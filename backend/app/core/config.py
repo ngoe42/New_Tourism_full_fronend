@@ -1,0 +1,50 @@
+from pydantic_settings import BaseSettings
+from pydantic import AnyHttpUrl, field_validator
+from typing import List, Optional
+import secrets
+
+
+class Settings(BaseSettings):
+    APP_NAME: str = "Karibu Safari API"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = False
+    ENVIRONMENT: str = "production"
+
+    SECRET_KEY: str = secrets.token_urlsafe(32)
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    DATABASE_URL: str
+    DATABASE_URL_SYNC: str
+
+    REDIS_URL: Optional[str] = None
+
+    CLOUDINARY_CLOUD_NAME: Optional[str] = None
+    CLOUDINARY_API_KEY: Optional[str] = None
+    CLOUDINARY_API_SECRET: Optional[str] = None
+
+    AWS_ACCESS_KEY_ID: Optional[str] = None
+    AWS_SECRET_ACCESS_KEY: Optional[str] = None
+    AWS_REGION: str = "us-east-1"
+    AWS_BUCKET_NAME: Optional[str] = None
+
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+
+    FIRST_ADMIN_EMAIL: str = "admin@karibusafari.com"
+    FIRST_ADMIN_PASSWORD: str = "ChangeMe123!"
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors(cls, v: str) -> str:
+        return v
+
+    def get_allowed_origins(self) -> List[str]:
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+
+settings = Settings()
