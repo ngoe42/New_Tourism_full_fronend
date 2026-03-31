@@ -11,7 +11,10 @@ from app.api.v1.router import api_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    await _seed_admin()
+    try:
+        await _seed_admin()
+    except Exception:
+        logger.exception("Admin seeding failed during startup; continuing so the app can serve health checks")
     yield
     logger.info("Shutting down...")
 
