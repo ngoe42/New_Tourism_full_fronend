@@ -23,14 +23,13 @@ export default function Footer() {
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Brand column */}
           <div className="col-span-2 lg:col-span-2">
-            <Link to="/" className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center text-white font-serif font-bold text-lg flex-shrink-0">
-                N
-              </div>
-              <div>
-                <span className="font-serif font-semibold text-xl text-white block leading-none">Nelson Tour and Safari</span>
-                <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-gold">Tanzania</span>
-              </div>
+            <Link to="/" className="flex flex-col leading-none mb-6">
+              <span className="font-serif font-bold text-2xl tracking-[0.12em] uppercase text-white">
+                Nelson
+              </span>
+              <span className="font-serif italic text-[11px] tracking-[0.22em] uppercase text-gold">
+                Tour &amp; Safari
+              </span>
             </Link>
 
             <p className="font-sans text-white/60 text-sm leading-relaxed mb-8 max-w-xs">

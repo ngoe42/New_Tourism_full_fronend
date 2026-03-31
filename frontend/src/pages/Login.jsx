@@ -44,8 +44,9 @@ export default function Login() {
         <div className="bg-white rounded-3xl shadow-xl shadow-black/5 p-8 border border-gray-100">
           {/* Brand */}
           <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-green-950 flex items-center justify-center mx-auto mb-4">
-              <span className="font-serif font-bold text-2xl text-amber-400">K</span>
+            <div className="flex flex-col leading-none items-center mb-4">
+              <span className="font-serif font-bold text-3xl tracking-[0.12em] uppercase text-green-950">Nelson</span>
+              <span className="font-serif italic text-[11px] tracking-[0.22em] uppercase text-amber-600">Tour &amp; Safari</span>
             </div>
             <h1 className="font-serif text-2xl font-bold text-green-950">Welcome Back</h1>
             <p className="font-sans text-sm text-gray-500 mt-1">Sign in to your Nelson Tour and Safari account</p>

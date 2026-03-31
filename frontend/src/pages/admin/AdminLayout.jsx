@@ -113,13 +113,14 @@ export default function AdminLayout() {
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
 
       {/* Brand */}
-      <div className={`flex items-center border-b border-gray-100 transition-all duration-300 ${collapsed && !isMobile ? 'justify-center px-0 py-5' : 'gap-3 px-5 py-5'}`}>
-        <div className="w-9 h-9 rounded-lg bg-green-700 flex items-center justify-center font-serif font-bold text-white text-base flex-shrink-0">N</div>
-        {(!collapsed || isMobile) && (
-          <div className="overflow-hidden">
-            <div className="font-serif font-bold text-sm text-gray-900 leading-tight whitespace-nowrap">Nelson Tour and Safari</div>
-            <div className="font-sans text-[10px] text-gray-400 tracking-widest uppercase whitespace-nowrap">Admin Panel</div>
+      <div className={`flex items-center border-b border-gray-100 transition-all duration-300 ${collapsed && !isMobile ? 'justify-center px-0 py-5' : 'px-5 py-5'}`}>
+        {(!collapsed || isMobile) ? (
+          <div className="flex flex-col leading-none">
+            <span className="font-serif font-bold text-lg tracking-[0.12em] uppercase text-gray-900 whitespace-nowrap">Nelson</span>
+            <span className="font-serif italic text-[10px] tracking-[0.2em] uppercase text-amber-600 whitespace-nowrap">Tour &amp; Safari</span>
           </div>
+        ) : (
+          <span className="font-serif font-bold text-base tracking-widest text-gray-900">N</span>
         )}
       </div>
 

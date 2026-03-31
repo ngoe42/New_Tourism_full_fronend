@@ -66,16 +66,13 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
-            <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center text-white font-serif font-bold text-lg">N</div>
-            <div>
-              <span className={`font-serif font-semibold text-xl leading-none block transition-colors duration-300 ${isTransparent ? 'text-white' : 'text-green-950'}`}>
-                Nelson Tour and Safari
-              </span>
-              <span className={`font-sans text-[10px] tracking-[0.2em] uppercase transition-colors duration-300 ${isTransparent ? 'text-gold-light' : 'text-gold'}`}>
-                Tanzania
-              </span>
-            </div>
+          <Link to="/" className="flex flex-col leading-none group flex-shrink-0">
+            <span className={`font-serif font-bold text-2xl tracking-[0.12em] uppercase transition-colors duration-300 ${isTransparent ? 'text-white' : 'text-green-950'}`}>
+              Nelson
+            </span>
+            <span className={`font-serif italic text-[11px] tracking-[0.22em] uppercase transition-colors duration-300 ${isTransparent ? 'text-gold-light' : 'text-gold'}`}>
+              Tour &amp; Safari
+            </span>
           </Link>
 
           {/* Desktop Nav */}
