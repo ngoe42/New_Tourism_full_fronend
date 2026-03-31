@@ -70,7 +70,7 @@ function InquiryRow({ inquiry }) {
           )}
           <div className="mt-4">
             <a
-              href={`mailto:${inquiry.email}?subject=Re: Your Karibu Safari Inquiry`}
+              href={`mailto:${inquiry.email}?subject=Re: Your Nelson Tour and Safari Inquiry`}
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-sans text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors"
             >
               <Mail size={13} /> Reply via Email

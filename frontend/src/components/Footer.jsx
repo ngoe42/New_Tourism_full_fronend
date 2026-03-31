@@ -25,10 +25,10 @@ export default function Footer() {
           <div className="col-span-2 lg:col-span-2">
             <Link to="/" className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center text-white font-serif font-bold text-lg flex-shrink-0">
-                K
+                N
               </div>
               <div>
-                <span className="font-serif font-semibold text-xl text-white block leading-none">Karibu Safari</span>
+                <span className="font-serif font-semibold text-xl text-white block leading-none">Nelson Tour and Safari</span>
                 <span className="font-sans text-[10px] tracking-[0.2em] uppercase text-gold">Tanzania</span>
               </div>
             </Link>
@@ -43,9 +43,9 @@ export default function Footer() {
                 <Phone size={14} className="text-gold flex-shrink-0" />
                 <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors">+255 123 456 789</span>
               </a>
-              <a href="mailto:hello@karibusafari.com" className="flex items-center gap-3 group">
+              <a href="mailto:hello@nelsontoursandsafari.com" className="flex items-center gap-3 group">
                 <Mail size={14} className="text-gold flex-shrink-0" />
-                <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors">hello@karibusafari.com</span>
+                <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors">hello@nelsontoursandsafari.com</span>
               </a>
               <div className="flex items-center gap-3">
                 <MapPin size={14} className="text-gold flex-shrink-0" />
@@ -123,7 +123,7 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="font-sans text-xs text-white/30">
-            © {new Date().getFullYear()} Karibu Safari. All rights reserved.
+            © {new Date().getFullYear()} Nelson Tour and Safari. All rights reserved.
           </p>
           <div className="flex flex-wrap gap-4 sm:gap-6 justify-center sm:justify-start">
             {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((item) => (

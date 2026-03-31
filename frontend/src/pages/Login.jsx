@@ -48,7 +48,7 @@ export default function Login() {
               <span className="font-serif font-bold text-2xl text-amber-400">K</span>
             </div>
             <h1 className="font-serif text-2xl font-bold text-green-950">Welcome Back</h1>
-            <p className="font-sans text-sm text-gray-500 mt-1">Sign in to your Karibu Safari account</p>
+            <p className="font-sans text-sm text-gray-500 mt-1">Sign in to your Nelson Tour and Safari account</p>
           </div>
 
           {/* Error */}
@@ -72,7 +72,7 @@ export default function Login() {
                   required
                   value={form.email}
                   onChange={(e) => set('email', e.target.value)}
-                  placeholder="admin@karibusafari.com"
+                  placeholder="admin@nelsontoursandsafari.com"
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl font-sans text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
                 />
               </div>
@@ -124,7 +124,7 @@ export default function Login() {
         </div>
 
         <p className="font-sans text-xs text-center text-gray-400 mt-4">
-          Admin credentials: <span className="font-semibold">admin@karibusafari.com</span>
+          Admin credentials: <span className="font-semibold">admin@nelsontoursandsafari.com</span>
         </p>
       </motion.div>
     </div>

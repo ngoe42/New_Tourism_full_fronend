@@ -114,10 +114,10 @@ export default function AdminLayout() {
 
       {/* Brand */}
       <div className={`flex items-center border-b border-gray-100 transition-all duration-300 ${collapsed && !isMobile ? 'justify-center px-0 py-5' : 'gap-3 px-5 py-5'}`}>
-        <div className="w-9 h-9 rounded-lg bg-green-700 flex items-center justify-center font-serif font-bold text-white text-base flex-shrink-0">K</div>
+        <div className="w-9 h-9 rounded-lg bg-green-700 flex items-center justify-center font-serif font-bold text-white text-base flex-shrink-0">N</div>
         {(!collapsed || isMobile) && (
           <div className="overflow-hidden">
-            <div className="font-serif font-bold text-sm text-gray-900 leading-tight whitespace-nowrap">Karibu Safari</div>
+            <div className="font-serif font-bold text-sm text-gray-900 leading-tight whitespace-nowrap">Nelson Tour and Safari</div>
             <div className="font-sans text-[10px] text-gray-400 tracking-widest uppercase whitespace-nowrap">Admin Panel</div>
           </div>
         )}

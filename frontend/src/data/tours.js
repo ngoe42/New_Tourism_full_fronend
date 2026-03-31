@@ -240,7 +240,7 @@ export const testimonials = [
     avatar: '/images/avatars/avatar-1.jpg',
     rating: 5,
     tour: 'Great Serengeti Migration',
-    text: `Karibu Safari exceeded every expectation. The river crossing was otherworldly — thousands of wildebeest thundering into the Mara River while our guide calmly explained the ecology. The tented camp felt like a five-star hotel in the middle of the wild. We will absolutely return.`,
+    text: `Nelson Tour and Safari exceeded every expectation. The river crossing was otherworldly — thousands of wildebeest thundering into the Mara River while our guide calmly explained the ecology. The tented camp felt like a five-star hotel in the middle of the wild. We will absolutely return.`,
   },
   {
     id: 2,
@@ -258,7 +258,7 @@ export const testimonials = [
     avatar: '/images/avatars/avatar-3.jpg',
     rating: 5,
     tour: 'Zanzibar Island Escape',
-    text: `The dhow sailing at sunset over turquoise water was pure magic. Stone Town was a labyrinth of history and flavor. Our villa was perfection. Karibu Safari has a gift for crafting experiences that feel both luxurious and authentic.`,
+    text: `The dhow sailing at sunset over turquoise water was pure magic. Stone Town was a labyrinth of history and flavor. Our villa was perfection. Nelson Tour and Safari has a gift for crafting experiences that feel both luxurious and authentic.`,
   },
   {
     id: 4,

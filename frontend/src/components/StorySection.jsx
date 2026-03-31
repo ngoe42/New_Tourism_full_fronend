@@ -7,7 +7,7 @@ const stories = [
   {
     label: 'Our Story',
     title: 'Born from a Deep Love\nof the African Wild',
-    body: `Karibu Safari was founded by a passionate team of Tanzanian naturalists who believe that every traveler deserves more than a tour — they deserve a transformation. We grew up on these plains, under these stars, and beside these rivers. We share them with the world not as guides, but as storytellers.`,
+    body: `Nelson Tour and Safari was founded by a passionate team of Tanzanian naturalists who believe that every traveler deserves more than a tour — they deserve a transformation. We grew up on these plains, under these stars, and beside these rivers. We share them with the world not as guides, but as storytellers.`,
     image: '/images/sections/story-guides.jpg',
     imageAlt: 'Safari guide with guests at sunset',
     bullets: ['Deep-rooted local expertise', 'Team of certified naturalists', 'TATO & TTB licensed & insured'],

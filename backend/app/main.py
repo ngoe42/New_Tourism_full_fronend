@@ -39,7 +39,7 @@ async def _seed_admin():
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Production-ready API for Karibu Safari luxury travel platform",
+    description="Production-ready API for Nelson Tour and Safari luxury travel platform",
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     openapi_url="/openapi.json" if settings.DEBUG else None,

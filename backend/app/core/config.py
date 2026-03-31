@@ -5,7 +5,7 @@ import secrets
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Karibu Safari API"
+    APP_NAME: str = "Nelson Tour and Safari API"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     ENVIRONMENT: str = "production"
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
-    FIRST_ADMIN_EMAIL: str = "admin@karibusafari.com"
+    FIRST_ADMIN_EMAIL: str = "admin@nelsontoursandsafari.com"
     FIRST_ADMIN_PASSWORD: str = "ChangeMe123!"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")

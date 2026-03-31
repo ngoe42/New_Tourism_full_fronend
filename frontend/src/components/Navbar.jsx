@@ -67,10 +67,10 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
-            <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center text-white font-serif font-bold text-lg">K</div>
+            <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center text-white font-serif font-bold text-lg">N</div>
             <div>
               <span className={`font-serif font-semibold text-xl leading-none block transition-colors duration-300 ${isTransparent ? 'text-white' : 'text-green-950'}`}>
-                Karibu Safari
+                Nelson Tour and Safari
               </span>
               <span className={`font-sans text-[10px] tracking-[0.2em] uppercase transition-colors duration-300 ${isTransparent ? 'text-gold-light' : 'text-gold'}`}>
                 Tanzania

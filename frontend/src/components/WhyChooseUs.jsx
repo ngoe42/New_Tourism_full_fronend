@@ -62,7 +62,7 @@ export default function WhyChooseUs() {
             transition={{ duration: 0.6 }}
             className="section-label block mb-3"
           >
-            Why Karibu Safari
+            Why Nelson Tour and Safari
           </motion.span>
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
@@ -71,7 +71,7 @@ export default function WhyChooseUs() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="section-title max-w-2xl mx-auto"
           >
-            The Karibu Difference
+            The Nelson Difference
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
