@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,11 +12,11 @@ from app.api.v1.router import api_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    try:
-        await _seed_admin()
-    except Exception:
-        logger.exception("Admin seeding failed during startup; continuing so the app can serve health checks")
+    app.state.admin_seed_task = asyncio.create_task(_seed_admin_background())
     yield
+    seed_task = getattr(app.state, "admin_seed_task", None)
+    if seed_task and not seed_task.done():
+        seed_task.cancel()
     logger.info("Shutting down...")
 
 
@@ -37,6 +38,13 @@ async def _seed_admin():
             await repo.create(admin)
             await db.commit()
             logger.info(f"Admin user created: {settings.FIRST_ADMIN_EMAIL}")
+
+
+async def _seed_admin_background():
+    try:
+        await _seed_admin()
+    except Exception:
+        logger.exception("Admin seeding failed during startup; continuing so the app can serve health checks")
 
 
 app = FastAPI(
