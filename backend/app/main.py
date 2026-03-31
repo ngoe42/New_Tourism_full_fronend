@@ -5,14 +5,12 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from loguru import logger
 
 from app.core.config import settings
-from app.core.database import create_tables
 from app.api.v1.router import api_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    await create_tables()
     await _seed_admin()
     yield
     logger.info("Shutting down...")
