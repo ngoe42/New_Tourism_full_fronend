@@ -97,7 +97,7 @@ export default function TourCard({ tour, index = 0 }) {
           <div className="text-right">
             <div className="font-sans text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">From</div>
             <div className="font-serif text-xl font-semibold text-green-950">
-              ${tour.price.toLocaleString()}
+              ${(tour.price ?? 0).toLocaleString()}
             </div>
             <div className="font-sans text-[10px] text-gray-400">per person</div>
           </div>

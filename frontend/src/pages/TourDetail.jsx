@@ -101,7 +101,7 @@ export default function TourDetail() {
               <div className="flex items-center gap-4 flex-shrink-0">
                 <div className="text-right hidden sm:block">
                   <p className="font-sans text-xs text-gray-400">From</p>
-                  <p className="font-serif text-xl font-semibold text-green-950">${tour.price.toLocaleString()}</p>
+                  <p className="font-serif text-xl font-semibold text-green-950">${(tour.price ?? 0).toLocaleString()}</p>
                 </div>
                 <button
                   onClick={() => bookingRef.current?.scrollIntoView({ behavior: 'smooth' })}
@@ -180,7 +180,7 @@ export default function TourDetail() {
             <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-4 lg:hidden shadow-sm border border-gray-100">
               <div>
                 <p className="font-sans text-xs text-gray-400 uppercase tracking-wider">From</p>
-                <p className="font-serif text-2xl font-semibold text-green-950">${tour.price.toLocaleString()}</p>
+                <p className="font-serif text-2xl font-semibold text-green-950">${(tour.price ?? 0).toLocaleString()}</p>
                 <p className="font-sans text-[11px] text-gray-400">per person</p>
               </div>
               <button
@@ -349,7 +349,7 @@ export default function TourDetail() {
                 <div className="flex items-end justify-between mb-2">
                   <div>
                     <p className="font-sans text-xs text-gray-400 uppercase tracking-wider">Starting from</p>
-                    <p className="font-serif text-4xl font-semibold text-green-950">${tour.price.toLocaleString()}</p>
+                    <p className="font-serif text-4xl font-semibold text-green-950">${(tour.price ?? 0).toLocaleString()}</p>
                     <p className="font-sans text-xs text-gray-400">per person</p>
                   </div>
                   <div className="text-right">
