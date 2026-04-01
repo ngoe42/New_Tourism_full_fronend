@@ -8,7 +8,7 @@ from app.models.user import User
 from app.schemas.media import MediaResponse, MediaUploadResponse
 from app.services.media import MediaService
 
-router = APIRouter(prefix="/media", tags=["Media"])
+router = APIRouter(tags=["Media"])
 
 
 @router.post("/upload", response_model=MediaUploadResponse, status_code=201)

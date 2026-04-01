@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { experiencesApi } from '../api/experiences'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 const STATIC_EXPERIENCES = [
   {
@@ -99,7 +100,7 @@ export default function ExperiencesSlider() {
           className="absolute inset-0"
         >
           <motion.img
-            src={slide.image_url}
+            src={resolveImageUrl(slide.image_url)}
             alt={slide.title}
             className="w-full h-full object-cover"
             animate={{ scale: [1.0, 1.06] }}

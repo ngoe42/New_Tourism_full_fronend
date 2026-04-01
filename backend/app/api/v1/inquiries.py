@@ -6,7 +6,7 @@ from app.dependencies.auth import require_admin
 from app.schemas.inquiry import InquiryCreate, InquiryResponse, InquiryUpdate, PaginatedInquiries
 from app.services.inquiry import InquiryService
 
-router = APIRouter(prefix="/inquiries", tags=["Inquiries"])
+router = APIRouter(tags=["Inquiries"])
 
 
 @router.post("", response_model=InquiryResponse, status_code=201)

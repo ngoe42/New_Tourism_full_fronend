@@ -1,4 +1,7 @@
 import io
+import os
+import uuid
+from pathlib import Path
 from typing import Optional
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,10 +54,7 @@ class MediaService:
         elif settings.AWS_BUCKET_NAME and settings.AWS_ACCESS_KEY_ID:
             return await self._upload_s3(contents, filename, content_type)
         else:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="No storage provider configured. Set Cloudinary or S3 credentials in .env",
-            )
+            return await self._upload_local(contents, filename)
 
     async def _upload_cloudinary(self, contents: bytes, filename: str) -> tuple[str, str]:
         import cloudinary
@@ -71,6 +71,15 @@ class MediaService:
             overwrite=False,
         )
         return result["secure_url"], result["public_id"]
+
+    async def _upload_local(self, contents: bytes, filename: str) -> tuple[str, None]:
+        upload_dir = Path(__file__).resolve().parents[3] / "static" / "uploads"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        ext = Path(filename).suffix or ".jpg"
+        unique_name = f"{uuid.uuid4().hex}{ext}"
+        dest = upload_dir / unique_name
+        dest.write_bytes(contents)
+        return f"/uploads/{unique_name}", None
 
     async def _upload_s3(self, contents: bytes, filename: str, content_type: str) -> tuple[str, str]:
         import boto3

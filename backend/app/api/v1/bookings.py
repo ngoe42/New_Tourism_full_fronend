@@ -7,7 +7,7 @@ from app.models.user import User
 from app.schemas.booking import BookingCreate, BookingResponse, BookingStatusUpdate, PaginatedBookings
 from app.services.booking import BookingService
 
-router = APIRouter(prefix="/bookings", tags=["Bookings"])
+router = APIRouter(tags=["Bookings"])
 
 
 @router.post("", response_model=BookingResponse, status_code=201)

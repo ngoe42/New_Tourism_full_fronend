@@ -64,6 +64,8 @@ Railway Project
 | `VITE_API_URL` | `https://YOUR-BACKEND-URL.railway.app/api/v1` |
 
 > Replace `YOUR-BACKEND-URL` with the backend URL from Step 3.
+> This variable is **baked into the JS bundle at build time** by Vite.
+> **Do NOT edit `public/config.js`** — leave it as an empty object (`window.APP_CONFIG = {}`).
 
 4. Click **Deploy** — wait for green ✅
 5. Copy your frontend URL, e.g. `https://frontend-xxx.railway.app`
@@ -143,7 +145,16 @@ Browser → Frontend (Railway)
 
 | Issue | Fix |
 |---|---|
-| `CORS error` | Make sure `ALLOWED_ORIGINS` on backend includes the exact frontend URL |
-| `relation does not exist` | Alembic migrations run automatically on startup via `start` command |
+| `CORS error` | Make sure `ALLOWED_ORIGINS` on backend includes the **exact** frontend URL (no trailing slash) |
+| `404 on /api/v1/*` | Verify `VITE_API_URL` is set in the frontend service Variables **before** the build ran; redeploy if needed |
+| `relation does not exist` | Alembic migrations run automatically on startup via `start.sh` |
 | `401 on all requests` | Check `SECRET_KEY` is consistent across restarts (not auto-generated) |
 | Frontend shows blank page | Make sure `VITE_API_URL` is set **before** the build runs on Railway |
+| Local CORS error (dev) | **Never** set a hardcoded URL in `public/config.js` locally. Leave it as `window.APP_CONFIG = {}` and let the Vite proxy handle `/api/v1` requests to `localhost:8002` |
+
+## Local Development Notes
+
+- Docker maps the API container (port 8000) to **host port 8002**
+- Vite proxy (`vite.config.js`) forwards `/api/v1` → `http://localhost:8002`
+- `public/config.js` must stay as `window.APP_CONFIG = {}` (no API_URL set) so the proxy is used
+- With `DEBUG=true` in `backend/.env`, the backend allows all CORS origins (`*`) automatically

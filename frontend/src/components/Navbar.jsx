@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ChevronDown, LogIn, LayoutDashboard, LogOut, MapPin, Clock, ArrowRight } from 'lucide-react'
+import { Menu, X, ChevronDown, LogIn, LayoutDashboard, LogOut, MapPin, Clock, ArrowRight, Mountain } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { toursApi } from '../api/tours'
+import { routesApi } from '../api/routes'
+import { experiencesApi } from '../api/experiences'
 
 const staticLinks = [
   { label: 'Home',        href: '/' },
-  { label: 'Kilimanjaro', href: '/tours/kilimanjaro-summit-trek' },
+  { label: 'Kilimanjaro', href: '/routes', hasRouteDropdown: true },
   { label: 'Safari',      href: '/tours', hasTourDropdown: true },
+  { label: 'Experiences', href: '/experiences', hasExperienceDropdown: true },
+  { label: 'Blog',        href: '/blog' },
   { label: 'About',       href: '/#about' },
   { label: 'Contact',     href: '/contact' },
 ]
@@ -30,6 +34,23 @@ export default function Navbar() {
     staleTime: 5 * 60 * 1000,
   })
   const tourList = toursData?.items ?? []
+
+  const { data: routesData } = useQuery({
+    queryKey: ['nav-routes'],
+    queryFn: () => routesApi.list(),
+    staleTime: 5 * 60 * 1000,
+  })
+  const routeList = routesData ?? []
+  const [activeRouteHover, setActiveRouteHover] = useState(null)
+  const [activeTourHover, setActiveTourHover] = useState(null)
+  const [activeExpHover, setActiveExpHover] = useState(null)
+
+  const { data: experiencesData } = useQuery({
+    queryKey: ['nav-experiences'],
+    queryFn: () => experiencesApi.list(),
+    staleTime: 5 * 60 * 1000,
+  })
+  const experienceList = Array.isArray(experiencesData) ? experiencesData : (experiencesData?.value ?? [])
 
   useEffect(() => {
     const handler = (e) => {
@@ -65,7 +86,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
 
-          {/* Logo */}
+          {/* Logo + Desktop Nav grouped on the left */}
+          <div className="flex items-center gap-10">
           <Link to="/" className="flex flex-col leading-none group flex-shrink-0">
             <span className={`font-serif font-bold text-2xl tracking-[0.12em] uppercase transition-colors duration-300 ${isTransparent ? 'text-white' : 'text-green-950'}`}>
               Nelson
@@ -81,22 +103,153 @@ export default function Navbar() {
               <div
                 key={link.label}
                 className="relative"
-                onMouseEnter={() => link.hasTourDropdown && setActiveDropdown(link.label)}
-                onMouseLeave={() => setActiveDropdown(null)}
+                onMouseEnter={() => {
+                  if (link.hasTourDropdown || link.hasRouteDropdown || link.hasExperienceDropdown) setActiveDropdown(link.label)
+                }}
+                onMouseLeave={() => {
+                  setActiveDropdown(null)
+                  setActiveRouteHover(null)
+                  setActiveTourHover(null)
+                  setActiveExpHover(null)
+                }}
               >
                 <Link
                   to={link.href}
                   className={`flex items-center gap-1 font-sans text-sm font-medium tracking-wide transition-colors duration-300 hover:text-gold ${textCls} ${
-                    location.pathname === link.href ? activeCls : ''
+                    location.pathname.startsWith(link.href) && link.href !== '/' ? activeCls : location.pathname === link.href ? activeCls : ''
                   }`}
                 >
                   {link.label}
-                  {link.hasTourDropdown && (
+                  {(link.hasTourDropdown || link.hasRouteDropdown || link.hasExperienceDropdown) && (
                     <ChevronDown size={14} className={`transition-transform duration-200 ${activeDropdown === link.label ? 'rotate-180' : ''}`} />
                   )}
                 </Link>
 
-                {/* Safari tour dropdown */}
+                {/* Kilimanjaro Route Megamenu */}
+                <AnimatePresence>
+                  {link.hasRouteDropdown && activeDropdown === link.label && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full -left-10 mt-3 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex"
+                      style={{ width: activeRouteHover ? 700 : 290 }}
+                    >
+                      {/* Left: Route List */}
+                      <div className="w-[290px] flex-shrink-0 bg-white border-r border-gray-100 flex flex-col">
+                        <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                          <Mountain size={14} className="text-gold" />
+                          <span className="font-sans text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Select Route</span>
+                        </div>
+                        <div className="py-2 flex-1">
+                          {routeList.length === 0 ? (
+                            <div className="px-5 py-4 font-sans text-sm text-gray-400">Loading routes…</div>
+                          ) : (
+                            routeList.map((route) => (
+                              <div
+                                key={route.id}
+                                onMouseEnter={() => setActiveRouteHover(route)}
+                                className={`px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors duration-150 flex items-center justify-between group ${
+                                  activeRouteHover?.id === route.id ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                              >
+                                <span>{route.name}</span>
+                                <ArrowRight size={12} className={`transition-all duration-200 ${activeRouteHover?.id === route.id ? 'text-gold translate-x-0 opacity-100' : 'text-gray-300 -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0'}`} />
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        <div className="p-3 border-t border-gray-100 bg-gray-50">
+                          <Link to="/routes" className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
+                            Compare All Routes <ArrowRight size={11} />
+                          </Link>
+                        </div>
+                      </div>
+
+                      {/* Right: Route Details Preview */}
+                      {activeRouteHover && (
+                        <motion.div
+                          key={activeRouteHover.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.18 }}
+                          className="w-[410px] flex flex-col"
+                        >
+                          {/* Cover image */}
+                          <div className="relative h-48 flex-shrink-0 overflow-hidden">
+                            {(() => {
+                              const cover = activeRouteHover.images?.find(i => i.is_cover) ?? activeRouteHover.images?.[0]
+                              return cover ? (
+                                <img
+                                  src={cover.url}
+                                  alt={activeRouteHover.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
+                                  <Mountain size={32} className="text-white/30" />
+                                </div>
+                              )
+                            })()}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                            <div className="absolute bottom-3 left-4 right-4">
+                              <h4 className="font-serif text-lg text-white font-bold leading-tight drop-shadow">
+                                {activeRouteHover.name}
+                              </h4>
+                              {activeRouteHover.nickname && (
+                                <p className="font-sans text-xs text-[#c9a96e] italic mt-0.5">"{activeRouteHover.nickname}"</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Details */}
+                          <div className="bg-[#faf8f3] p-4 flex flex-col flex-1">
+                            <div className="flex gap-2 mb-3">
+                              <span className="flex items-center gap-1 font-sans text-[11px] font-semibold text-gray-500 bg-white px-2 py-1 rounded-md shadow-sm">
+                                <Clock size={11} className="text-gold"/> {activeRouteHover.duration}
+                              </span>
+                              {activeRouteHover.difficulty && (
+                                <span className="flex items-center gap-1 font-sans text-[11px] font-semibold text-gray-500 bg-white px-2 py-1 rounded-md shadow-sm">
+                                  <Mountain size={11} className="text-gold"/> {activeRouteHover.difficulty}
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="font-sans text-xs text-gray-600 leading-relaxed mb-3 line-clamp-3">
+                              {activeRouteHover.short_description}
+                            </p>
+
+                            {activeRouteHover.nickname_explanation && (
+                              <div className="bg-white/80 p-2.5 rounded-lg border border-white mb-3">
+                                <p className="font-sans text-[11px] text-gray-500 leading-snug line-clamp-2">
+                                  <span className="font-semibold text-green-800">Why the nickname?</span> {activeRouteHover.nickname_explanation}
+                                </p>
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
+                              <Link
+                                to={`/routes/${activeRouteHover.slug}`}
+                                className="text-center font-sans text-xs font-semibold text-green-800 border border-green-800/20 bg-white hover:bg-gray-50 py-2 rounded-lg transition-colors"
+                              >
+                                More Details
+                              </Link>
+                              <Link
+                                to={`/contact?interest=${activeRouteHover.name}`}
+                                className="text-center font-sans text-xs font-semibold text-white bg-green-800 hover:bg-green-700 py-2 rounded-lg transition-colors shadow-md"
+                              >
+                                Book Now
+                              </Link>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Safari tour megamenu */}
                 <AnimatePresence>
                   {link.hasTourDropdown && activeDropdown === link.label && (
                     <motion.div
@@ -104,56 +257,214 @@ export default function Navbar() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
-                      style={{ minWidth: 280 }}
+                      className="absolute top-full -left-10 mt-3 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex"
+                      style={{ width: activeTourHover ? 700 : 290 }}
                     >
-                      {/* Header row */}
-                      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                        <span className="font-sans text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Our Safaris</span>
-                        <Link
-                          to="/tours"
-                          className="font-sans text-xs text-green-700 font-semibold hover:text-gold flex items-center gap-1 transition-colors"
-                        >
-                          View all <ArrowRight size={11} />
-                        </Link>
+                      {/* Left: Tour list */}
+                      <div className="w-[290px] flex-shrink-0 bg-white border-r border-gray-100 flex flex-col">
+                        <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                          <MapPin size={14} className="text-gold" />
+                          <span className="font-sans text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Select Safari</span>
+                        </div>
+                        <div className="py-2 flex-1 overflow-y-auto max-h-72">
+                          {tourList.length === 0 ? (
+                            <div className="px-5 py-4 font-sans text-sm text-gray-400">Loading safaris…</div>
+                          ) : (
+                            tourList.map((tour) => (
+                              <div
+                                key={tour.id}
+                                onMouseEnter={() => setActiveTourHover(tour)}
+                                className={`px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors duration-150 flex items-center justify-between group ${
+                                  activeTourHover?.id === tour.id ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                              >
+                                <span className="truncate pr-2">{tour.title}</span>
+                                <ArrowRight size={12} className={`flex-shrink-0 transition-all duration-200 ${
+                                  activeTourHover?.id === tour.id ? 'text-gold translate-x-0 opacity-100' : 'text-gray-300 -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0'
+                                }`} />
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        <div className="p-3 border-t border-gray-100 bg-gray-50">
+                          <Link to="/tours" className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
+                            View All Safaris <ArrowRight size={11} />
+                          </Link>
+                        </div>
                       </div>
 
-                      {/* Tour list */}
-                      {tourList.length === 0 ? (
-                        <div className="px-5 py-4 font-sans text-sm text-gray-400">Loading safaris…</div>
-                      ) : (
-                        tourList.map((tour) => (
-                          <Link
-                            key={tour.id}
-                            to={`/tours/${tour.slug}`}
-                            className="flex items-start gap-3 px-4 py-3 hover:bg-beige transition-colors duration-150 group/item border-b border-gray-50 last:border-0"
-                          >
-                            {/* Cover thumbnail */}
-                            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 mt-0.5">
-                              {tour.images?.[0]?.url ? (
-                                <img src={tour.images[0].url} alt={tour.title} className="w-full h-full object-cover" />
+                      {/* Right: Tour preview */}
+                      {activeTourHover && (
+                        <motion.div
+                          key={activeTourHover.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.18 }}
+                          className="w-[410px] flex flex-col"
+                        >
+                          {/* Cover image */}
+                          <div className="relative h-48 flex-shrink-0 overflow-hidden">
+                            {(() => {
+                              const cover = activeTourHover.images?.find(i => i.is_cover) ?? activeTourHover.images?.[0]
+                              return cover ? (
+                                <img src={cover.url} alt={activeTourHover.title} className="w-full h-full object-cover" />
                               ) : (
-                                <div className="w-full h-full bg-green-100" />
+                                <div className="w-full h-full bg-gradient-to-br from-amber-800 to-green-900 flex items-center justify-center">
+                                  <MapPin size={32} className="text-white/30" />
+                                </div>
+                              )
+                            })()}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                            <div className="absolute bottom-3 left-4 right-4">
+                              <h4 className="font-serif text-lg text-white font-bold leading-tight drop-shadow">
+                                {activeTourHover.title}
+                              </h4>
+                              {activeTourHover.location && (
+                                <p className="font-sans text-xs text-[#c9a96e] mt-0.5 flex items-center gap-1">
+                                  <MapPin size={10} /> {activeTourHover.location}
+                                </p>
                               )}
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-sans text-sm font-semibold text-gray-800 group-hover/item:text-green-700 transition-colors truncate">
-                                {tour.title}
-                              </p>
-                              <div className="flex items-center gap-3 mt-0.5">
-                                <span className="flex items-center gap-1 font-sans text-[11px] text-gray-400">
-                                  <Clock size={10} /> {tour.duration}
+                          </div>
+
+                          {/* Details */}
+                          <div className="bg-[#faf8f3] p-4 flex flex-col flex-1">
+                            <div className="flex gap-2 mb-3">
+                              {activeTourHover.duration && (
+                                <span className="flex items-center gap-1 font-sans text-[11px] font-semibold text-gray-500 bg-white px-2 py-1 rounded-md shadow-sm">
+                                  <Clock size={11} className="text-gold" /> {activeTourHover.duration}
                                 </span>
-                                <span className="flex items-center gap-1 font-sans text-[11px] text-gray-400">
-                                  <MapPin size={10} /> {tour.location?.split(',')[0]}
+                              )}
+                              {activeTourHover.price > 0 && (
+                                <span className="flex items-center gap-1 font-sans text-[11px] font-semibold text-green-700 bg-white px-2 py-1 rounded-md shadow-sm">
+                                  From ${activeTourHover.price?.toLocaleString()}
                                 </span>
-                              </div>
+                              )}
                             </div>
-                            <span className="font-sans text-xs font-bold text-green-700 flex-shrink-0 mt-1">
-                              ${tour.price?.toLocaleString()}
-                            </span>
+
+                            <p className="font-sans text-xs text-gray-600 leading-relaxed mb-3 line-clamp-3">
+                              {activeTourHover.subtitle}
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
+                              <Link
+                                to={`/tours/${activeTourHover.slug}`}
+                                className="text-center font-sans text-xs font-semibold text-green-800 border border-green-800/20 bg-white hover:bg-gray-50 py-2 rounded-lg transition-colors"
+                              >
+                                More Details
+                              </Link>
+                              <Link
+                                to={`/contact?interest=${activeTourHover.title}`}
+                                className="text-center font-sans text-xs font-semibold text-white bg-green-800 hover:bg-green-700 py-2 rounded-lg transition-colors shadow-md"
+                              >
+                                Book Now
+                              </Link>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Experiences megamenu */}
+                <AnimatePresence>
+                  {link.hasExperienceDropdown && activeDropdown === link.label && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full -left-10 mt-3 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex"
+                      style={{ width: activeExpHover ? 700 : 290 }}
+                    >
+                      {/* Left: Experience list */}
+                      <div className="w-[290px] flex-shrink-0 bg-white border-r border-gray-100 flex flex-col">
+                        <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                          <Mountain size={14} className="text-gold" />
+                          <span className="font-sans text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Select Experience</span>
+                        </div>
+                        <div className="py-2 flex-1">
+                          {experienceList.length === 0 ? (
+                            <div className="px-5 py-4 font-sans text-sm text-gray-400">Loading…</div>
+                          ) : (
+                            experienceList.map((exp) => (
+                              <div
+                                key={exp.id}
+                                onMouseEnter={() => setActiveExpHover(exp)}
+                                className={`px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors duration-150 flex items-center justify-between group ${
+                                  activeExpHover?.id === exp.id ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                              >
+                                <span className="truncate pr-2">{exp.title}</span>
+                                <ArrowRight size={12} className={`flex-shrink-0 transition-all duration-200 ${
+                                  activeExpHover?.id === exp.id ? 'text-gold translate-x-0 opacity-100' : 'text-gray-300 -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0'
+                                }`} />
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        <div className="p-3 border-t border-gray-100 bg-gray-50">
+                          <Link to="/experiences" className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
+                            View All Experiences <ArrowRight size={11} />
                           </Link>
-                        ))
+                        </div>
+                      </div>
+
+                      {/* Right: Experience preview */}
+                      {activeExpHover && (
+                        <motion.div
+                          key={activeExpHover.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.18 }}
+                          className="w-[410px] flex flex-col"
+                        >
+                          {/* Cover image */}
+                          <div className="relative h-48 flex-shrink-0 overflow-hidden">
+                            {activeExpHover.image_url ? (
+                              <img src={activeExpHover.image_url} alt={activeExpHover.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-green-900 to-amber-800 flex items-center justify-center">
+                                <Mountain size={32} className="text-white/30" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                            <div className="absolute bottom-3 left-4 right-4">
+                              <h4 className="font-serif text-lg text-white font-bold leading-tight drop-shadow">
+                                {activeExpHover.title}
+                              </h4>
+                              {activeExpHover.subtitle && (
+                                <p className="font-sans text-xs text-[#c9a96e] mt-0.5 italic">
+                                  {activeExpHover.subtitle}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Details */}
+                          <div className="bg-[#faf8f3] p-4 flex flex-col flex-1">
+                            {activeExpHover.description && (
+                              <p className="font-sans text-xs text-gray-600 leading-relaxed mb-4 line-clamp-3">
+                                {activeExpHover.description}
+                              </p>
+                            )}
+                            <div className="grid grid-cols-2 gap-2 mt-auto">
+                              <Link
+                                to="/experiences"
+                                className="text-center font-sans text-xs font-semibold text-green-800 border border-green-800/20 bg-white hover:bg-gray-50 py-2 rounded-lg transition-colors"
+                              >
+                                More Details
+                              </Link>
+                              <Link
+                                to={`/contact?interest=${encodeURIComponent(activeExpHover.title)}`}
+                                className="text-center font-sans text-xs font-semibold text-white bg-green-800 hover:bg-green-700 py-2 rounded-lg transition-colors shadow-md"
+                              >
+                                Book Now
+                              </Link>
+                            </div>
+                          </div>
+                        </motion.div>
                       )}
                     </motion.div>
                   )}
@@ -161,6 +472,7 @@ export default function Navbar() {
               </div>
             ))}
           </div>
+          </div>{/* end logo+nav group */}
 
           {/* CTA + Mobile Toggle */}
           <div className="flex items-center gap-3">
@@ -255,6 +567,29 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              {/* Mobile route list under Kilimanjaro */}
+              {routeList.length > 0 && (
+                <div className="pt-1 pb-2">
+                  <p className="font-sans text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2 pt-1 flex items-center gap-1">
+                    <Mountain size={12} className="text-gold" /> All Kilimanjaro Routes
+                  </p>
+                  <div className="space-y-1">
+                    {routeList.map((route) => (
+                      <Link
+                        key={route.id}
+                        to={`/routes/${route.slug}`}
+                        className="flex items-center justify-between py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-50"
+                      >
+                        <span className="flex items-center gap-2">
+                          <ArrowRight size={12} className="text-gold flex-shrink-0" />
+                          {route.name}
+                        </span>
+                        <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-0.5 rounded">{route.duration}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Mobile tour list under Safari */}
               {tourList.length > 0 && (
                 <div className="pt-1 pb-2">

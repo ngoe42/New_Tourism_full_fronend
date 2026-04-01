@@ -1,6 +1,8 @@
 import axios from 'axios'
 
-const API_URL = window.APP_CONFIG?.API_URL || import.meta.env.VITE_API_URL || '/api/v1'
+// Priority: VITE_API_URL env var (set in .env locally, or Railway Variables for production)
+// Fallback: /api/v1 (relative — only works when frontend and backend are on the same origin)
+const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 const apiClient = axios.create({
   baseURL: API_URL,

@@ -14,7 +14,7 @@ from app.schemas.experience import (
     ExperienceReorderItem,
 )
 
-router = APIRouter(prefix="/experiences", tags=["Experiences"])
+router = APIRouter(tags=["Experiences"])
 
 
 @router.get("", response_model=List[ExperienceResponse])

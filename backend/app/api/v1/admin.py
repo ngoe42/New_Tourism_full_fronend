@@ -6,7 +6,7 @@ from app.dependencies.auth import require_admin
 from app.schemas.dashboard import DashboardStats
 from app.services.dashboard import DashboardService
 
-router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
+router = APIRouter(tags=["Admin Dashboard"])
 
 
 @router.get("/dashboard", response_model=DashboardStats, dependencies=[Depends(require_admin)])

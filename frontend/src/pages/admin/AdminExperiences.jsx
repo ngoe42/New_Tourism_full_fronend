@@ -1,15 +1,41 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, X, Save, Loader2, ImageOff } from 'lucide-react'
+import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, X, Save, Loader2, ImageOff, Upload, Link } from 'lucide-react'
 import { experiencesApi } from '../../api/experiences'
+import apiClient from '../../api/client'
+import { resolveImageUrl } from '../../utils/imageUrl'
 
 const EMPTY_FORM = { title: '', subtitle: '', description: '', image_url: '', order: 0, is_active: true }
 
 function ExperienceModal({ initial, onClose, onSave, loading }) {
   const [form, setForm] = useState(initial ?? EMPTY_FORM)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
+  const [urlMode, setUrlMode] = useState(false)
+  const fileInputRef = useRef(null)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
   const isEdit = !!initial?.id
+
+  const handleFilePick = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await apiClient.post('/media/upload', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      set('image_url', res.data.url)
+    } catch (err) {
+      setUploadError(err?.response?.data?.detail ?? 'Upload failed')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -30,27 +56,78 @@ function ExperienceModal({ initial, onClose, onSave, loading }) {
         </div>
 
         <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* Image preview */}
-          <div className="w-full h-40 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center relative">
-            {form.image_url ? (
-              <img src={form.image_url} alt="Preview" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none' }} />
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-gray-300">
-                <ImageOff size={32} />
-                <span className="font-sans text-xs">Paste an image URL below</span>
-              </div>
-            )}
-          </div>
-
+          {/* Image picker */}
           <div>
-            <label className="block font-sans text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Image URL *</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-sans text-xs font-semibold text-gray-600 uppercase tracking-wider">Image *</label>
+              <button
+                type="button"
+                onClick={() => setUrlMode((v) => !v)}
+                className="flex items-center gap-1 font-sans text-[10px] text-gray-400 hover:text-amber-500 transition-colors"
+              >
+                {urlMode ? <><Upload size={10} /> Browse file</> : <><Link size={10} /> Paste URL</>}
+              </button>
+            </div>
+
+            {/* Preview area / drop zone */}
+            <div
+              onClick={() => !urlMode && fileInputRef.current?.click()}
+              className={`w-full h-44 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center relative border-2 border-dashed transition-colors
+                ${!urlMode ? 'cursor-pointer hover:border-amber-400 hover:bg-amber-50/30' : ''}
+                ${form.image_url ? 'border-transparent' : 'border-gray-200'}`}
+            >
+              {form.image_url ? (
+                <>
+                  <img
+                    src={resolveImageUrl(form.image_url)}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.style.display = 'none' }}
+                  />
+                  {!urlMode && (
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                      <span className="font-sans text-xs text-white font-semibold">Change photo</span>
+                    </div>
+                  )}
+                </>
+              ) : uploading ? (
+                <div className="flex flex-col items-center gap-2 text-amber-500">
+                  <Loader2 size={28} className="animate-spin" />
+                  <span className="font-sans text-xs">Uploading…</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-gray-300">
+                  {urlMode ? <ImageOff size={32} /> : <Upload size={32} />}
+                  <span className="font-sans text-xs text-center">
+                    {urlMode ? 'Enter a URL below' : 'Click to browse or drop an image'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Hidden file input */}
             <input
-              type="url"
-              value={form.image_url}
-              onChange={(e) => set('image_url', e.target.value)}
-              placeholder="https://images.unsplash.com/..."
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl font-sans text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleFilePick}
             />
+
+            {/* URL fallback input */}
+            {urlMode && (
+              <input
+                type="url"
+                value={form.image_url}
+                onChange={(e) => set('image_url', e.target.value)}
+                placeholder="https://images.unsplash.com/…"
+                className="mt-2 w-full px-3 py-2.5 border border-gray-200 rounded-xl font-sans text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+              />
+            )}
+
+            {uploadError && (
+              <p className="mt-1.5 font-sans text-xs text-red-500">{uploadError}</p>
+            )}
           </div>
 
           <div>
@@ -212,7 +289,7 @@ export default function AdminExperiences() {
               {/* Thumbnail */}
               <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
                 {exp.image_url ? (
-                  <img src={exp.image_url} alt={exp.title} className="w-full h-full object-cover" />
+                  <img src={resolveImageUrl(exp.image_url)} alt={exp.title} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <ImageOff size={16} className="text-gray-300" />

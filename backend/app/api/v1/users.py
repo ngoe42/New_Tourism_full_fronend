@@ -8,7 +8,7 @@ from app.models.user import User
 from app.repositories.user import UserRepository
 from app.schemas.user import UserResponse, UserUpdate, UserPasswordChange, UserAdminUpdate
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(tags=["Users"])
 
 
 @router.get("/me", response_model=UserResponse)

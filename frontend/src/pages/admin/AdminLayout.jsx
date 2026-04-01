@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation, Link } from 'react-router-do
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Map, CalendarCheck, MessageSquare,
-  Mail, LogOut, Menu, Globe, Bell, CalendarClock, Inbox, Star, Images
+  Mail, LogOut, Menu, Globe, Bell, CalendarClock, Inbox, Star, Images, Mountain
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
@@ -16,6 +16,7 @@ const PAGE_TITLES = {
   '/admin/testimonials': 'Testimonials',
   '/admin/inquiries': 'Inquiries',
   '/admin/experiences': 'Experiences',
+  '/admin/routes': 'Kilimanjaro Routes',
 }
 
 function NotifBadge({ count }) {
@@ -94,6 +95,7 @@ export default function AdminLayout() {
     { to: '/admin/testimonials', label: 'Testimonials', icon: MessageSquare,   end: false, badge: pendingTestimonials },
     { to: '/admin/inquiries',    label: 'Inquiries',    icon: Mail,            end: false, badge: pendingInquiries },
     { to: '/admin/experiences',  label: 'Experiences',  icon: Images,          end: false, badge: 0 },
+    { to: '/admin/routes',        label: 'Routes',       icon: Mountain,        end: false, badge: 0 },
   ]
 
   const notifItems = [

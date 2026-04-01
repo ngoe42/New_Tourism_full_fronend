@@ -8,7 +8,7 @@ from app.schemas.auth import LoginRequest, TokenResponse, RefreshRequest, Access
 from app.schemas.user import UserCreate, UserResponse
 from app.services.auth import AuthService
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)

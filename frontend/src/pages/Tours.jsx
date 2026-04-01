@@ -148,7 +148,7 @@ export default function Tours() {
           {isError && (
             <div className="text-center py-16">
               <p className="font-sans text-red-500 mb-4">Unable to load tours. Is the backend running?</p>
-              <p className="font-sans text-gray-400 text-sm">Make sure the API is running at {import.meta.env.VITE_API_URL || 'http://localhost:8000'}</p>
+              <p className="font-sans text-gray-400 text-sm">Make sure the API is running at {import.meta.env.VITE_API_URL || 'http://localhost:8002'}</p>
             </div>
           )}
 

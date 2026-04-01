@@ -7,7 +7,7 @@ from app.models.user import User
 from app.schemas.trip_plan import TripPlanCreate, TripPlanResponse, TripPlanAdminUpdate, PaginatedTripPlans
 from app.services.trip_plan import TripPlanService
 
-router = APIRouter(prefix="/trip-plans", tags=["Trip Planning"])
+router = APIRouter(tags=["Trip Planning"])
 
 
 @router.post("", response_model=TripPlanResponse, status_code=201)

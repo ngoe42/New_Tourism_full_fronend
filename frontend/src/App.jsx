@@ -7,6 +7,8 @@ import Footer from './components/Footer'
 import Home from './pages/Home'
 import Tours from './pages/Tours'
 import TourDetail from './pages/TourDetail'
+import RoutesList from './pages/RoutesList'
+import RouteDetail from './pages/RouteDetail'
 import Contact from './pages/Contact'
 import Login from './pages/Login'
 import RequireAdmin from './components/RequireAdmin'
@@ -17,6 +19,9 @@ import AdminBookings from './pages/admin/AdminBookings'
 import AdminTestimonials from './pages/admin/AdminTestimonials'
 import AdminInquiries from './pages/admin/AdminInquiries'
 import AdminExperiences from './pages/admin/AdminExperiences'
+import AdminRoutes from './pages/admin/AdminRoutes'
+import Experiences from './pages/Experiences'
+import Blog from './pages/Blog'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +54,10 @@ function AppRoutes() {
         <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
         <Route path="/tours" element={<PublicLayout><Tours /></PublicLayout>} />
         <Route path="/tours/:id" element={<PublicLayout><TourDetail /></PublicLayout>} />
+        <Route path="/routes" element={<PublicLayout><RoutesList /></PublicLayout>} />
+        <Route path="/routes/:slug" element={<PublicLayout><RouteDetail /></PublicLayout>} />
+        <Route path="/experiences" element={<PublicLayout><Experiences /></PublicLayout>} />
+        <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
         <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
         <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
 
@@ -60,6 +69,7 @@ function AppRoutes() {
           <Route path="testimonials" element={<AdminTestimonials />} />
           <Route path="inquiries" element={<AdminInquiries />} />
           <Route path="experiences" element={<AdminExperiences />} />
+          <Route path="routes" element={<AdminRoutes />} />
         </Route>
       </Routes>
     </>

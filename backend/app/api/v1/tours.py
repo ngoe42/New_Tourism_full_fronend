@@ -8,7 +8,7 @@ from app.models.user import User
 from app.schemas.tour import TourCreate, TourUpdate, TourResponse, TourListResponse, PaginatedTours
 from app.services.tour import TourService
 
-router = APIRouter(prefix="/tours", tags=["Tours"])
+router = APIRouter(tags=["Tours"])
 
 
 @router.get("", response_model=PaginatedTours)

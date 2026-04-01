@@ -9,7 +9,7 @@ from app.schemas.testimonial import (
 )
 from app.services.testimonial import TestimonialService
 
-router = APIRouter(prefix="/testimonials", tags=["Testimonials"])
+router = APIRouter(tags=["Testimonials"])
 
 
 @router.post("", response_model=TestimonialResponse, status_code=201)

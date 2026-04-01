@@ -213,7 +213,7 @@ alembic downgrade -1
 The frontend (Vite + React) talks to this API. Set the base URL in your frontend `.env`:
 
 ```
-VITE_API_URL=http://localhost:8000/api/v1
+VITE_API_URL=http://localhost:8002/api/v1
 ```
 
 CORS is pre-configured — add your frontend domain to `ALLOWED_ORIGINS` in `.env`.
