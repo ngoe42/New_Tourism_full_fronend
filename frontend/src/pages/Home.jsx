@@ -1,6 +1,7 @@
 import Hero from '../components/Hero'
 import TrustStrip from '../components/TrustStrip'
 import FeaturedTours from '../components/FeaturedTours'
+import ExperiencesSlider from '../components/ExperiencesSlider'
 import StorySection from '../components/StorySection'
 import ParallaxBreak from '../components/ParallaxBreak'
 import WhyChooseUs from '../components/WhyChooseUs'
@@ -14,6 +15,7 @@ export default function Home() {
       <Hero />
       <TrustStrip />
       <FeaturedTours />
+      <ExperiencesSlider />
       <StorySection />
       <ParallaxBreak
         image="/images/sections/parallax-serengeti.jpg"

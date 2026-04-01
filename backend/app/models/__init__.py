@@ -5,6 +5,7 @@ from app.models.inquiry import Inquiry
 from app.models.trip_plan import TripPlan
 from app.models.media import Media
 from app.models.testimonial import Testimonial
+from app.models.experience import Experience
 
 __all__ = [
     "User",
@@ -15,4 +16,5 @@ __all__ = [
     "TripPlan",
     "Media",
     "Testimonial",
+    "Experience",
 ]

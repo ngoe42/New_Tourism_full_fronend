@@ -514,6 +514,26 @@ def seed():
         )
         print(f"  ✓ Testimonial: {tm['name']}")
 
+    print("\nSeeding experiences...")
+    EXPERIENCES = [
+        {"title": "Kilimanjaro Summit Trek", "subtitle": "Stand on the Roof of Africa at 5,895 m", "description": "Conquer Africa's highest peak and witness the world from above the clouds.", "image_url": "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1600", "order": 0},
+        {"title": "Ngorongoro Crater", "subtitle": "Descend into a world unlike any other", "description": "The world's largest intact volcanic caldera, home to 25,000 wild animals.", "image_url": "https://images.unsplash.com/photo-1551244072-5d12893278bc?w=1600", "order": 1},
+        {"title": "Serengeti Migration", "subtitle": "Witness the greatest wildlife spectacle on Earth", "description": "Over 1.5 million wildebeest thunder across endless golden plains.", "image_url": "https://images.unsplash.com/photo-1516426122078-c23e76319801?w=1600", "order": 2},
+        {"title": "Hot-Air Balloon Safari", "subtitle": "Float silently over the savannah at dawn", "description": "An unforgettable sunrise perspective of the Serengeti from 1,000 feet above.", "image_url": "https://images.unsplash.com/photo-1502920514313-52581002a659?w=1600", "order": 3},
+        {"title": "Walking Safari", "subtitle": "Connect with the wild on foot", "description": "Track the Big Five on guided bush walks with expert FGASA-licensed rangers.", "image_url": "https://images.unsplash.com/photo-1568017388877-13bff411e1b5?w=1600", "order": 4},
+        {"title": "Zanzibar Beach Escape", "subtitle": "Turquoise waters and white-sand serenity", "description": "Unwind on pristine Indian Ocean beaches after your safari adventure.", "image_url": "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=1600", "order": 5},
+    ]
+    cur.execute("DELETE FROM experiences")
+    for exp in EXPERIENCES:
+        cur.execute(
+            """
+            INSERT INTO experiences (title, subtitle, description, image_url, "order", is_active, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, true, %s, %s)
+            """,
+            (exp["title"], exp["subtitle"], exp["description"], exp["image_url"], exp["order"], now, now),
+        )
+        print(f"  ✓ Experience: {exp['title']}")
+
     conn.commit()
     cur.close()
     conn.close()

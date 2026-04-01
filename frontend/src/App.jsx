@@ -16,6 +16,7 @@ import AdminTours from './pages/admin/AdminTours'
 import AdminBookings from './pages/admin/AdminBookings'
 import AdminTestimonials from './pages/admin/AdminTestimonials'
 import AdminInquiries from './pages/admin/AdminInquiries'
+import AdminExperiences from './pages/admin/AdminExperiences'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +59,7 @@ function AppRoutes() {
           <Route path="bookings" element={<AdminBookings />} />
           <Route path="testimonials" element={<AdminTestimonials />} />
           <Route path="inquiries" element={<AdminInquiries />} />
+          <Route path="experiences" element={<AdminExperiences />} />
         </Route>
       </Routes>
     </>
