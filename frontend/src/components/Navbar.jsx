@@ -33,14 +33,14 @@ export default function Navbar() {
     queryFn: () => toursApi.list({ per_page: 20, is_published: true }),
     staleTime: 5 * 60 * 1000,
   })
-  const tourList = toursData?.items ?? []
+  const tourList = Array.isArray(toursData?.items) ? toursData.items : []
 
   const { data: routesData } = useQuery({
     queryKey: ['nav-routes'],
     queryFn: () => routesApi.list(),
     staleTime: 5 * 60 * 1000,
   })
-  const routeList = routesData ?? []
+  const routeList = Array.isArray(routesData) ? routesData : []
   const [activeRouteHover, setActiveRouteHover] = useState(null)
   const [activeTourHover, setActiveTourHover] = useState(null)
   const [activeExpHover, setActiveExpHover] = useState(null)
@@ -50,7 +50,7 @@ export default function Navbar() {
     queryFn: () => experiencesApi.list(),
     staleTime: 5 * 60 * 1000,
   })
-  const experienceList = Array.isArray(experiencesData) ? experiencesData : (experiencesData?.value ?? [])
+  const experienceList = Array.isArray(experiencesData) ? experiencesData : []
 
   useEffect(() => {
     const handler = (e) => {
