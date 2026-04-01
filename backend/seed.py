@@ -1,12 +1,33 @@
 """
-Seed script – inserts sample tours, images, and testimonials.
-Run against the Docker DB:  python seed.py
+Seed script – inserts admin user, sample tours, images, and testimonials.
+
+Local Docker:  python seed.py
+Railway:       railway run python seed.py
+
+The script reads DATABASE_URL (or DATABASE_URL_SYNC) from the environment.
+If neither is set it falls back to the local Docker credentials.
 """
 import json
+import os
+import sys
 import psycopg2
 from datetime import datetime, timezone
 
-DB = dict(host="localhost", port=5435, user="postgres", password="password", dbname="karibu_safari")
+_LOCAL = dict(host="localhost", port=5435, user="postgres", password="password", dbname="karibu_safari")
+
+
+def _get_conn():
+    url = os.environ.get("DATABASE_URL_SYNC") or os.environ.get("DATABASE_URL")
+    if url:
+        # Strip SQLAlchemy driver prefixes so psycopg2 can use the URL directly
+        url = (
+            url.replace("postgresql+asyncpg://", "postgresql://")
+               .replace("postgresql+psycopg2://", "postgresql://")
+        )
+        print(f"Connecting via DATABASE_URL …")
+        return psycopg2.connect(url)
+    print("No DATABASE_URL found – connecting to local Docker DB …")
+    return psycopg2.connect(**_LOCAL)
 
 TOURS = [
     {
@@ -391,8 +412,38 @@ TESTIMONIALS = [
 
 def seed():
     now = datetime.now(timezone.utc)
-    conn = psycopg2.connect(**DB)
+    conn = _get_conn()
     cur = conn.cursor()
+
+    # ── Admin user ────────────────────────────────────────────────────────────
+    admin_email = os.environ.get("FIRST_ADMIN_EMAIL", "admin@nelsontoursandsafari.com")
+    admin_password = os.environ.get("FIRST_ADMIN_PASSWORD", "ChangeMe123!")
+    try:
+        from passlib.context import CryptContext
+        _pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        hashed = _pwd.hash(admin_password)
+    except ImportError:
+        print("passlib not installed – skipping admin seed", file=sys.stderr)
+        hashed = None
+
+    if hashed:
+        cur.execute("SELECT id FROM users WHERE email = %s", (admin_email,))
+        if cur.fetchone() is None:
+            cur.execute(
+                """
+                INSERT INTO users (email, name, hashed_password, role, is_active, created_at, updated_at)
+                VALUES (%s, %s, %s, 'admin', true, %s, %s)
+                """,
+                (admin_email, "Admin", hashed, now, now),
+            )
+            print(f"  ✓ Admin user created: {admin_email}")
+        else:
+            cur.execute(
+                "UPDATE users SET hashed_password = %s WHERE email = %s",
+                (hashed, admin_email),
+            )
+            print(f"  ✓ Admin password updated: {admin_email}")
+        conn.commit()
 
     print("Seeding tours...")
     tour_id_map = {}
