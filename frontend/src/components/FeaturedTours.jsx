@@ -15,7 +15,8 @@ export default function FeaturedTours() {
     queryFn: () => toursApi.featured(4),
   })
 
-  const displayTours = featured?.length ? featured : staticTours.filter((t) => t.featured)
+  const featuredArray = Array.isArray(featured) ? featured : (Array.isArray(featured?.items) ? featured.items : null)
+  const displayTours = featuredArray?.length ? featuredArray : staticTours.filter((t) => t.featured)
 
   return (
     <section id="tours" className="py-14 sm:py-24 lg:py-32 bg-beige">
