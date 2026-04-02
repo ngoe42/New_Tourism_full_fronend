@@ -225,7 +225,7 @@ function RouteModal({ route, onClose, onSaved }) {
         setCreatedRoute(created)
         setForm({ ...created })
         setSection('images')
-        onSaved()
+        onSaved(false)
       }
     } catch (err) {
       alert('Error: ' + (err.response?.data?.detail ?? err.message))
@@ -254,7 +254,7 @@ function RouteModal({ route, onClose, onSaved }) {
         <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
           <div>
             <h2 className="font-serif text-xl font-bold text-gray-900">
-              {isEdit ? `Edit: ${route.name}` : 'New Kilimanjaro Route'}
+              {isEdit ? `Edit: ${editTarget?.name ?? route?.name ?? 'Route'}` : 'New Kilimanjaro Route'}
             </h2>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition">
@@ -441,10 +441,10 @@ export default function AdminRoutes() {
     }
   }
 
-  const onSaved = () => {
+  const onSaved = (closeModal = true) => {
     qc.invalidateQueries({ queryKey: ['admin-routes'] })
     qc.invalidateQueries({ queryKey: ['nav-routes'] })
-    setModal(null)
+    if (closeModal) setModal(null)
   }
 
   return (
