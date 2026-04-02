@@ -55,7 +55,7 @@ export default function RouteDetail() {
     <div className="bg-[#faf8f3] min-h-screen">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[75vh] flex flex-col justify-end bg-green-950 overflow-hidden">
+      <section className="relative min-h-[60vh] sm:min-h-[75vh] flex flex-col justify-end bg-green-950 overflow-hidden">
         {/* Full background image */}
         {coverImg ? (
           <div className="absolute inset-0">
@@ -81,7 +81,7 @@ export default function RouteDetail() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3"
+              className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3"
             >
               {route.name}
             </motion.h1>
@@ -150,7 +150,7 @@ export default function RouteDetail() {
             <div className="lg:col-span-2">
 
               {/* Tab bar */}
-              <div className="flex gap-1 bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 mb-8 overflow-x-auto">
+              <div className="flex gap-1 bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 mb-8 overflow-x-auto scrollbar-none" style={{scrollbarWidth:'none'}}>
                 {TABS.map((tab) => (
                   <button
                     key={tab}

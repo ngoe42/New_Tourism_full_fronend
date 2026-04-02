@@ -88,7 +88,7 @@ export default function ExperiencesSlider() {
   const slide = slides[current]
 
   return (
-    <section className="relative w-full h-[85vh] min-h-[560px] overflow-hidden bg-black">
+    <section className="relative w-full h-[70vh] sm:h-[80vh] lg:h-[85vh] min-h-[480px] sm:min-h-[560px] overflow-hidden bg-black">
       {/* Ken Burns slides */}
       <AnimatePresence mode="sync">
         <motion.div
@@ -113,7 +113,7 @@ export default function ExperiencesSlider() {
       </AnimatePresence>
 
       {/* Text content */}
-      <div className="absolute inset-0 flex flex-col justify-end pb-20 sm:pb-24 px-8 sm:px-16 lg:px-24 max-w-4xl">
+      <div className="absolute inset-0 flex flex-col justify-end pb-20 sm:pb-24 px-6 sm:px-16 lg:px-24 max-w-4xl">
         <AnimatePresence mode="wait">
           <motion.div
             key={`text-${current}`}
@@ -125,7 +125,7 @@ export default function ExperiencesSlider() {
             <span className="inline-block font-sans text-xs font-semibold tracking-[0.25em] uppercase text-amber-400 mb-3">
               Experience {String(current + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
             </span>
-            <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-3 drop-shadow-xl">
+            <h2 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-3 drop-shadow-xl">
               {slide.title}
             </h2>
             <p className="font-sans text-lg sm:text-xl text-amber-300 font-medium mb-4">
@@ -141,7 +141,7 @@ export default function ExperiencesSlider() {
       </div>
 
       {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 flex gap-1 px-8 sm:px-16 lg:px-24 pb-6">
+      <div className="absolute bottom-0 left-0 right-0 flex gap-1 px-6 sm:px-16 lg:px-24 pb-6">
         {slides.map((_, i) => (
           <button
             key={i}
@@ -163,7 +163,7 @@ export default function ExperiencesSlider() {
       </div>
 
       {/* Controls */}
-      <div className="absolute bottom-10 right-8 sm:right-16 lg:right-24 flex items-center gap-3">
+      <div className="absolute bottom-10 right-6 sm:right-16 lg:right-24 flex items-center gap-2 sm:gap-3">
         <button
           onClick={() => setPaused((p) => !p)}
           className="w-9 h-9 rounded-full border border-white/30 bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors"
@@ -185,7 +185,7 @@ export default function ExperiencesSlider() {
       </div>
 
       {/* Section label */}
-      <div className="absolute top-8 left-8 sm:left-16 lg:left-24">
+      <div className="absolute top-8 left-6 sm:left-16 lg:left-24">
         <span className="font-sans text-xs font-semibold tracking-[0.3em] uppercase text-white/50">
           Tanzania Experiences
         </span>

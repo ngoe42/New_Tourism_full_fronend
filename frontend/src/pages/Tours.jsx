@@ -80,7 +80,7 @@ export default function Tours() {
       {/* Filters */}
       <section className="bg-white border-b border-gray-100 sticky top-20 z-40">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4">
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 items-stretch lg:items-center justify-between">
             {/* Search */}
             <div className="relative w-full lg:w-72">
               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" />
@@ -102,7 +102,7 @@ export default function Tours() {
             </div>
 
             {/* Category pills */}
-            <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible scrollbar-none" style={{scrollbarWidth:'none'}}>
+            <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible scrollbar-none -mx-6 px-6 lg:mx-0 lg:px-0" style={{scrollbarWidth:'none'}}>
               {categories.map((cat) => (
                 <button
                   key={cat}
@@ -119,7 +119,7 @@ export default function Tours() {
             </div>
 
             {/* Sort */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <SlidersHorizontal size={14} className="text-gray-400" />
               <select
                 value={sortBy}

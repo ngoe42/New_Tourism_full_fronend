@@ -52,10 +52,10 @@ function StoryBlock({ story, index }) {
           </div>
           {/* Decorative accent */}
           <div
-            className={`absolute -bottom-6 ${story.reverse ? '-right-6' : '-left-6'} w-48 h-48 rounded-3xl bg-gold/10 -z-10`}
+            className={`absolute -bottom-6 ${story.reverse ? '-right-6' : '-left-6'} w-48 h-48 rounded-3xl bg-gold/10 -z-10 hidden sm:block`}
           />
           <div
-            className={`absolute -top-4 ${story.reverse ? '-left-4' : '-right-4'} w-24 h-24 rounded-2xl bg-green-950/10 -z-10`}
+            className={`absolute -top-4 ${story.reverse ? '-left-4' : '-right-4'} w-24 h-24 rounded-2xl bg-green-950/10 -z-10 hidden sm:block`}
           />
         </div>
       </motion.div>

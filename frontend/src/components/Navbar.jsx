@@ -88,12 +88,12 @@ export default function Navbar() {
 
           {/* Logo + Desktop Nav grouped on the left */}
           <div className="flex items-center gap-10">
-          <Link to="/" className="flex-shrink-0 flex items-center justify-start relative w-[200px] h-full" aria-label="Nelson Tours and Safari — Home">
+          <Link to="/" className="flex-shrink-0 flex items-center justify-start relative w-[140px] sm:w-[200px] h-full" aria-label="Nelson Tours and Safari — Home">
             <img
               src="/images/logo/logo.png"
               alt="Nelson Tours & Safari"
-              className={`h-24 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
-                isTransparent ? 'scale-[1.47] translate-y-2 -translate-x-2' : 'scale-100 translate-y-0 translate-x-0'
+              className={`h-16 sm:h-24 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
+                isTransparent ? 'scale-[1.2] sm:scale-[1.47] translate-y-1 sm:translate-y-2 -translate-x-1 sm:-translate-x-2' : 'scale-100 translate-y-0 translate-x-0'
               }`}
             />
           </Link>

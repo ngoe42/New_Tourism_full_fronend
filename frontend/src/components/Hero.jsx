@@ -74,7 +74,7 @@ export default function Hero() {
       </AnimatePresence>
 
       {/* Slide dots */}
-      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+      <div className="absolute bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 flex gap-2 z-20">
         {slides.map((_, i) => (
           <button
             key={i}
@@ -165,7 +165,7 @@ export default function Hero() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2, duration: 1 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/60"
+        className="absolute bottom-8 sm:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/60 hidden sm:flex"
       >
         <span className="font-sans text-xs tracking-[0.2em] uppercase">Scroll</span>
         <motion.div

@@ -20,9 +20,9 @@ export default function Footer() {
     <footer className="bg-green-950 text-white">
       {/* Main footer */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 lg:py-20">
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-12">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Brand column */}
-          <div className="col-span-2 lg:col-span-2">
+          <div className="col-span-2 md:col-span-3 lg:col-span-2">
             <Link to="/" className="inline-block mb-6" aria-label="Nelson Tours and Safari — Home">
               <img
                 src="/images/logo/logo.png"
@@ -43,7 +43,7 @@ export default function Footer() {
               </a>
               <a href="mailto:hello@nelsontoursandsafari.com" className="flex items-center gap-3 group">
                 <Mail size={14} className="text-gold flex-shrink-0" />
-                <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors">hello@nelsontoursandsafari.com</span>
+                <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors break-all sm:break-normal">hello@nelsontoursandsafari.com</span>
               </a>
               <div className="flex items-center gap-3">
                 <MapPin size={14} className="text-gold flex-shrink-0" />

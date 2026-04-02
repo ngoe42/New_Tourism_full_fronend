@@ -53,7 +53,7 @@ export default function Contact() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="font-serif text-5xl md:text-6xl text-white font-semibold mb-4"
+            className="font-serif text-3xl sm:text-5xl md:text-6xl text-white font-semibold mb-4"
           >
             Plan Your Safari
           </motion.h1>
@@ -71,7 +71,7 @@ export default function Contact() {
       {/* Contact Info Cards */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 sm:-mt-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 -mt-6 sm:-mt-10">
             {contactInfo.map((item, i) => {
               const Icon = item.icon
               return (

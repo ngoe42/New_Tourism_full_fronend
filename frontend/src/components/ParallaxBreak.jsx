@@ -26,7 +26,7 @@ export default function ParallaxBreak({
   }, [])
 
   return (
-    <section className={`relative ${height} overflow-hidden flex items-center justify-center`}>
+    <section className={`relative ${height} max-sm:h-[40vh] overflow-hidden flex items-center justify-center`}>
       {/* Parallax image */}
       <div className="absolute inset-0 overflow-hidden">
         <img
