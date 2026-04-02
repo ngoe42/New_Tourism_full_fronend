@@ -92,8 +92,8 @@ export default function Navbar() {
             <img
               src="/images/logo/logo.png"
               alt="Nelson Tours & Safari"
-              className={`h-16 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
-                isTransparent ? 'scale-[2.2] translate-y-2 -translate-x-2' : 'scale-100 translate-y-0 translate-x-0'
+              className={`h-24 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
+                isTransparent ? 'scale-[1.47] translate-y-2 -translate-x-2' : 'scale-100 translate-y-0 translate-x-0'
               }`}
             />
           </Link>
