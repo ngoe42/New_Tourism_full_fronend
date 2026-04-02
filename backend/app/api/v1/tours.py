@@ -19,12 +19,14 @@ async def list_tours(
     category: Optional[str] = Query(None),
     min_price: Optional[float] = Query(None, ge=0),
     max_price: Optional[float] = Query(None, ge=0),
+    admin: bool = Query(False),
     db: AsyncSession = Depends(get_db),
 ):
     service = TourService(db)
     return await service.list_tours(
         page=page, per_page=per_page, query=q,
         category=category, min_price=min_price, max_price=max_price,
+        admin=admin,
     )
 
 

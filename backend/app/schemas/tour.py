@@ -76,14 +76,17 @@ class TourListResponse(BaseModel):
     title: str
     slug: str
     subtitle: Optional[str] = None
+    description: Optional[str] = None
     price: float
     duration: str
     location: str
+    group_size: Optional[str] = None
     category: str
     badge: Optional[str] = None
     rating: float
     review_count: int
     is_featured: bool
+    is_published: bool
     images: List[TourImageResponse] = []
 
     model_config = {"from_attributes": True}

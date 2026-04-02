@@ -92,12 +92,12 @@ export default function AdminBookings() {
                     <tr key={b.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 font-sans text-xs text-gray-400">#{b.id}</td>
                       <td className="px-4 py-3">
-                        <div className="font-sans text-sm font-semibold text-gray-900">{b.guest_name}</div>
-                        <div className="font-sans text-xs text-gray-400">{b.guest_email}</div>
+                        <div className="font-sans text-sm font-semibold text-gray-900">{b.contact_name}</div>
+                        <div className="font-sans text-xs text-gray-400">{b.contact_email}</div>
                       </td>
-                      <td className="px-4 py-3 font-sans text-sm text-gray-700 max-w-[160px] truncate">{b.tour_title ?? `Tour #${b.tour_id}`}</td>
+                      <td className="px-4 py-3 font-sans text-sm text-gray-700 max-w-[160px] truncate">{b.tour?.title ?? `Tour #${b.tour_id}`}</td>
                       <td className="px-4 py-3 font-sans text-sm text-gray-600 whitespace-nowrap">{b.travel_date}</td>
-                      <td className="px-4 py-3 font-sans text-sm text-gray-600">{b.num_guests}</td>
+                      <td className="px-4 py-3 font-sans text-sm text-gray-600">{b.guests}</td>
                       <td className="px-4 py-3 font-sans text-sm font-semibold text-gray-900">${(b.total_price ?? 0).toLocaleString()}</td>
                       <td className="px-4 py-3">
                         <StatusDropdown bookingId={b.id} current={b.status} />

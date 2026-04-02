@@ -4,9 +4,13 @@ import { Plus, Pencil, Trash2, Search, ImageIcon, X } from 'lucide-react'
 import { toursApi } from '../../api/tours'
 
 const EMPTY_FORM = {
-  title: '', slug: '', subtitle: '', description: '', category: '',
-  location: '', duration: '', group_size: '', price: '', rating: '',
-  is_active: true, is_featured: false, is_published: true,
+  title: '', slug: '', subtitle: '', description: '', category: 'Safari',
+  location: '', duration: '', group_size: '', price: '',
+  is_featured: false, is_published: true,
+}
+
+function slugify(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
 function TourForm({ initial, onClose, onSave, saving }) {
@@ -17,10 +21,15 @@ function TourForm({ initial, onClose, onSave, saving }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSave({
-      formData: { ...form, price: parseFloat(form.price) || 0, rating: parseFloat(form.rating) || 0 },
-      imageFiles,
-    })
+    const formData = { ...form, price: parseFloat(form.price) || 0 }
+    delete formData.rating
+    delete formData.review_count
+    delete formData.images
+    delete formData.created_at
+    delete formData.updated_at
+    delete formData.id
+    if (!formData.slug) formData.slug = slugify(formData.title)
+    onSave({ formData, imageFiles })
   }
 
   return (
@@ -40,15 +49,20 @@ function TourForm({ initial, onClose, onSave, saving }) {
 
           {/* Title */}
           <div className="sm:col-span-2">
-            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Title</label>
-            <input type="text" value={form.title} onChange={(e) => set('title', e.target.value)} required
+            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Title *</label>
+            <input type="text" value={form.title} onChange={(e) => {
+              const title = e.target.value
+              set('title', title)
+              if (!initial || form.slug === slugify(form.title)) set('slug', slugify(title))
+            }} required
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
           </div>
 
-          {/* Slug */}
+          {/* Title → auto slug */}
           <div>
             <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Slug (URL)</label>
-            <input type="text" value={form.slug} onChange={(e) => set('slug', e.target.value)} required
+            <input type="text" value={form.slug} onChange={(e) => set('slug', e.target.value)}
+              placeholder="Auto-generated from title"
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
           </div>
 
@@ -56,13 +70,6 @@ function TourForm({ initial, onClose, onSave, saving }) {
           <div>
             <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Category</label>
             <input type="text" value={form.category} onChange={(e) => set('category', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
-          </div>
-
-          {/* Location */}
-          <div>
-            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Location</label>
-            <input type="text" value={form.location} onChange={(e) => set('location', e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
           </div>
 
@@ -94,10 +101,10 @@ function TourForm({ initial, onClose, onSave, saving }) {
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
           </div>
 
-          {/* Rating */}
+          {/* Location */}
           <div>
-            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Rating (0–5)</label>
-            <input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(e) => set('rating', e.target.value)}
+            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Location *</label>
+            <input type="text" value={form.location} onChange={(e) => set('location', e.target.value)} required
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
           </div>
 
@@ -110,7 +117,7 @@ function TourForm({ initial, onClose, onSave, saving }) {
 
           {/* Flags */}
           <div className="sm:col-span-2 flex flex-wrap gap-6">
-            {[['is_active', 'Active'], ['is_featured', 'Featured'], ['is_published', 'Published']].map(([k, l]) => (
+            {[['is_featured', 'Featured'], ['is_published', 'Published']].map(([k, l]) => (
               <label key={k} className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={!!form[k]} onChange={(e) => set(k, e.target.checked)}
                   className="w-4 h-4 accent-green-600" />
@@ -174,7 +181,7 @@ export default function AdminTours() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-tours', search],
-    queryFn: () => toursApi.list({ q: search, per_page: 50 }),
+    queryFn: () => toursApi.list({ q: search, per_page: 50, admin: true }),
   })
 
   const tours = data?.items ?? []
@@ -279,7 +286,7 @@ export default function AdminTours() {
                   <td className="px-4 py-3 font-sans text-sm text-gray-600">{tour.rating ?? '—'}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1.5">
-                      {tour.is_active && <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-semibold">Active</span>}
+                      {tour.is_published ? <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-semibold">Published</span> : <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-[10px] font-semibold">Draft</span>}
                       {tour.is_featured && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-semibold">Featured</span>}
                     </div>
                   </td>
@@ -289,7 +296,7 @@ export default function AdminTours() {
                         className="p-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-600 text-gray-400 transition-colors">
                         <Pencil size={14} />
                       </button>
-                      <button onClick={() => deleteMutation.mutate(tour.id)}
+                      <button onClick={() => { if (confirm(`Delete "${tour.title}"? This cannot be undone.`)) deleteMutation.mutate(tour.id) }}
                         className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 transition-colors">
                         <Trash2 size={14} />
                       </button>

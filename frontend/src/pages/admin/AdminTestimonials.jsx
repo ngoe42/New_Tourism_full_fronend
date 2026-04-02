@@ -15,45 +15,35 @@ function StarRating({ rating }) {
 export default function AdminTestimonials() {
   const qc = useQueryClient()
 
-  const { data: pending, isLoading: loadingPending } = useQuery({
-    queryKey: ['admin-testimonials-pending'],
-    queryFn: () => testimonialsApi.list({ approved: false, per_page: 50 }),
+  const { data: allData, isLoading } = useQuery({
+    queryKey: ['admin-testimonials'],
+    queryFn: () => testimonialsApi.listAll({ per_page: 100 }),
   })
 
-  const { data: approved, isLoading: loadingApproved } = useQuery({
-    queryKey: ['admin-testimonials-approved'],
-    queryFn: () => testimonialsApi.list({ approved: true, per_page: 50 }),
-  })
+  const allItems = allData?.items ?? []
+  const pendingList = allItems.filter((t) => !t.is_approved)
+  const approvedList = allItems.filter((t) => t.is_approved)
 
   const approveMutation = useMutation({
     mutationFn: testimonialsApi.approve,
-    onSuccess: () => {
-      qc.invalidateQueries(['admin-testimonials-pending'])
-      qc.invalidateQueries(['admin-testimonials-approved'])
-    },
+    onSuccess: () => qc.invalidateQueries(['admin-testimonials']),
   })
 
   const deleteMutation = useMutation({
     mutationFn: testimonialsApi.delete,
-    onSuccess: () => {
-      qc.invalidateQueries(['admin-testimonials-pending'])
-      qc.invalidateQueries(['admin-testimonials-approved'])
-    },
+    onSuccess: () => qc.invalidateQueries(['admin-testimonials']),
   })
-
-  const pendingList = Array.isArray(pending) ? pending : pending?.items ?? []
-  const approvedList = Array.isArray(approved) ? approved : approved?.items ?? []
 
   const TestimonialCard = ({ t, showApprove }) => (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center font-sans text-sm font-bold text-green-700">
-            {t.author_name?.[0]?.toUpperCase() ?? 'G'}
+            {t.name?.[0]?.toUpperCase() ?? 'G'}
           </div>
           <div>
-            <div className="font-sans text-sm font-semibold text-gray-900">{t.author_name}</div>
-            <div className="font-sans text-xs text-gray-400">{t.author_location}</div>
+            <div className="font-sans text-sm font-semibold text-gray-900">{t.name}</div>
+            <div className="font-sans text-xs text-gray-400">{t.location}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -61,9 +51,9 @@ export default function AdminTestimonials() {
           <span className="font-sans text-xs text-gray-400">{new Date(t.created_at).toLocaleDateString()}</span>
         </div>
       </div>
-      <p className="font-sans text-sm text-gray-600 leading-relaxed mb-3 line-clamp-3">"{t.text}"</p>
-      {t.tour_title && (
-        <div className="font-sans text-xs text-gray-600 mb-3"> {t.tour_title}</div>
+      <p className="font-sans text-sm text-gray-600 leading-relaxed mb-3 line-clamp-3">"{t.message}"</p>
+      {t.tour_id && (
+        <div className="font-sans text-xs text-gray-600 mb-3">Tour #{t.tour_id}</div>
       )}
       <div className="flex gap-2">
         {showApprove && (
@@ -98,7 +88,7 @@ export default function AdminTestimonials() {
             <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-sans text-xs font-bold">{pendingList.length}</span>
           )}
         </div>
-        {loadingPending ? (
+        {isLoading ? (
           <div className="flex justify-center py-10">
             <div className="w-7 h-7 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
           </div>
@@ -117,7 +107,7 @@ export default function AdminTestimonials() {
       {/* Approved */}
       <div>
         <h2 className="font-sans text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">Approved ({approvedList.length})</h2>
-        {loadingApproved ? (
+        {isLoading ? (
           <div className="flex justify-center py-10">
             <div className="w-7 h-7 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
           </div>

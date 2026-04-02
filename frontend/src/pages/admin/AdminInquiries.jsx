@@ -20,19 +20,19 @@ function InquiryRow({ inquiry }) {
             <div className="font-sans text-sm font-semibold text-gray-900 truncate">{inquiry.name}</div>
             <div className="font-sans text-xs text-gray-400 truncate">{inquiry.email}</div>
           </div>
-          {inquiry.tour_title && (
+          {inquiry.tour_interest && (
             <span className="hidden sm:inline-flex px-2.5 py-0.5 bg-amber-50 text-amber-700 rounded-full font-sans text-[11px] font-medium truncate max-w-[160px]">
-              {inquiry.tour_title}
+              {inquiry.tour_interest}
             </span>
           )}
         </div>
         <div className="flex items-center gap-3 flex-shrink-0 ml-3">
           <span className={`px-2.5 py-0.5 rounded-full font-sans text-[11px] font-semibold ${
-            inquiry.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-            inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
-            'bg-gray-100 text-gray-500'
+            inquiry.is_replied ? 'bg-green-100 text-green-700' :
+            inquiry.is_read ? 'bg-blue-100 text-blue-700' :
+            'bg-amber-100 text-amber-700'
           }`}>
-            {inquiry.status ?? 'pending'}
+            {inquiry.is_replied ? 'Replied' : inquiry.is_read ? 'Read' : 'New'}
           </span>
           <span className="font-sans text-xs text-gray-400 hidden sm:block">
             {inquiry.created_at ? new Date(inquiry.created_at).toLocaleDateString() : ''}
@@ -43,23 +43,17 @@ function InquiryRow({ inquiry }) {
 
       {expanded && (
         <div className="px-5 pb-5 border-t border-gray-50">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 mb-4">
+          <div className="flex flex-wrap gap-3 mt-4 mb-4">
             {inquiry.phone && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Phone size={13} className="text-gray-400" />
                 {inquiry.phone}
               </div>
             )}
-            {inquiry.preferred_date && (
+            {inquiry.tour_interest && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Calendar size={13} className="text-gray-400" />
-                {inquiry.preferred_date}
-              </div>
-            )}
-            {inquiry.num_guests && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Mail size={13} className="text-gray-400" />
-                {inquiry.num_guests} guest(s)
+                Interested in: {inquiry.tour_interest}
               </div>
             )}
           </div>
