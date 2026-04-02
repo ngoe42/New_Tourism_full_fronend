@@ -23,11 +23,11 @@ export default function Footer() {
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Brand column */}
           <div className="col-span-2 lg:col-span-2">
-            <Link to="/" className="inline-block mb-6 bg-white rounded-xl p-2 shadow-md" aria-label="Nelson Tours and Safari — Home">
+            <Link to="/" className="inline-block mb-6" aria-label="Nelson Tours and Safari — Home">
               <img
                 src="/images/logo/logo.png"
                 alt="Nelson Tours & Safari"
-                className="h-14 w-auto object-contain"
+                className="h-16 w-auto object-contain drop-shadow-lg"
               />
             </Link>
 
