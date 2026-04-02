@@ -5,10 +5,11 @@ import { Mountain, Clock, ChevronRight } from 'lucide-react'
 import { routesApi } from '../api/routes'
 
 export default function RoutesList() {
-  const { data: routes, isLoading, error } = useQuery({
+  const { data: rawRoutes, isLoading, error } = useQuery({
     queryKey: ['routes'],
     queryFn: () => routesApi.list(),
   })
+  const routes = Array.isArray(rawRoutes) ? rawRoutes : []
 
   return (
     <div className="bg-beige min-h-screen">
@@ -42,7 +43,7 @@ export default function RoutesList() {
             <div className="text-center py-20 text-red-500">Failed to load routes. Please try again later.</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {routes?.map((route, idx) => (
+              {routes.map((route, idx) => (
                 <motion.div
                   key={route.id}
                   initial={{ opacity: 0, y: 20 }}

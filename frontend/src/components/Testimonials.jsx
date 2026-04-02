@@ -14,7 +14,7 @@ export default function Testimonials() {
     queryFn: () => testimonialsApi.list({ per_page: 12 }),
   })
 
-  const items = data?.items?.length
+  const items = Array.isArray(data?.items) && data.items.length > 0
     ? data.items.map((t) => ({
         id: t.id,
         rating: t.rating,

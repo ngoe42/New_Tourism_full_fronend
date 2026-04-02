@@ -74,7 +74,7 @@ function ListEditor({ label, value = [], onChange }) {
           <Plus size={15} />
         </button>
       </div>
-      {value.length > 0 && (
+      {Array.isArray(value) && value.length > 0 && (
         <ul className="space-y-1.5">
           {value.map((item, i) => (
             <li key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
@@ -103,7 +103,7 @@ function ItineraryEditor({ value = [], onChange }) {
     <div>
       <label className="block font-sans text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Itinerary</label>
       <div className="space-y-3">
-        {value.map((day, i) => (
+        {Array.isArray(value) && value.map((day, i) => (
           <div key={i} className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-2">
             <div className="flex items-center justify-between mb-1">
               <span className="font-sans text-xs font-bold text-green-800 uppercase tracking-wide">Day {day.day ?? i + 1}</span>
