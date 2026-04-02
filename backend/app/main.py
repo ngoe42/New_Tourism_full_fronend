@@ -59,17 +59,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-_allowed_origins = settings.get_allowed_origins()
-_allow_wildcard = settings.DEBUG or _allowed_origins == ["*"]
-_cors_origins = ["*"] if _allow_wildcard else _allowed_origins
-_cors_credentials = not _allow_wildcard
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
-    allow_credentials=_cors_credentials,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 app.include_router(api_router)

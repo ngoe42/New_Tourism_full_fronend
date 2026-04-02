@@ -23,7 +23,7 @@ export const routesApi = {
     if (caption) form.append('caption', caption)
     form.append('is_cover', isCover)
     return apiClient
-      .post(`/routes/${routeId}/images`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .post(`/routes/${routeId}/images`, form)
       .then((r) => r.data)
   },
 

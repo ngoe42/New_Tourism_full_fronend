@@ -1,10 +1,16 @@
+import io
+import uuid
+from pathlib import Path
 from typing import List, Optional
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.config import settings
 from app.models.route import Route, RouteImage
 from app.schemas.route import RouteCreate, RouteUpdate
 from app.repositories.route import RouteRepository
-from app.services.media import MediaService
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 class RouteService:

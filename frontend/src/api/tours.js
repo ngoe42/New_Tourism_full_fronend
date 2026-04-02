@@ -26,9 +26,7 @@ export const toursApi = {
     const form = new FormData()
     form.append('file', file)
     return apiClient
-      .post(`/media/upload?tour_id=${tourId}`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      .post(`/media/upload?tour_id=${tourId}`, form)
       .then((r) => r.data)
   },
 }
