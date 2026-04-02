@@ -1,8 +1,10 @@
 import axios from 'axios'
 
-// Priority: VITE_API_URL env var (set in .env locally, or Railway Variables for production)
-// Fallback: /api/v1 (relative — only works when frontend and backend are on the same origin)
-const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
+// Priority:
+//   1. window.APP_CONFIG.API_URL  — runtime config injected by config.js (set at serve time)
+//   2. VITE_API_URL env var       — baked in at build time by Vite
+//   3. /api/v1                    — relative fallback (only works behind a reverse proxy)
+const API_URL = window.APP_CONFIG?.API_URL || import.meta.env.VITE_API_URL || '/api/v1'
 
 const apiClient = axios.create({
   baseURL: API_URL,

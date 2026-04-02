@@ -64,8 +64,11 @@ Railway Project
 | `VITE_API_URL` | `https://YOUR-BACKEND-URL.railway.app/api/v1` |
 
 > Replace `YOUR-BACKEND-URL` with the backend URL from Step 3.
-> This variable is **baked into the JS bundle at build time** by Vite.
-> **Do NOT edit `public/config.js`** — leave it as an empty object (`window.APP_CONFIG = {}`).
+> This variable works **two ways**:
+> - **Build time**: Vite bakes it into the JS bundle during `npm run build`
+> - **Runtime**: `generate-config.js` writes it into `dist/config.js` before `serve` starts
+>
+> So even if you add or change the variable **after** the build, the next restart will pick it up.
 
 4. Click **Deploy** — wait for green ✅
 5. Copy your frontend URL, e.g. `https://frontend-xxx.railway.app`
