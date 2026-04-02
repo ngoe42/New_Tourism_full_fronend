@@ -92,7 +92,7 @@ export default function Navbar() {
             <img
               src="/images/logo/logo.png"
               alt="Nelson Tours & Safari"
-              className="w-full h-full object-cover scale-[1.8] origin-center"
+              className="w-full h-full object-cover scale-[2.4] origin-center"
             />
           </Link>
 
