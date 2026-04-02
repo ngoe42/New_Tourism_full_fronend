@@ -27,7 +27,7 @@ export default function Footer() {
               <img
                 src="/images/logo/logo.png"
                 alt="Nelson Tours & Safari"
-                className="h-16 w-auto object-contain drop-shadow-lg"
+                className="h-24 w-auto object-contain drop-shadow-lg"
               />
             </Link>
 
