@@ -23,13 +23,12 @@ export default function Footer() {
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Brand column */}
           <div className="col-span-2 lg:col-span-2">
-            <Link to="/" className="flex flex-col leading-none mb-6">
-              <span className="font-serif font-bold text-2xl tracking-[0.12em] uppercase text-white">
-                Nelson
-              </span>
-              <span className="font-serif italic text-[11px] tracking-[0.22em] uppercase text-gold">
-                Tour &amp; Safari
-              </span>
+            <Link to="/" className="inline-block mb-6" aria-label="Nelson Tours and Safari — Home">
+              <img
+                src="/images/logo/logo-horizontal.svg"
+                alt="Nelson Tours & Safari"
+                className="h-12 w-auto brightness-0 invert"
+              />
             </Link>
 
             <p className="font-sans text-white/60 text-sm leading-relaxed mb-8 max-w-xs">
