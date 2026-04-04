@@ -37,13 +37,13 @@ export default function Footer() {
 
             {/* Contact info */}
             <div className="space-y-3">
-              <a href="tel:+255123456789" className="flex items-center gap-3 group">
+              <a href="tel:+255750005973" className="flex items-center gap-3 group">
                 <Phone size={14} className="text-gold flex-shrink-0" />
-                <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors">+255 123 456 789</span>
+                <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors">+255 750 005 973</span>
               </a>
-              <a href="mailto:hello@nelsontoursandsafari.com" className="flex items-center gap-3 group">
+              <a href="mailto:contact@nelsontoursandsafari.com" className="flex items-center gap-3 group">
                 <Mail size={14} className="text-gold flex-shrink-0" />
-                <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors break-all sm:break-normal">hello@nelsontoursandsafari.com</span>
+                <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors break-all sm:break-normal">contact@nelsontoursandsafari.com</span>
               </a>
               <div className="flex items-center gap-3">
                 <MapPin size={14} className="text-gold flex-shrink-0" />
