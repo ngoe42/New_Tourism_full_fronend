@@ -86,6 +86,7 @@ export default function Navbar() {
   const activeCls = 'text-gold'
 
   return (
+    <>
     <motion.nav
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -559,8 +560,10 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu Drawer */}
-      <AnimatePresence>
+    </motion.nav>
+
+    {/* Mobile Menu Drawer — rendered outside <nav> to escape its stacking context */}
+    <AnimatePresence>
         {menuOpen && (
           <>
             {/* Backdrop */}
@@ -569,7 +572,7 @@ export default function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="fixed inset-0 bg-black/60 z-[60] lg:hidden"
+              className="fixed inset-0 bg-black/60 z-[9998] lg:hidden"
               onClick={() => setMenuOpen(false)}
             />
             {/* Drawer */}
@@ -578,7 +581,7 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="fixed inset-0 bg-white z-[70] lg:hidden flex flex-col"
+              className="fixed inset-0 bg-white z-[9999] lg:hidden flex flex-col"
             >
               {/* Header: Logo + Close */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
@@ -598,10 +601,20 @@ export default function Navbar() {
               </div>
 
               {/* Scrollable nav area */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-y-auto">
 
                 {/* Accordion Nav */}
                 <nav className="py-2">
+
+                  {/* HOME link */}
+                  <Link
+                    to="/"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors border-b border-gray-100"
+                  >
+                    Home
+                    <ChevronRight size={16} className="text-gray-300" />
+                  </Link>
 
                   {/* KILIMANJARO accordion */}
                   <div className="border-b border-gray-100">
@@ -831,7 +844,7 @@ export default function Navbar() {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
-    </motion.nav>
+    </AnimatePresence>
+    </>
   )
 }
