@@ -20,6 +20,7 @@ import AdminTestimonials from './pages/admin/AdminTestimonials'
 import AdminInquiries from './pages/admin/AdminInquiries'
 import AdminExperiences from './pages/admin/AdminExperiences'
 import AdminRoutes from './pages/admin/AdminRoutes'
+import AdminSettings from './pages/admin/AdminSettings'
 import Experiences from './pages/Experiences'
 import Blog from './pages/Blog'
 
@@ -70,6 +71,7 @@ function AppRoutes() {
           <Route path="inquiries" element={<AdminInquiries />} />
           <Route path="experiences" element={<AdminExperiences />} />
           <Route path="routes" element={<AdminRoutes />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
     </>

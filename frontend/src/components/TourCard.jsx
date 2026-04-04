@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Star, Clock, Users, MapPin, ArrowRight } from 'lucide-react'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export default function TourCard({ tour, index = 0 }) {
+  const { showPrices } = useSiteSettings()
   const coverImage =
     tour.images?.find((i) => i.is_cover)?.url ??
     tour.images?.[0]?.url ??
@@ -94,13 +96,22 @@ export default function TourCard({ tour, index = 0 }) {
           </div>
 
           {/* Price */}
-          <div className="text-right">
-            <div className="font-sans text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">From</div>
-            <div className="font-serif text-xl font-semibold text-green-950">
-              ${(tour.price ?? 0).toLocaleString()}
+          {showPrices ? (
+            <div className="text-right">
+              <div className="font-sans text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">From</div>
+              <div className="font-serif text-xl font-semibold text-green-950">
+                ${(tour.price ?? 0).toLocaleString()}
+              </div>
+              <div className="font-sans text-[10px] text-gray-400">per person</div>
             </div>
-            <div className="font-sans text-[10px] text-gray-400">per person</div>
-          </div>
+          ) : (
+            <Link
+              to={`/tours/${tour.slug ?? tour.id}`}
+              className="font-sans text-xs font-semibold text-gold hover:underline"
+            >
+              Request Price
+            </Link>
+          )}
         </div>
       </div>
     </motion.div>

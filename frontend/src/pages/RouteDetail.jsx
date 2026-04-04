@@ -8,6 +8,7 @@ import {
   DollarSign, Loader2, Star
 } from 'lucide-react'
 import { routesApi } from '../api/routes'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 import BookingForm from '../components/BookingForm'
 
 const TABS = ['Overview', 'Itinerary', "What's Included", 'Packing List']
@@ -21,6 +22,7 @@ const difficultyColor = {
 
 export default function RouteDetail() {
   const { slug } = useParams()
+  const { showPrices } = useSiteSettings()
   const [activeTab, setActiveTab] = useState('Overview')
   const { data: route, isLoading, error } = useQuery({
     queryKey: ['route', slug],
@@ -127,7 +129,7 @@ export default function RouteDetail() {
                   </div>
                 </div>
               ))}
-              {route.price > 0 && (
+              {showPrices && route.price > 0 && (
                 <div className="flex items-center gap-2 bg-[#c9a96e]/20 px-4 py-2.5 rounded-xl border border-[#c9a96e]/30">
                   <DollarSign size={14} className="text-[#c9a96e]" />
                   <div>
@@ -332,13 +334,18 @@ export default function RouteDetail() {
               <div className="sticky top-28 space-y-5">
                 <div className="bg-white rounded-3xl p-7 shadow-xl shadow-green-900/5 border border-gray-100">
                   <p className="font-sans text-xs text-gray-400 uppercase tracking-widest mb-1">Book This Route</p>
-                  <div className="flex items-end gap-2 mb-6">
-                    <span className="font-serif text-3xl font-bold text-green-950">
-                      ${route.price > 0 ? route.price.toLocaleString() : 'Contact Us'}
-                    </span>
-                    {route.price > 0 && <span className="font-sans text-gray-400 mb-0.5 text-sm">/ person</span>}
-                  </div>
-                  <BookingForm tourTitle={route.name} tourPrice={route.price || undefined} />
+                  {showPrices && route.price > 0 && (
+                    <div className="flex items-end gap-2 mb-6">
+                      <span className="font-serif text-3xl font-bold text-green-950">
+                        ${route.price.toLocaleString()}
+                      </span>
+                      <span className="font-sans text-gray-400 mb-0.5 text-sm">/ person</span>
+                    </div>
+                  )}
+                  {!showPrices && (
+                    <p className="font-serif text-xl font-semibold text-green-950 mb-6">Request a Quote</p>
+                  )}
+                  <BookingForm tourTitle={route.name} tourPrice={showPrices ? route.price || undefined : undefined} />
                 </div>
 
                 {/* Quick stats card */}

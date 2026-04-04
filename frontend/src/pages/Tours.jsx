@@ -5,8 +5,10 @@ import { useQuery } from '@tanstack/react-query'
 import TourCard from '../components/TourCard'
 import { toursApi } from '../api/tours'
 import { categories } from '../data/tours'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export default function Tours() {
+  const { showPrices } = useSiteSettings()
   const [activeCategory, setActiveCategory] = useState('All')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('featured')
@@ -128,8 +130,8 @@ export default function Tours() {
               >
                 <option value="featured">Featured</option>
                 <option value="rating">Top Rated</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
+                {showPrices && <option value="price-asc">Price: Low to High</option>}
+                {showPrices && <option value="price-desc">Price: High to Low</option>}
               </select>
             </div>
           </div>

@@ -7,6 +7,7 @@ from app.models.media import Media
 from app.models.testimonial import Testimonial
 from app.models.experience import Experience
 from app.models.route import Route, RouteImage
+from app.models.site_settings import SiteSettings
 
 __all__ = [
     "User",
@@ -23,4 +24,5 @@ __all__ = [
     "Experience",
     "Route",
     "RouteImage",
+    "SiteSettings",
 ]

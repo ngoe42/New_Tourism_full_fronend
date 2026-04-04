@@ -4,9 +4,11 @@ import { Calendar, Users, Mail, Phone, MessageSquare, CheckCircle, Loader2, Aler
 import { bookingsApi } from '../api/bookings'
 import { inquiriesApi } from '../api/inquiries'
 import { useAuth } from '../context/AuthContext'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export default function BookingForm({ tourId = null, tourTitle = '', tourPrice = 0, compact = false }) {
   const { user } = useAuth()
+  const { showPrices } = useSiteSettings()
   const [form, setForm] = useState({
     name: user?.name ?? '',
     email: user?.email ?? '',
@@ -189,7 +191,7 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
       </div>
 
       {/* Price estimate */}
-      {total && (
+      {showPrices && total && (
         <div className="bg-beige rounded-2xl px-4 py-3 flex justify-between items-center">
           <span className="font-sans text-xs text-gray-500">Estimated Total ({form.guests} guests)</span>
           <span className="font-serif text-lg font-semibold text-green-950">${total.toLocaleString()}</span>
