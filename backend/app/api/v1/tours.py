@@ -1,12 +1,13 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.dependencies.auth import get_current_user, require_admin
 from app.models.user import User
-from app.schemas.tour import TourCreate, TourUpdate, TourResponse, TourListResponse, PaginatedTours
+from app.schemas.tour import TourCreate, TourUpdate, TourResponse, TourListResponse, TourImageResponse, PaginatedTours
 from app.services.tour import TourService
+from app.services.media import MediaService
 
 router = APIRouter(tags=["Tours"])
 
@@ -61,6 +62,18 @@ async def update_tour(tour_id: int, data: TourUpdate, db: AsyncSession = Depends
 async def delete_tour(tour_id: int, db: AsyncSession = Depends(get_db)):
     service = TourService(db)
     await service.delete_tour(tour_id)
+
+
+@router.post("/{tour_id}/images", response_model=TourImageResponse, status_code=201)
+async def upload_tour_image(
+    tour_id: int,
+    file: UploadFile = File(...),
+    is_cover: bool = Form(False),
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    media = await MediaService(db).upload(file, current_user)
+    return await TourService(db).add_image(tour_id, media.url, media.public_id, is_cover=is_cover)
 
 
 @router.delete("/{tour_id}/images/{image_id}", status_code=204, dependencies=[Depends(require_admin)])

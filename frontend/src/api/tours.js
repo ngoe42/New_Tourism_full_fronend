@@ -22,11 +22,15 @@ export const toursApi = {
   delete: (id) =>
     apiClient.delete(`/tours/${id}`),
 
-  uploadImage: (tourId, file) => {
+  uploadImage: (tourId, file, isCover = false) => {
     const form = new FormData()
     form.append('file', file)
+    form.append('is_cover', isCover)
     return apiClient
-      .post(`/media/upload?tour_id=${tourId}`, form)
+      .post(`/tours/${tourId}/images`, form)
       .then((r) => r.data)
   },
+
+  deleteImage: (tourId, imageId) =>
+    apiClient.delete(`/tours/${tourId}/images/${imageId}`),
 }

@@ -25,9 +25,7 @@ function ExperienceModal({ initial, onClose, onSave, loading }) {
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const res = await apiClient.post('/media/upload', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const res = await apiClient.post('/media/upload', fd)
       set('image_url', res.data.url)
     } catch (err) {
       setUploadError(err?.response?.data?.detail ?? 'Upload failed')
