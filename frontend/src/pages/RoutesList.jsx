@@ -3,8 +3,10 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Mountain, Clock, ChevronRight } from 'lucide-react'
 import { routesApi } from '../api/routes'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export default function RoutesList() {
+  const { showPrices } = useSiteSettings()
   const { data: rawRoutes, isLoading, error } = useQuery({
     queryKey: ['routes'],
     queryFn: () => routesApi.list(),
@@ -87,10 +89,19 @@ export default function RoutesList() {
                     </div>
 
                     <div className="flex items-center justify-between mt-auto">
-                      <div>
-                        <p className="font-sans text-[10px] uppercase tracking-wider font-semibold text-gray-400 mb-0.5">Starting From</p>
-                        <p className="font-serif text-xl font-bold text-green-950">${route.price.toLocaleString()}</p>
-                      </div>
+                      {showPrices && route.price > 0 ? (
+                        <div>
+                          <p className="font-sans text-[10px] uppercase tracking-wider font-semibold text-gray-400 mb-0.5">Starting From</p>
+                          <p className="font-serif text-xl font-bold text-green-950">${route.price.toLocaleString()}</p>
+                        </div>
+                      ) : (
+                        <Link
+                          to={`/contact?interest=${encodeURIComponent(route.name)}`}
+                          className="font-sans text-xs font-semibold text-gold hover:underline"
+                        >
+                          Request a Quote
+                        </Link>
+                      )}
                       <Link
                         to={`/routes/${route.slug}`}
                         className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center text-gold group-hover:bg-gold group-hover:text-white transition-all duration-300"
