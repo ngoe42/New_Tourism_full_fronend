@@ -613,7 +613,6 @@ export default function Navbar() {
                     className="flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors border-b border-gray-100"
                   >
                     Home
-                    <ChevronRight size={16} className="text-gray-300" />
                   </Link>
 
                   {/* KILIMANJARO accordion */}
@@ -761,7 +760,6 @@ export default function Navbar() {
                       className="flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors border-b border-gray-100"
                     >
                       {link.label}
-                      <ChevronRight size={16} className="text-gray-300" />
                     </Link>
                   ))}
                 </nav>
