@@ -53,17 +53,14 @@ function TourForm({ initial, onClose, onSave, saving }) {
             <input type="text" value={form.title} onChange={(e) => {
               const title = e.target.value
               set('title', title)
-              if (!initial || form.slug === slugify(form.title)) set('slug', slugify(title))
+              set('slug', slugify(title))
             }} required
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
-          </div>
-
-          {/* Title → auto slug */}
-          <div>
-            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Slug (URL)</label>
-            <input type="text" value={form.slug} onChange={(e) => set('slug', e.target.value)}
-              placeholder="Auto-generated from title"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+            {form.slug && (
+              <p className="mt-1.5 font-sans text-xs text-gray-400">
+                URL: <span className="font-mono text-gray-500">/tours/<strong>{form.slug}</strong></span>
+              </p>
+            )}
           </div>
 
           {/* Category */}
