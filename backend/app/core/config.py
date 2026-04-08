@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     FIRST_ADMIN_EMAIL: str = "admin@nelsontoursandsafari.com"
     FIRST_ADMIN_PASSWORD: str = "ChangeMe123!"
 
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: Optional[str] = None
+    SMTP_PASS: Optional[str] = None
+    SMTP_FROM: str = "Nelson Tours & Safari <contact@nelsontoursandsafari.com>"
+    SMTP_TLS: bool = True
+
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def parse_cors(cls, v: str) -> str:

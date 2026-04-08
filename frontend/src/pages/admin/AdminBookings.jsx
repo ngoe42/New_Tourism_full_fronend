@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle, XCircle, Clock, ChevronDown } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, ChevronDown, Mail } from 'lucide-react'
 import { bookingsApi } from '../../api/bookings'
+import EmailReplyModal from '../../components/EmailReplyModal'
 
 const STATUS_STYLES = {
   pending:   'bg-amber-100 text-amber-700',
@@ -56,6 +57,7 @@ function StatusDropdown({ bookingId, current }) {
 
 export default function AdminBookings() {
   const [page, setPage] = useState(1)
+  const [replyTarget, setReplyTarget] = useState(null)
   const { data, isLoading } = useQuery({
     queryKey: ['admin-bookings', page],
     queryFn: () => bookingsApi.all({ page, per_page: 20 }),
@@ -80,7 +82,7 @@ export default function AdminBookings() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr className="border-b border-gray-200">
-                    {['#', 'Guest', 'Tour', 'Date', 'Guests', 'Total', 'Status', 'Booked'].map((h) => (
+                    {['#', 'Guest', 'Tour', 'Date', 'Guests', 'Total', 'Status', 'Booked', ''].map((h) => (
                       <th key={h} className="px-4 py-3 text-left font-sans text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -104,6 +106,15 @@ export default function AdminBookings() {
                       </td>
                       <td className="px-4 py-3 font-sans text-xs text-gray-400 whitespace-nowrap">
                         {b.created_at ? new Date(b.created_at).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => setReplyTarget(b)}
+                          title="Reply via email"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 font-sans text-xs font-semibold rounded-lg transition-colors"
+                        >
+                          <Mail size={12} /> Reply
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -130,6 +141,16 @@ export default function AdminBookings() {
           </>
         )}
       </div>
+
+      {replyTarget && (
+        <EmailReplyModal
+          recipient={{ name: replyTarget.contact_name, email: replyTarget.contact_email }}
+          subject={`Re: Your Nelson Tours & Safari Booking${replyTarget.tour?.title ? ` \u2014 ${replyTarget.tour.title}` : ''}`}
+          bookingId={replyTarget.id}
+          invalidateKey="admin-bookings"
+          onClose={() => setReplyTarget(null)}
+        />
+      )}
     </div>
   )
 }

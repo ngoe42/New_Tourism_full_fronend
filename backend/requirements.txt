@@ -36,5 +36,8 @@ python-dotenv==1.0.1
 # Date handling
 python-dateutil==2.9.0.post0
 
+# Email
+aiosmtplib==3.0.1
+
 # Logging
 loguru==0.7.3

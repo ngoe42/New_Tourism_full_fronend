@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Mail, Phone, Calendar, ChevronDown, ChevronUp } from 'lucide-react'
 import { inquiriesApi } from '../../api/inquiries'
+import EmailReplyModal from '../../components/EmailReplyModal'
 
-function InquiryRow({ inquiry }) {
+function InquiryRow({ inquiry, onReply }) {
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -63,12 +64,12 @@ function InquiryRow({ inquiry }) {
             </div>
           )}
           <div className="mt-4">
-            <a
-              href={`mailto:${inquiry.email}?subject=Re: Your Nelson Tour and Safari Inquiry`}
+            <button
+              onClick={() => onReply(inquiry)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-sans text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors"
             >
               <Mail size={13} /> Reply via Email
-            </a>
+            </button>
           </div>
         </div>
       )}
@@ -78,6 +79,7 @@ function InquiryRow({ inquiry }) {
 
 export default function AdminInquiries() {
   const [page, setPage] = useState(1)
+  const [replyTarget, setReplyTarget] = useState(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-inquiries', page],
@@ -103,8 +105,18 @@ export default function AdminInquiries() {
         </div>
       ) : (
         <div className="space-y-3">
-          {inquiries.map((inq) => <InquiryRow key={inq.id} inquiry={inq} />)}
+          {inquiries.map((inq) => <InquiryRow key={inq.id} inquiry={inq} onReply={setReplyTarget} />)}
         </div>
+      )}
+
+      {replyTarget && (
+        <EmailReplyModal
+          recipient={{ name: replyTarget.name, email: replyTarget.email }}
+          subject={`Re: Your Nelson Tours & Safari Inquiry${replyTarget.tour_interest ? ` — ${replyTarget.tour_interest}` : ''}`}
+          inquiryId={replyTarget.id}
+          invalidateKey="admin-inquiries"
+          onClose={() => setReplyTarget(null)}
+        />
       )}
 
       {totalPages > 1 && (
