@@ -2,14 +2,17 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import aiosmtplib
+from loguru import logger
 
 from app.core.config import settings
 
 
 async def send_email(to: str, subject: str, body: str) -> None:
-    """Send a plain-text + HTML email via SMTP."""
+    """Send a plain-text + HTML email via SMTP (explicit STARTTLS flow)."""
     if not settings.SMTP_USER or not settings.SMTP_PASS:
-        raise RuntimeError("SMTP credentials are not configured. Set SMTP_USER and SMTP_PASS in .env")
+        raise RuntimeError(
+            "SMTP credentials are not configured. Set SMTP_USER and SMTP_PASS in .env"
+        )
 
     html_body = f"""
     <html>
@@ -34,15 +37,35 @@ async def send_email(to: str, subject: str, body: str) -> None:
     msg["From"] = settings.SMTP_FROM
     msg["To"] = to
     msg["Subject"] = subject
-
     msg.attach(MIMEText(body, "plain"))
     msg.attach(MIMEText(html_body, "html"))
 
-    await aiosmtplib.send(
-        msg,
+    logger.info(f"Sending email to {to} via {settings.SMTP_HOST}:{settings.SMTP_PORT}")
+
+    smtp = aiosmtplib.SMTP(
         hostname=settings.SMTP_HOST,
         port=settings.SMTP_PORT,
-        username=settings.SMTP_USER,
-        password=settings.SMTP_PASS,
-        start_tls=settings.SMTP_TLS,
+        timeout=30,
     )
+
+    try:
+        await smtp.connect()
+        if settings.SMTP_TLS:
+            await smtp.starttls()
+        await smtp.login(settings.SMTP_USER, settings.SMTP_PASS)
+        await smtp.send_message(msg)
+        logger.info(f"Email sent successfully to {to}")
+    except aiosmtplib.SMTPAuthenticationError as e:
+        logger.error(f"SMTP auth failed: {e}")
+        raise RuntimeError(f"Gmail authentication failed — check SMTP_USER and SMTP_PASS. Detail: {e}")
+    except aiosmtplib.SMTPConnectError as e:
+        logger.error(f"SMTP connect failed: {e}")
+        raise RuntimeError(f"Cannot connect to {settings.SMTP_HOST}:{settings.SMTP_PORT}. Detail: {e}")
+    except aiosmtplib.SMTPException as e:
+        logger.error(f"SMTP error: {e}")
+        raise RuntimeError(f"SMTP error: {e}")
+    finally:
+        try:
+            await smtp.quit()
+        except Exception:
+            pass

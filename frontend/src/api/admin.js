@@ -5,5 +5,5 @@ export const adminApi = {
     apiClient.get('/admin/dashboard').then((r) => r.data),
 
   sendEmail: (data) =>
-    apiClient.post('/admin/send-email', data).then((r) => r.data),
+    apiClient.post('/admin/send-email', data, { timeout: 35000 }).then((r) => r.data),
 }

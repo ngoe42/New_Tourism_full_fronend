@@ -136,7 +136,10 @@ export default function EmailReplyModal({ recipient, subject: defaultSubject, in
                 <div className="mx-4 mb-3 flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
                   <AlertCircle size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
                   <p className="font-sans text-xs text-red-600 leading-snug">
-                    {mutation.error?.response?.data?.detail ?? 'Failed to send email. Check SMTP settings.'}
+                    {mutation.error?.response?.data?.detail
+                      || mutation.error?.response?.data?.message
+                      || mutation.error?.message
+                      || 'Failed to send email. Check SMTP settings.'}
                   </p>
                 </div>
               )}
