@@ -1,20 +1,11 @@
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
-import aiosmtplib
+import resend
 from loguru import logger
 
 from app.core.config import settings
 
 
-async def send_email(to: str, subject: str, body: str) -> None:
-    """Send a plain-text + HTML email via SMTP (explicit STARTTLS flow)."""
-    if not settings.SMTP_USER or not settings.SMTP_PASS:
-        raise RuntimeError(
-            "SMTP credentials are not configured. Set SMTP_USER and SMTP_PASS in .env"
-        )
-
-    html_body = f"""
+def _build_html(body: str) -> str:
+    return f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #222; background: #faf8f3; padding: 0; margin: 0;">
         <div style="max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
@@ -33,44 +24,28 @@ async def send_email(to: str, subject: str, body: str) -> None:
     </html>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg["From"] = settings.SMTP_FROM
-    msg["To"] = to
-    msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
-    msg.attach(MIMEText(html_body, "html"))
 
-    logger.info(f"Sending email to {to} via {settings.SMTP_HOST}:{settings.SMTP_PORT}")
+async def send_email(to: str, subject: str, body: str) -> None:
+    """Send email via Resend HTTP API (works on Railway / any cloud host)."""
+    if not settings.RESEND_API_KEY:
+        raise RuntimeError(
+            "Email not configured. Set RESEND_API_KEY in environment variables."
+        )
 
-    # Port 465 = SSL from the start (use_tls=True)
-    # Port 587 = plain connect then STARTTLS — often blocked by cloud hosts
-    use_ssl = settings.SMTP_PORT == 465
+    resend.api_key = settings.RESEND_API_KEY
 
-    smtp = aiosmtplib.SMTP(
-        hostname=settings.SMTP_HOST,
-        port=settings.SMTP_PORT,
-        use_tls=use_ssl,
-        timeout=30,
-    )
+    logger.info(f"Sending email to {to} via Resend")
 
     try:
-        await smtp.connect()
-        if not use_ssl and settings.SMTP_TLS:
-            await smtp.starttls()
-        await smtp.login(settings.SMTP_USER, settings.SMTP_PASS)
-        await smtp.send_message(msg)
-        logger.info(f"Email sent successfully to {to}")
-    except aiosmtplib.SMTPAuthenticationError as e:
-        logger.error(f"SMTP auth failed: {e}")
-        raise RuntimeError(f"Gmail authentication failed — check App Password. Detail: {e}")
-    except aiosmtplib.SMTPConnectError as e:
-        logger.error(f"SMTP connect failed: {e}")
-        raise RuntimeError(f"Cannot connect to {settings.SMTP_HOST}:{settings.SMTP_PORT}. Detail: {e}")
-    except aiosmtplib.SMTPException as e:
-        logger.error(f"SMTP error: {e}")
-        raise RuntimeError(f"SMTP error: {e}")
-    finally:
-        try:
-            await smtp.quit()
-        except Exception:
-            pass
+        params: resend.Emails.SendParams = {
+            "from": settings.EMAIL_FROM,
+            "to": [to],
+            "subject": subject,
+            "html": _build_html(body),
+            "text": body,
+        }
+        result = resend.Emails.send(params)
+        logger.info(f"Email sent successfully — id: {result.get('id')}")
+    except Exception as e:
+        logger.error(f"Resend error: {e}")
+        raise RuntimeError(f"Failed to send email: {e}")
