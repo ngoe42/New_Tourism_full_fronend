@@ -42,22 +42,27 @@ async def send_email(to: str, subject: str, body: str) -> None:
 
     logger.info(f"Sending email to {to} via {settings.SMTP_HOST}:{settings.SMTP_PORT}")
 
+    # Port 465 = SSL from the start (use_tls=True)
+    # Port 587 = plain connect then STARTTLS — often blocked by cloud hosts
+    use_ssl = settings.SMTP_PORT == 465
+
     smtp = aiosmtplib.SMTP(
         hostname=settings.SMTP_HOST,
         port=settings.SMTP_PORT,
+        use_tls=use_ssl,
         timeout=30,
     )
 
     try:
         await smtp.connect()
-        if settings.SMTP_TLS:
+        if not use_ssl and settings.SMTP_TLS:
             await smtp.starttls()
         await smtp.login(settings.SMTP_USER, settings.SMTP_PASS)
         await smtp.send_message(msg)
         logger.info(f"Email sent successfully to {to}")
     except aiosmtplib.SMTPAuthenticationError as e:
         logger.error(f"SMTP auth failed: {e}")
-        raise RuntimeError(f"Gmail authentication failed — check SMTP_USER and SMTP_PASS. Detail: {e}")
+        raise RuntimeError(f"Gmail authentication failed — check App Password. Detail: {e}")
     except aiosmtplib.SMTPConnectError as e:
         logger.error(f"SMTP connect failed: {e}")
         raise RuntimeError(f"Cannot connect to {settings.SMTP_HOST}:{settings.SMTP_PORT}. Detail: {e}")

@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     FIRST_ADMIN_PASSWORD: str = "ChangeMe123!"
 
     SMTP_HOST: str = "smtp.gmail.com"
-    SMTP_PORT: int = 587
+    SMTP_PORT: int = 465
     SMTP_USER: Optional[str] = None
     SMTP_PASS: Optional[str] = None
     SMTP_FROM: str = "Nelson Tours & Safari <contact@nelsontoursandsafari.com>"
