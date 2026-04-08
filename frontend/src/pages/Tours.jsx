@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, SlidersHorizontal, X, Loader2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -9,7 +10,11 @@ import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export default function Tours() {
   const { showPrices } = useSiteSettings()
-  const [activeCategory, setActiveCategory] = useState('All')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const urlCategory = searchParams.get('category')
+  const [activeCategory, setActiveCategory] = useState(
+    urlCategory && categories.includes(urlCategory) ? urlCategory : 'All'
+  )
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('featured')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -18,6 +23,22 @@ export default function Tours() {
     const t = setTimeout(() => setDebouncedSearch(search), 400)
     return () => clearTimeout(t)
   }, [search])
+
+  useEffect(() => {
+    if (urlCategory && categories.includes(urlCategory)) {
+      setActiveCategory(urlCategory)
+    }
+  }, [urlCategory])
+
+  const handleCategoryChange = (cat) => {
+    setActiveCategory(cat)
+    if (cat === 'All') {
+      searchParams.delete('category')
+    } else {
+      searchParams.set('category', cat)
+    }
+    setSearchParams(searchParams, { replace: true })
+  }
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['tours', activeCategory, debouncedSearch, sortBy],
@@ -108,7 +129,7 @@ export default function Tours() {
               {categories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setActiveCategory(cat)}
+                  onClick={() => handleCategoryChange(cat)}
                   className={`font-sans text-xs font-medium px-4 py-2 rounded-full transition-all duration-200 flex-shrink-0 ${
                     activeCategory === cat
                       ? 'bg-green-950 text-white shadow-sm'
