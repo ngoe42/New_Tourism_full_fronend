@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ChevronDown, ChevronRight, LogIn, LayoutDashboard, LogOut, MapPin, Clock, ArrowRight, Mountain, Phone, Mail } from 'lucide-react'
+import { Menu, X, ChevronDown, ChevronRight, LayoutDashboard, LogOut, MapPin, Clock, ArrowRight, Mountain, Phone, Mail } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { toursApi } from '../api/tours'
@@ -459,14 +459,7 @@ export default function Navbar() {
                   )}
                 </AnimatePresence>
               </div>
-            ) : (
-              <Link to="/login"
-                className={`hidden lg:flex items-center gap-1.5 text-sm font-medium font-sans px-4 py-2 rounded-full transition-all duration-300 border ${
-                  isTransparent ? 'border-white/40 text-white hover:bg-white/10' : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                }`}>
-                <LogIn size={14} /> Sign In
-              </Link>
-            )}
+            ) : null}
             <Link
               to="/tours"
               className={`hidden lg:block text-sm font-medium font-sans px-6 py-2.5 rounded-full transition-all duration-300 ${
@@ -712,15 +705,7 @@ export default function Navbar() {
                         <LogOut size={15} /> Sign Out
                       </button>
                     </div>
-                  ) : (
-                    <Link
-                      to="/login"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 py-2.5 px-4 font-sans text-sm font-medium text-gray-700 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                    >
-                      <LogIn size={15} /> Sign In
-                    </Link>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
