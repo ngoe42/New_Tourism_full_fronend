@@ -34,8 +34,8 @@ class Settings(BaseSettings):
     FIRST_ADMIN_EMAIL: str = "admin@nelsontoursandsafari.com"
     FIRST_ADMIN_PASSWORD: str = "ChangeMe123!"
 
-    RESEND_API_KEY: Optional[str] = None
-    EMAIL_FROM: str = "Nelson Tours & Safari <onboarding@resend.dev>"
+    SENDGRID_API_KEY: Optional[str] = None
+    EMAIL_FROM: str = "ngoekenedy@gmail.com"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod

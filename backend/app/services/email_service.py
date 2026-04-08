@@ -1,4 +1,5 @@
-import resend
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 from loguru import logger
 
 from app.core.config import settings
@@ -26,26 +27,26 @@ def _build_html(body: str) -> str:
 
 
 async def send_email(to: str, subject: str, body: str) -> None:
-    """Send email via Resend HTTP API (works on Railway / any cloud host)."""
-    if not settings.RESEND_API_KEY:
+    """Send email via SendGrid HTTP API (works on Railway / any cloud host)."""
+    if not settings.SENDGRID_API_KEY:
         raise RuntimeError(
-            "Email not configured. Set RESEND_API_KEY in environment variables."
+            "Email not configured. Set SENDGRID_API_KEY in environment variables."
         )
 
-    resend.api_key = settings.RESEND_API_KEY
+    logger.info(f"Sending email to {to} via SendGrid")
 
-    logger.info(f"Sending email to {to} via Resend")
+    message = Mail(
+        from_email=settings.EMAIL_FROM,
+        to_emails=to,
+        subject=subject,
+        html_content=_build_html(body),
+        plain_text_content=body,
+    )
 
     try:
-        params: resend.Emails.SendParams = {
-            "from": settings.EMAIL_FROM,
-            "to": [to],
-            "subject": subject,
-            "html": _build_html(body),
-            "text": body,
-        }
-        result = resend.Emails.send(params)
-        logger.info(f"Email sent successfully — id: {result.get('id')}")
+        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+        response = sg.send(message)
+        logger.info(f"Email sent — status: {response.status_code}")
     except Exception as e:
-        logger.error(f"Resend error: {e}")
+        logger.error(f"SendGrid error: {e}")
         raise RuntimeError(f"Failed to send email: {e}")

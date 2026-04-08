@@ -37,7 +37,7 @@ python-dotenv==1.0.1
 python-dateutil==2.9.0.post0
 
 # Email
-resend==2.7.0
+sendgrid==6.11.0
 
 # Logging
 loguru==0.7.3
