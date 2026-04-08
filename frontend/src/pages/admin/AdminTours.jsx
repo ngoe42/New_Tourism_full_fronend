@@ -17,7 +17,9 @@ function slugify(str) {
 }
 
 function TourForm({ initial, onClose, onSave, saving }) {
-  const [form, setForm] = useState(initial ?? EMPTY_FORM)
+  const [form, setForm] = useState(
+    initial?.id ? initial : { ...EMPTY_FORM, category: initial?.category ?? EMPTY_FORM.category }
+  )
   const [imageFiles, setImageFiles] = useState([])
   const fileRef = useRef(null)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
@@ -31,6 +33,7 @@ function TourForm({ initial, onClose, onSave, saving }) {
     delete formData.created_at
     delete formData.updated_at
     delete formData.id
+    delete formData._isNew
     if (!formData.slug) formData.slug = slugify(formData.title)
     onSave({ formData, imageFiles })
   }
@@ -40,7 +43,7 @@ function TourForm({ initial, onClose, onSave, saving }) {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
         <h2 className="font-sans text-base font-bold text-gray-800">
-          {initial ? 'Edit Tour' : 'Add Tour'}
+          {initial?.id ? 'Edit Tour' : `Add ${form.category || 'Tour'}`}
         </h2>
         <button onClick={onClose} className="font-sans text-sm text-gray-500 hover:text-gray-800 transition-colors">
           Cancel
@@ -181,14 +184,16 @@ function TourForm({ initial, onClose, onSave, saving }) {
 export default function AdminTours() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
-  const [activeForm, setActiveForm] = useState(null) // null | 'create' | tour object
+  const [activeCategory, setActiveCategory] = useState('All')
+  const [activeForm, setActiveForm] = useState(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-tours', search],
-    queryFn: () => toursApi.list({ q: search, per_page: 50, admin: true }),
+    queryFn: () => toursApi.list({ q: search, per_page: 100, admin: true }),
   })
 
   const tours = data?.items ?? []
+  const filtered = activeCategory === 'All' ? tours : tours.filter((t) => t.category === activeCategory)
 
   const createMutation = useMutation({
     mutationFn: async ({ formData, imageFiles }) => {
@@ -217,8 +222,15 @@ export default function AdminTours() {
     onSuccess: () => qc.invalidateQueries(['admin-tours']),
   })
 
+  const handleAddTour = () => {
+    setActiveForm({
+      _isNew: true,
+      category: activeCategory !== 'All' ? activeCategory : 'Luxury Safaris',
+    })
+  }
+
   const handleSave = ({ formData, imageFiles }) => {
-    if (activeForm && activeForm !== 'create') {
+    if (activeForm?.id) {
       updateMutation.mutate({ id: activeForm.id, formData, imageFiles })
     } else {
       createMutation.mutate({ formData, imageFiles })
@@ -231,19 +243,47 @@ export default function AdminTours() {
     <div className="space-y-4">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <p className="font-sans text-sm text-gray-400">{data?.total ?? 0} tours total</p>
+        <p className="font-sans text-sm text-gray-400">
+          {filtered.length} {activeCategory !== 'All' ? activeCategory : 'total tours'}
+        </p>
         {!activeForm && (
-          <button onClick={() => setActiveForm('create')}
+          <button onClick={handleAddTour}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-sans text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-sm">
-            <Plus size={15} /> Add Tour
+            <Plus size={15} />
+            Add {activeCategory !== 'All' ? activeCategory.replace(' Safaris', '') + ' Safari' : 'Tour'}
           </button>
         )}
       </div>
 
+      {/* Category filter tabs */}
+      {!activeForm && (
+        <div className="flex gap-2 flex-wrap">
+          {['All', ...TOUR_CATEGORIES].map((cat) => {
+            const count = cat === 'All' ? tours.length : tours.filter((t) => t.category === cat).length
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`flex items-center gap-1.5 flex-shrink-0 font-sans text-xs font-medium px-3.5 py-1.5 rounded-full transition-all ${
+                  activeCategory === cat
+                    ? 'bg-green-700 text-white shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-700'
+                }`}
+              >
+                {cat}
+                <span className={`text-[10px] font-bold ${
+                  activeCategory === cat ? 'text-white/70' : 'text-gray-400'
+                }`}>{count}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* Inline form — shown instead of modal */}
       {activeForm && (
         <TourForm
-          initial={activeForm !== 'create' ? activeForm : null}
+          initial={activeForm}
           onClose={() => setActiveForm(null)}
           onSave={handleSave}
           saving={saving}
@@ -276,9 +316,9 @@ export default function AdminTours() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {tours.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 font-sans text-sm text-gray-400">No tours found</td></tr>
-              ) : tours.map((tour) => (
+              {filtered.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-12 font-sans text-sm text-gray-400">No {activeCategory !== 'All' ? activeCategory : ''} tours found</td></tr>
+              ) : filtered.map((tour) => (
                 <tr key={tour.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="font-sans text-sm font-semibold text-gray-900">{tour.title}</div>
