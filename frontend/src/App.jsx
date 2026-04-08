@@ -23,6 +23,7 @@ import AdminRoutes from './pages/admin/AdminRoutes'
 import AdminSettings from './pages/admin/AdminSettings'
 import Experiences from './pages/Experiences'
 import Blog from './pages/Blog'
+import WhatsAppButton from './components/WhatsAppButton'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,7 @@ function PublicLayout({ children }) {
       <Navbar />
       {children}
       <Footer />
+      <WhatsAppButton />
     </>
   )
 }

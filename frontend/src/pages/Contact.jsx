@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
-import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Youtube } from 'lucide-react'
+import { MapPin, Phone, Mail, Clock, MessageCircle, Instagram, Facebook, Youtube } from 'lucide-react'
 import BookingForm from '../components/BookingForm'
 
 const contactInfo = [
-  { icon: Phone, label: 'Call Us', value: '+255 123 456 789', sub: 'Mon–Fri, 8am–6pm EAT', href: 'tel:+255123456789' },
+  { icon: Phone, label: 'Call Us', value: '+255 750 005 973', sub: 'Mon–Fri, 8am–6pm EAT', href: 'tel:+255750005973' },
+  { icon: MessageCircle, label: 'WhatsApp', value: '+255 750 005 973', sub: 'Chat with us instantly', href: 'https://wa.me/255750005973' },
   { icon: Mail, label: 'Email Us', value: 'hello@nelsontoursandsafari.com', sub: 'Response within 24 hours', href: 'mailto:hello@nelsontoursandsafari.com' },
   { icon: MapPin, label: 'Visit Us', value: 'Sokoine Road, Arusha', sub: 'Tanzania, East Africa', href: '#' },
   { icon: Clock, label: 'Office Hours', value: 'Mon–Fri: 8am–6pm', sub: 'Sat: 9am–2pm EAT', href: '#' },
