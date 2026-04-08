@@ -2,9 +2,12 @@ import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Pencil, Trash2, Search, ImageIcon, X } from 'lucide-react'
 import { toursApi } from '../../api/tours'
+import { categories } from '../../data/tours'
+
+const TOUR_CATEGORIES = categories.filter((c) => c !== 'All')
 
 const EMPTY_FORM = {
-  title: '', slug: '', subtitle: '', description: '', category: 'Safari',
+  title: '', slug: '', subtitle: '', description: '', category: 'Luxury Safaris',
   location: '', duration: '', group_size: '', price: '',
   is_featured: false, is_published: true,
 }
@@ -66,8 +69,12 @@ function TourForm({ initial, onClose, onSave, saving }) {
           {/* Category */}
           <div>
             <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Category</label>
-            <input type="text" value={form.category} onChange={(e) => set('category', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+            <select value={form.category} onChange={(e) => set('category', e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white">
+              {TOUR_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
           </div>
 
           {/* Subtitle */}

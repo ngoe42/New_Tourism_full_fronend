@@ -287,4 +287,4 @@ export const stats = [
   { value: 24, suffix: '/7', label: 'Guest Support' },
 ]
 
-export const categories = ['All', 'Classic Safari', 'Luxury Safari', 'Adventure', 'Beach & Culture', 'Wilderness', 'Wildlife Safari']
+export const categories = ['All', 'Luxury Safaris', 'Mid-Range Safaris', 'Budget Safaris', 'Day Trips']
