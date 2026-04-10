@@ -84,23 +84,6 @@ export default function Hero() {
         ))}
       </div>
 
-      {/* Floating stat badges */}
-      <motion.div
-        initial={{ opacity: 0, x: -40 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1.4, duration: 0.7 }}
-        className="absolute left-8 bottom-32 hidden lg:flex flex-col gap-3"
-      >
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-3 text-white">
-          <div className="font-serif text-2xl font-semibold">4.97★</div>
-          <div className="font-sans text-xs tracking-wider text-white/70 mt-0.5">Average Rating</div>
-        </div>
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-3 text-white">
-          <div className="font-serif text-2xl font-semibold">12,000+</div>
-          <div className="font-sans text-xs tracking-wider text-white/70 mt-0.5">Happy Travelers</div>
-        </div>
-      </motion.div>
-
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full">
         <div className="max-w-3xl">
