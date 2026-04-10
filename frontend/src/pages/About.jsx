@@ -82,18 +82,6 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── Stats strip ───────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-          {stats.map((s) => (
-            <div key={s.label}>
-              <p className="font-serif text-3xl font-bold text-green-950">{s.value}</p>
-              <p className="font-sans text-xs text-gray-400 mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* ── Our Story ─────────────────────────────────────────────── */}
       <section className="py-16 sm:py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
