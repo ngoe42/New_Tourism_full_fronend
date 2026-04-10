@@ -36,7 +36,8 @@ python-dotenv==1.0.1
 # Date handling
 python-dateutil==2.9.0.post0
 
-# Email (via Brevo HTTP API — uses httpx)
+# Email
+sendgrid==6.11.0
 
 # Logging
 loguru==0.7.3
