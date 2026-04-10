@@ -1,14 +1,17 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Pagination, Autoplay } from 'swiper/modules'
-import { Star, Quote } from 'lucide-react'
+import { Star, Quote, PenLine } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { testimonialsApi } from '../api/testimonials'
 import { testimonials as staticTestimonials } from '../data/tours'
+import TestimonialFormModal from './TestimonialFormModal'
 import 'swiper/css'
 import 'swiper/css/pagination'
 
 export default function Testimonials() {
+  const [showForm, setShowForm] = useState(false)
   const { data } = useQuery({
     queryKey: ['testimonials'],
     queryFn: () => testimonialsApi.list({ per_page: 12 }),
@@ -129,7 +132,28 @@ export default function Testimonials() {
             </div>
           ))}
         </motion.div>
+
+        {/* CTA to submit */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="text-center mt-10 sm:mt-14"
+        >
+          <p className="font-sans text-sm text-white/50 mb-4">Traveled with us? We'd love to hear from you.</p>
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gold hover:bg-amber-500 text-green-950 font-sans text-sm font-semibold rounded-xl transition-colors"
+          >
+            <PenLine size={15} />
+            Share Your Experience
+          </button>
+        </motion.div>
+
       </div>
+
+      {showForm && <TestimonialFormModal onClose={() => setShowForm(false)} />}
     </section>
   )
 }
