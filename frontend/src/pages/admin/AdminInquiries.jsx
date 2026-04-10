@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Mail, Phone, Calendar, ChevronDown, ChevronUp, Search, X } from 'lucide-react'
 import { inquiriesApi } from '../../api/inquiries'
 import EmailReplyModal from '../../components/EmailReplyModal'
@@ -7,17 +7,27 @@ import EmailReplyModal from '../../components/EmailReplyModal'
 const STATUS_TABS = [
   { key: null,       label: 'All' },
   { key: 'new',     label: 'New' },
-  { key: 'read',    label: 'Read' },
   { key: 'replied', label: 'Replied' },
 ]
 
 function InquiryRow({ inquiry, onReply }) {
   const [expanded, setExpanded] = useState(false)
+  const queryClient = useQueryClient()
+
+  const markRead = useMutation({
+    mutationFn: () => inquiriesApi.update(inquiry.id, { is_read: true }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-inquiries'] }),
+  })
+
+  const handleExpand = () => {
+    if (!expanded && !inquiry.is_read) markRead.mutate()
+    setExpanded((e) => !e)
+  }
 
   return (
     <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
       <button
-        onClick={() => setExpanded((e) => !e)}
+        onClick={handleExpand}
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left"
       >
         <div className="flex items-center gap-4 min-w-0">
