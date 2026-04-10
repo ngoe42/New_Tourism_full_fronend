@@ -17,7 +17,7 @@ const staticLinks = [
   { label: 'Safari',      href: '/tours', hasTourDropdown: true },
   { label: 'Experiences', href: '/experiences', hasExperienceDropdown: true },
   { label: 'Blog',        href: '/blog' },
-  { label: 'About',       href: '/#about' },
+  { label: 'About',       href: '/about' },
   { label: 'Contact',     href: '/contact' },
 ]
 

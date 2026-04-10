@@ -23,6 +23,7 @@ import AdminRoutes from './pages/admin/AdminRoutes'
 import AdminSettings from './pages/admin/AdminSettings'
 import Experiences from './pages/Experiences'
 import Blog from './pages/Blog'
+import About from './pages/About'
 import WhatsAppButton from './components/WhatsAppButton'
 
 const queryClient = new QueryClient({
@@ -61,6 +62,7 @@ function AppRoutes() {
         <Route path="/routes/:slug" element={<PublicLayout><RouteDetail /></PublicLayout>} />
         <Route path="/experiences" element={<PublicLayout><Experiences /></PublicLayout>} />
         <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
+        <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
         <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
         <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
 

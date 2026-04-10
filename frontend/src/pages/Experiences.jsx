@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Loader2, ArrowRight, Compass } from 'lucide-react'
 import { experiencesApi } from '../api/experiences'
+import ExperiencesSlider from '../components/ExperiencesSlider'
 
 export default function Experiences() {
   const { data, isLoading } = useQuery({
@@ -15,36 +16,8 @@ export default function Experiences() {
   return (
     <div className="bg-[#faf8f3] min-h-screen">
 
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative bg-green-950 pt-32 pb-20 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_#1a5c42_0%,_#0f3d2e_60%)]" />
-        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="font-sans text-[11px] font-semibold text-[#c9a96e] uppercase tracking-[0.25em] mb-3"
-          >
-            Tanzania Awaits
-          </motion.p>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-5"
-          >
-            Unforgettable Experiences
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="font-sans text-base text-white/70 max-w-2xl mx-auto leading-relaxed"
-          >
-            From the summit of Kilimanjaro to the shores of Zanzibar — every adventure is crafted to leave you breathless.
-          </motion.p>
-        </div>
-      </section>
+      {/* ── Hero Slider ───────────────────────────────────────────────────── */}
+      <ExperiencesSlider />
 
       {/* ── Grid ─────────────────────────────────────────────────────────── */}
       <section className="py-16 lg:py-24">
