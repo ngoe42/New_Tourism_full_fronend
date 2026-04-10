@@ -35,13 +35,16 @@ async def send_email(to: str, subject: str, body: str) -> None:
 
     logger.info(f"Sending email to {to} via SendGrid")
 
+    from sendgrid.helpers.mail import ReplyTo
+
     message = Mail(
-        from_email=settings.EMAIL_FROM,
+        from_email=(settings.EMAIL_FROM, "Nelson Tours & Safari"),
         to_emails=to,
         subject=subject,
         html_content=_build_html(body),
         plain_text_content=body,
     )
+    message.reply_to = ReplyTo(settings.EMAIL_FROM, "Nelson Tours & Safari")
 
     try:
         sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
