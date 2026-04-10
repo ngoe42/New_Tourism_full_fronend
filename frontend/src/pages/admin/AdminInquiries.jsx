@@ -1,8 +1,15 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Mail, Phone, Calendar, ChevronDown, ChevronUp } from 'lucide-react'
+import { Mail, Phone, Calendar, ChevronDown, ChevronUp, Search, X } from 'lucide-react'
 import { inquiriesApi } from '../../api/inquiries'
 import EmailReplyModal from '../../components/EmailReplyModal'
+
+const STATUS_TABS = [
+  { key: null,       label: 'All' },
+  { key: 'new',     label: 'New' },
+  { key: 'read',    label: 'Read' },
+  { key: 'replied', label: 'Replied' },
+]
 
 function InquiryRow({ inquiry, onReply }) {
   const [expanded, setExpanded] = useState(false)
@@ -79,11 +86,16 @@ function InquiryRow({ inquiry, onReply }) {
 
 export default function AdminInquiries() {
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState(null)
   const [replyTarget, setReplyTarget] = useState(null)
 
+  const handleSearch = useCallback((val) => { setSearch(val); setPage(1) }, [])
+  const handleStatus = useCallback((key) => { setStatus(key); setPage(1) }, [])
+
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-inquiries', page],
-    queryFn: () => inquiriesApi.all({ page, per_page: 20 }),
+    queryKey: ['admin-inquiries', page, search, status],
+    queryFn: () => inquiriesApi.all({ page, per_page: 20, search: search || undefined, status: status || undefined }),
   })
 
   const inquiries = data?.items ?? []
@@ -92,7 +104,43 @@ export default function AdminInquiries() {
 
   return (
     <div className="space-y-4">
-      <p className="font-sans text-sm text-gray-400">{total} total inquiries</p>
+      {/* Search + Filter toolbar */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 flex flex-col sm:flex-row gap-3">
+        {/* Search input */}
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Search by name or email…"
+            className="w-full pl-8 pr-8 py-2 font-sans text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition"
+          />
+          {search && (
+            <button onClick={() => handleSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <X size={13} />
+            </button>
+          )}
+        </div>
+        {/* Status tabs */}
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 flex-shrink-0">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.label}
+              onClick={() => handleStatus(tab.key)}
+              className={`px-3 py-1.5 rounded-md font-sans text-xs font-medium transition-all ${
+                status === tab.key
+                  ? 'bg-white text-green-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <p className="font-sans text-sm text-gray-400">{total} {status ? status : 'total'} inquiries{search ? ` matching "${search}"` : ''}</p>
 
       {isLoading ? (
         <div className="flex justify-center py-16">

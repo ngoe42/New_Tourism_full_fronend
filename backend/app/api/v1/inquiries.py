@@ -19,10 +19,12 @@ async def create_inquiry(data: InquiryCreate, db: AsyncSession = Depends(get_db)
 async def list_inquiries(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
+    search: str = Query(None),
+    status: str = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     service = InquiryService(db)
-    return await service.list_all(page=page, per_page=per_page)
+    return await service.list_all(page=page, per_page=per_page, search=search or None, status=status or None)
 
 
 @router.get("/{inquiry_id}", response_model=InquiryResponse, dependencies=[Depends(require_admin)])

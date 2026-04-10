@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,10 +28,13 @@ class InquiryService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inquiry not found")
         return inquiry
 
-    async def list_all(self, page: int = 1, per_page: int = 20) -> PaginatedInquiries:
+    async def list_all(
+        self, page: int = 1, per_page: int = 20,
+        search: Optional[str] = None, status: Optional[str] = None,
+    ) -> PaginatedInquiries:
         skip = (page - 1) * per_page
-        items = await self.repo.get_all_paginated(skip=skip, limit=per_page)
-        total = await self.repo.count()
+        items = await self.repo.get_all_paginated(skip=skip, limit=per_page, search=search, status=status)
+        total = await self.repo.count_filtered(search=search, status=status)
         return PaginatedInquiries(
             items=items,
             total=total,
