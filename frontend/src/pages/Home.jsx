@@ -6,7 +6,6 @@ import StorySection from '../components/StorySection'
 import ParallaxBreak from '../components/ParallaxBreak'
 import WhyChooseUs from '../components/WhyChooseUs'
 import Testimonials from '../components/Testimonials'
-import StatsSection from '../components/StatsSection'
 import CTASection from '../components/CTASection'
 
 export default function Home() {
@@ -27,7 +26,6 @@ export default function Home() {
       />
       <WhyChooseUs />
       <Testimonials />
-      <StatsSection />
       <ParallaxBreak
         image="/images/sections/parallax-kilimanjaro.jpg"
         subtitle="Summit Tanzania"
