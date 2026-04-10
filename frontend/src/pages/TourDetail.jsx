@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Swiper, SwiperSlide } from 'swiper/react'
-import { Navigation, Thumbs } from 'swiper/modules'
+import { Autoplay, EffectFade } from 'swiper/modules'
+import 'swiper/css/effect-fade'
 import {
   ArrowLeft, Star, Clock, Users, MapPin, CheckCircle, XCircle,
-  ChevronDown, Share2, Heart, Calendar, Loader2
+  ChevronDown, Share2, Heart, Calendar, Loader2, MessageCircle
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { toursApi } from '../api/tours'
@@ -13,8 +14,6 @@ import { useSiteSettings } from '../hooks/useSiteSettings'
 import BookingForm from '../components/BookingForm'
 import TourCard from '../components/TourCard'
 import 'swiper/css'
-import 'swiper/css/navigation'
-import 'swiper/css/thumbs'
 
 export default function TourDetail() {
   const { id } = useParams()
@@ -34,7 +33,6 @@ export default function TourDetail() {
     select: (d) => d.items.filter((t) => t.id !== tour?.id).slice(0, 3),
   })
 
-  const [thumbsSwiper, setThumbsSwiper] = useState(null)
   const [activeDay, setActiveDay] = useState(null)
   const [stickyVisible, setStickyVisible] = useState(false)
   const [wishlist, setWishlist] = useState(false)
@@ -119,17 +117,171 @@ export default function TourDetail() {
         )}
       </AnimatePresence>
 
-      {/* Breadcrumb */}
-      <div className="pt-24 pb-0 bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex items-center gap-2">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-gray-500 hover:text-green-950 transition-colors font-sans text-sm">
-            <ArrowLeft size={14} />
-            Back
+      {/* ── Hero Image ───────────────────────────────────────────── */}
+      <section className="relative min-h-[60vh] sm:min-h-[75vh] flex flex-col justify-end bg-green-950 overflow-hidden">
+        {/* Autoplay slideshow background */}
+        <div className="absolute inset-0">
+          <Swiper
+            modules={[Autoplay, EffectFade]}
+            effect="fade"
+            autoplay={{ delay: 4500, disableOnInteraction: false }}
+            loop={galleryImages.length > 1}
+            className="w-full h-full"
+          >
+            {galleryImages.map((img, i) => (
+              <SwiperSlide key={i}>
+                <img src={img} alt={`${tour.title} ${i + 1}`} className="w-full h-full object-cover" />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+          <div className="absolute inset-0 bg-gradient-to-t from-green-950 via-green-950/55 to-green-950/20" />
+        </div>
+
+        {/* Content — left aligned, bottom anchored */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-28 pb-14">
+          <div className="max-w-3xl">
+            {/* Title */}
+            <motion.h1
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 leading-tight"
+            >
+              {tour.title}
+            </motion.h1>
+
+            {/* Location */}
+            {tour.location && (
+              <motion.p
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="font-sans text-base text-white/70 flex items-center gap-1.5 mb-4"
+              >
+                <MapPin size={14} className="text-gold flex-shrink-0" /> {tour.location}
+              </motion.p>
+            )}
+
+            {/* Short description if available */}
+            {tour.short_description && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.15 }}
+                className="font-sans text-sm text-white/65 leading-relaxed mb-6 max-w-2xl"
+              >
+                {tour.short_description}
+              </motion.p>
+            )}
+
+            {/* Stat chips */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="flex flex-wrap gap-3"
+            >
+              {tour.rating > 0 && (
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2.5 rounded-xl border border-white/10">
+                  <Star size={14} className="text-gold fill-gold flex-shrink-0" />
+                  <div>
+                    <p className="font-sans text-[10px] text-white/50 uppercase tracking-wider leading-none">Rating</p>
+                    <p className="font-sans text-sm font-semibold text-white leading-tight">{tour.rating} · {tour.review_count} reviews</p>
+                  </div>
+                </div>
+              )}
+              {tour.duration && (
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2.5 rounded-xl border border-white/10">
+                  <Clock size={14} className="text-gold flex-shrink-0" />
+                  <div>
+                    <p className="font-sans text-[10px] text-white/50 uppercase tracking-wider leading-none">Duration</p>
+                    <p className="font-sans text-sm font-semibold text-white leading-tight">{tour.duration}</p>
+                  </div>
+                </div>
+              )}
+              {tour.group_size && (
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2.5 rounded-xl border border-white/10">
+                  <Users size={14} className="text-gold flex-shrink-0" />
+                  <div>
+                    <p className="font-sans text-[10px] text-white/50 uppercase tracking-wider leading-none">Group Size</p>
+                    <p className="font-sans text-sm font-semibold text-white leading-tight">{tour.group_size}</p>
+                  </div>
+                </div>
+              )}
+              {tour.difficulty && (
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2.5 rounded-xl border border-white/10">
+                  <div>
+                    <p className="font-sans text-[10px] text-white/50 uppercase tracking-wider leading-none">Difficulty</p>
+                    <p className="font-sans text-sm font-semibold text-white leading-tight">{tour.difficulty}</p>
+                  </div>
+                </div>
+              )}
+              {tour.best_season && (
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2.5 rounded-xl border border-white/10">
+                  <Calendar size={14} className="text-gold flex-shrink-0" />
+                  <div>
+                    <p className="font-sans text-[10px] text-white/50 uppercase tracking-wider leading-none">Best Season</p>
+                    <p className="font-sans text-sm font-semibold text-white leading-tight">{tour.best_season}</p>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Wish / Share — top right */}
+        <div className="absolute top-24 right-6 lg:right-12 flex gap-2 z-20">
+          <button
+            onClick={() => setWishlist(!wishlist)}
+            className={`w-9 h-9 rounded-full backdrop-blur-sm border flex items-center justify-center transition-all duration-300 ${wishlist ? 'bg-red-500/80 border-red-400 text-white' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+          >
+            <Heart size={15} fill={wishlist ? 'currentColor' : 'none'} />
           </button>
-          <span className="text-gray-300">/</span>
-          <Link to="/tours" className="font-sans text-sm text-gray-500 hover:text-green-950 transition-colors">Tours</Link>
-          <span className="text-gray-300">/</span>
-          <span className="font-sans text-sm text-green-950 font-medium truncate">{tour.title}</span>
+          <button className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+            <Share2 size={15} />
+          </button>
+        </div>
+      </section>
+
+      {/* ── Price Action Bar ─────────────────────────────────────────── */}
+      <div className="bg-white shadow-md border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
+          {/* Price */}
+          <div>
+            {showPrices ? (
+              <>
+                <p className="font-sans text-xs text-gray-400">Price from</p>
+                <p className="font-serif text-2xl font-bold text-green-950">${(tour.price ?? 0).toLocaleString()}</p>
+              </>
+            ) : (
+              <p className="font-serif text-lg font-semibold text-green-950">Request a Quote</p>
+            )}
+            <div className="flex items-center gap-3 mt-0.5">
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={11} className={i < Math.round(tour.rating) ? 'text-gold fill-gold' : 'text-gray-200 fill-gray-200'} />
+                ))}
+              </div>
+              <span className="font-sans text-xs text-gray-400">{tour.review_count} reviews</span>
+            </div>
+          </div>
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="https://wa.me/255750005973"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-green-600 text-green-700 font-sans text-sm font-semibold rounded-xl hover:bg-green-50 transition-colors"
+            >
+              <MessageCircle size={15} /> Chat on WhatsApp
+            </a>
+            <button
+              onClick={() => bookingRef.current?.scrollIntoView({ behavior: 'smooth' })}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-800 text-white font-sans text-sm font-semibold rounded-xl transition-colors"
+            >
+              Help Me Plan My Trip
+            </button>
+          </div>
         </div>
       </div>
 
@@ -137,101 +289,6 @@ export default function TourDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Left — Main Content */}
           <div className="lg:col-span-2 space-y-10">
-            {/* Title block */}
-            <div>
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div>
-                  <span className="bg-gold text-white font-sans text-xs font-semibold px-3 py-1.5 rounded-full mb-3 inline-block">
-                    {tour.category}
-                  </span>
-                  <h1 className="font-serif text-2xl sm:text-4xl md:text-5xl font-semibold text-green-950 leading-tight">{tour.title}</h1>
-                </div>
-                <div className="flex gap-2 flex-shrink-0 mt-1">
-                  <button
-                    onClick={() => setWishlist(!wishlist)}
-                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${wishlist ? 'border-red-300 bg-red-50 text-red-500' : 'border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-400'}`}
-                  >
-                    <Heart size={16} fill={wishlist ? 'currentColor' : 'none'} />
-                  </button>
-                  <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:border-green-950 hover:text-green-950 transition-all duration-300">
-                    <Share2 size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-4 mt-3">
-                <div className="flex items-center gap-1.5">
-                  <MapPin size={14} className="text-gold" />
-                  <span className="font-sans text-sm text-gray-500">{tour.location}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Star size={14} className="text-gold fill-gold" />
-                  <span className="font-sans text-sm font-semibold text-green-950">{tour.rating}</span>
-                  <span className="font-sans text-sm text-gray-400">({tour.review_count} reviews)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock size={14} className="text-gray-400" />
-                  <span className="font-sans text-sm text-gray-500">{tour.duration}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Users size={14} className="text-gray-400" />
-                  <span className="font-sans text-sm text-gray-500">{tour.group_size}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile price + book strip */}
-            <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-4 lg:hidden shadow-sm border border-gray-100">
-              {showPrices ? (
-                <div>
-                  <p className="font-sans text-xs text-gray-400 uppercase tracking-wider">From</p>
-                  <p className="font-serif text-2xl font-semibold text-green-950">${(tour.price ?? 0).toLocaleString()}</p>
-                  <p className="font-sans text-[11px] text-gray-400">per person</p>
-                </div>
-              ) : (
-                <p className="font-sans text-sm font-semibold text-green-950">Request a Quote</p>
-              )}
-              <button
-                onClick={() => bookingRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                className="bg-green-950 text-white font-sans text-sm font-medium px-6 py-3 rounded-xl hover:bg-gold transition-colors"
-              >
-                Book Now
-              </button>
-            </div>
-
-            {/* Gallery */}
-            <div className="space-y-3">
-              <Swiper
-                modules={[Navigation, Thumbs]}
-                navigation
-                thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
-                className="rounded-3xl overflow-hidden aspect-[16/9] shadow-xl"
-              >
-                {galleryImages.map((img, i) => (
-                  <SwiperSlide key={i}>
-                    <img src={img} alt={`${tour.title} ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-              <Swiper
-                onSwiper={setThumbsSwiper}
-                modules={[Thumbs]}
-                slidesPerView={3}
-                breakpoints={{ 480: { slidesPerView: 4 }, 768: { slidesPerView: 5 } }}
-                spaceBetween={8}
-                watchSlidesProgress
-                className="!h-20"
-              >
-                {galleryImages.map((img, i) => (
-                  <SwiperSlide key={i}>
-                    <div className="rounded-xl overflow-hidden h-full cursor-pointer opacity-60 hover:opacity-100 transition-opacity">
-                      <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
-                    </div>
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </div>
-
             {/* Highlights */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -240,7 +297,7 @@ export default function TourDetail() {
               transition={{ duration: 0.6 }}
               className="bg-white rounded-3xl p-8"
             >
-              <h2 className="font-serif text-2xl font-semibold text-green-950 mb-6">Tour Highlights</h2>
+              <h2 className="font-serif text-2xl font-semibold text-green-950 mb-6">{tour.title} Highlights</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {(tour.highlights ?? []).map((h) => (
                   <div key={h} className="flex items-start gap-3">
@@ -259,7 +316,7 @@ export default function TourDetail() {
               transition={{ duration: 0.6 }}
               className="bg-white rounded-3xl p-8"
             >
-              <h2 className="font-serif text-2xl font-semibold text-green-950 mb-4">About This Tour</h2>
+              <h2 className="font-serif text-2xl font-semibold text-green-950 mb-4">About {tour.title}</h2>
               <p className="font-sans text-gray-600 leading-relaxed text-base">{tour.description}</p>
             </motion.div>
 
@@ -271,7 +328,7 @@ export default function TourDetail() {
               transition={{ duration: 0.6 }}
               className="bg-white rounded-3xl p-8"
             >
-              <h2 className="font-serif text-2xl font-semibold text-green-950 mb-6">Day-by-Day Itinerary</h2>
+              <h2 className="font-serif text-2xl font-semibold text-green-950 mb-6">{tour.title} — Day-by-Day Itinerary</h2>
               <div className="space-y-3">
                 {(tour.itinerary ?? []).map((day) => (
                   <div
@@ -321,7 +378,7 @@ export default function TourDetail() {
               transition={{ duration: 0.6 }}
               className="bg-white rounded-3xl p-8"
             >
-              <h2 className="font-serif text-2xl font-semibold text-green-950 mb-6">What's Included</h2>
+              <h2 className="font-serif text-2xl font-semibold text-green-950 mb-6">What's Included in {tour.title}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div>
                   <h3 className="font-sans text-sm font-semibold text-green-950 uppercase tracking-wider mb-4">Included</h3>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Clock, Mountain, TrendingUp, Users, Calendar, MapPin, CheckCircle,
   XCircle, Backpack, ChevronRight, ArrowLeft, ShieldCheck, Info,
-  DollarSign, Loader2, Star
+  DollarSign, Loader2, Star, MessageCircle
 } from 'lucide-react'
 import { routesApi } from '../api/routes'
 import { useSiteSettings } from '../hooks/useSiteSettings'
@@ -143,6 +143,43 @@ export default function RouteDetail() {
         </div>
       </section>
 
+      {/* ── Price Action Bar ─────────────────────────────────────────────── */}
+      <div className="bg-white shadow-md border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="font-sans text-xs text-gray-400">Price from</p>
+            {showPrices && route.price > 0 ? (
+              <p className="font-serif text-2xl font-bold text-green-950">${route.price.toLocaleString()}</p>
+            ) : (
+              <p className="font-serif text-lg font-semibold text-green-950">Request a Quote</p>
+            )}
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className={`font-sans text-xs font-semibold px-2 py-0.5 rounded-full ${difficultyColor[route.difficulty] ?? 'bg-gray-100 text-gray-600'}`}>
+                {route.difficulty}
+              </span>
+              <span className="font-sans text-xs text-gray-400">· {route.duration}</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="https://wa.me/255750005973"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-green-600 text-green-700 font-sans text-sm font-semibold rounded-xl hover:bg-green-50 transition-colors"
+            >
+              <MessageCircle size={15} /> Chat on WhatsApp
+            </a>
+            <a
+              href="#booking"
+              onClick={(e) => { e.preventDefault(); document.getElementById('route-booking')?.scrollIntoView({ behavior: 'smooth' }) }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-800 text-white font-sans text-sm font-semibold rounded-xl transition-colors"
+            >
+              Help Me Plan My Trek
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* ── Tabs + Content ────────────────────────────────────────────────── */}
       <section className="py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -183,7 +220,7 @@ export default function RouteDetail() {
                       {/* Full description */}
                       {route.full_description && (
                         <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-100">
-                          <h3 className="font-serif text-xl font-bold text-green-950 mb-4">About This Route</h3>
+                          <h3 className="font-serif text-xl font-bold text-green-950 mb-4">About {route.name}</h3>
                           <div className="space-y-3">
                             {route.full_description.split('\n').filter(Boolean).map((p, i) => (
                               <p key={i} className="font-sans text-gray-600 leading-relaxed">{p}</p>
@@ -206,7 +243,7 @@ export default function RouteDetail() {
                       {/* Highlights */}
                       {route.highlights?.length > 0 && (
                         <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-100">
-                          <h3 className="font-serif text-xl font-bold text-green-950 mb-5">Route Highlights</h3>
+                          <h3 className="font-serif text-xl font-bold text-green-950 mb-5">{route.name} Highlights</h3>
                           <ul className="grid sm:grid-cols-2 gap-3">
                             {route.highlights.map((h, i) => (
                               <li key={i} className="flex items-start gap-3">
@@ -330,7 +367,7 @@ export default function RouteDetail() {
             </div>
 
             {/* Right: sticky booking sidebar */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1" id="route-booking">
               <div className="sticky top-28 space-y-5">
                 <div className="bg-white rounded-3xl p-7 shadow-xl shadow-green-900/5 border border-gray-100">
                   <p className="font-sans text-xs text-gray-400 uppercase tracking-widest mb-1">Book This Route</p>
