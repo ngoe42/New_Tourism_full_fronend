@@ -9,6 +9,7 @@ export function useSiteSettings() {
   })
   return {
     showPrices: data?.show_prices ?? false,
+    heroVideoUrl: data?.hero_video_url ?? null,
     settings: data,
   }
 }

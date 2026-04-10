@@ -1,21 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowDown, Play } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
-import { experiencesApi } from '../api/experiences'
-import { resolveImageUrl } from '../utils/imageUrl'
-
-const STATIC_IMAGES = [
-  { id: 1, image_url: '/images/hero-bg.jpg',                                                          title: 'Tanzania Safari' },
-  { id: 2, image_url: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1600',          title: 'Kilimanjaro Summit' },
-  { id: 3, image_url: 'https://images.unsplash.com/photo-1551244072-5d12893278bc?w=1600',             title: 'Ngorongoro Crater' },
-  { id: 4, image_url: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=1600',          title: 'Serengeti Migration' },
-  { id: 5, image_url: 'https://images.unsplash.com/photo-1502920514313-52581002a659?w=1600',          title: 'Balloon Safari' },
-  { id: 6, image_url: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=1600',          title: 'Zanzibar Escape' },
-]
-
-const SLIDE_INTERVAL = 6000
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 60 },
@@ -27,61 +13,27 @@ const fadeUp = {
 }
 
 export default function Hero() {
-  const heroRef = useRef(null)
-  const [current, setCurrent] = useState(0)
-  const timerRef = useRef(null)
-
-  const { data: apiData } = useQuery({
-    queryKey: ['experiences'],
-    queryFn: experiencesApi.list,
-    staleTime: 1000 * 60 * 5,
-  })
-
-  const slides = Array.isArray(apiData) && apiData.length > 0 ? apiData : STATIC_IMAGES
-  const total = slides.length
-
-  const advance = useCallback(() => setCurrent((c) => (c + 1) % total), [total])
-
-  useEffect(() => {
-    timerRef.current = setInterval(advance, SLIDE_INTERVAL)
-    return () => clearInterval(timerRef.current)
-  }, [advance])
+  const { heroVideoUrl } = useSiteSettings()
+  const videoSrc = heroVideoUrl || '/videos/hero.mp4'
 
   return (
-    <section ref={heroRef} className="relative h-screen min-h-[600px] sm:min-h-[700px] overflow-hidden flex items-center">
-      {/* Animated background slides */}
-      <AnimatePresence mode="sync">
-        <motion.div
-          key={current}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.4, ease: 'easeInOut' }}
-          className="absolute inset-0"
+    <section className="relative h-screen min-h-[600px] sm:min-h-[700px] overflow-hidden flex items-center">
+      {/* Video background */}
+      <div className="absolute inset-0">
+        <video
+          key={videoSrc}
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster="/images/hero-bg.jpg"
+          className="w-full h-full object-cover"
         >
-          <motion.img
-            src={resolveImageUrl(slides[current]?.image_url || '/images/hero-bg.jpg')}
-            alt={slides[current]?.title || 'Tanzania Safari'}
-            className="w-full h-full object-cover will-change-transform"
-            loading="eager"
-            animate={{ scale: [1.08, 1.02] }}
-            transition={{ duration: SLIDE_INTERVAL / 1000 + 1.4, ease: 'linear' }}
-          />
-          {/* Multi-layer gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-[#0f3d2e]/80" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Slide dots */}
-      <div className="absolute bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-        {slides.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => { setCurrent(i); clearInterval(timerRef.current); timerRef.current = setInterval(advance, SLIDE_INTERVAL) }}
-            className={`transition-all duration-300 rounded-full ${i === current ? 'w-6 h-2 bg-amber-400' : 'w-2 h-2 bg-white/40 hover:bg-white/70'}`}
-          />
-        ))}
+          <source src={videoSrc} type="video/mp4" />
+        </video>
+        {/* Multi-layer gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-[#0f3d2e]/80" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
       </div>
 
       {/* Content */}

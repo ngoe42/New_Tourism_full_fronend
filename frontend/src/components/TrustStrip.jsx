@@ -1,13 +1,11 @@
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
-import { Shield, Star, Users, Award, MapPin, Clock } from 'lucide-react'
+import { Shield, Users, MapPin, Clock } from 'lucide-react'
 
 const badges = [
-  { icon: Star, label: 'Top-Rated Guides', sub: '4.97 avg. rating' },
   { icon: MapPin, label: 'Local Experts', sub: 'Born & raised in Tanzania' },
   { icon: Users, label: 'Small Groups', sub: 'Max 8 guests per tour' },
   { icon: Shield, label: 'Fully Licensed', sub: 'TATO & TTB certified' },
-  { icon: Award, label: 'Award Winning', sub: 'Safari Awards 2024' },
   { icon: Clock, label: 'Tailored Experiences', sub: 'Every trip is unique' },
 ]
 
@@ -17,7 +15,7 @@ export default function TrustStrip() {
   return (
     <section ref={ref} className="bg-white py-10 border-y border-gray-100">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {badges.map((badge, i) => {
             const Icon = badge.icon
             return (

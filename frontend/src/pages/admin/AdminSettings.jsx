@@ -1,5 +1,6 @@
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { DollarSign, Eye, EyeOff, Settings } from 'lucide-react'
+import { DollarSign, Eye, EyeOff, Settings, Video, Upload, CheckCircle, AlertCircle } from 'lucide-react'
 import { settingsApi } from '../../api/settings'
 
 export default function AdminSettings() {
@@ -15,7 +16,25 @@ export default function AdminSettings() {
     onSuccess: () => qc.invalidateQueries(['site-settings']),
   })
 
+  const fileRef = useRef(null)
+  const [uploadProgress, setUploadProgress] = useState(null)
+
+  const videoMutation = useMutation({
+    mutationFn: (file) => settingsApi.uploadHeroVideo(file),
+    onSuccess: () => { qc.invalidateQueries(['site-settings']); setUploadProgress(null) },
+    onError: () => setUploadProgress(null),
+  })
+
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadProgress('uploading')
+    videoMutation.mutate(file)
+    e.target.value = ''
+  }
+
   const showPrices = settings?.show_prices ?? false
+  const currentVideo = settings?.hero_video_url
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -61,6 +80,55 @@ export default function AdminSettings() {
               }`}
             />
           </button>
+        </div>
+
+        {/* Hero Video */}
+        <div className="flex items-start justify-between gap-6 p-6">
+          <div className="flex items-start gap-4 flex-1 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+              <Video size={18} className="text-green-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-sans text-sm font-semibold text-gray-900">Hero Video</h3>
+              <p className="font-sans text-xs text-gray-400 mt-0.5 leading-relaxed">
+                Fullscreen background video on the home page hero. MP4 or WebM, max 150 MB.
+              </p>
+
+              {currentVideo && (
+                <div className="mt-2 flex items-center gap-1.5">
+                  <CheckCircle size={12} className="text-green-500 flex-shrink-0" />
+                  <span className="font-sans text-[11px] text-gray-500 truncate max-w-xs">{currentVideo.split('/').pop()}</span>
+                </div>
+              )}
+
+              {videoMutation.isError && (
+                <div className="mt-2 flex items-center gap-1.5">
+                  <AlertCircle size={12} className="text-red-500 flex-shrink-0" />
+                  <span className="font-sans text-[11px] text-red-500">
+                    {videoMutation.error?.response?.data?.detail || 'Upload failed'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-shrink-0">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime"
+              className="hidden"
+              onChange={handleVideoChange}
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={videoMutation.isPending}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-sans text-xs font-semibold rounded-lg transition-colors"
+            >
+              <Upload size={13} />
+              {videoMutation.isPending ? 'Uploading…' : currentVideo ? 'Replace Video' : 'Upload Video'}
+            </button>
+          </div>
         </div>
 
       </div>
