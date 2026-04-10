@@ -11,4 +11,5 @@ export const settingsApi = {
       timeout: 120000,
     }).then((r) => r.data)
   },
+  deleteHeroVideo: () => apiClient.delete('/settings/hero-video').then((r) => r.data),
 }

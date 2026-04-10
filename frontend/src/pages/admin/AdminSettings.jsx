@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { DollarSign, Eye, EyeOff, Settings, Video, Upload, CheckCircle, AlertCircle } from 'lucide-react'
+import { DollarSign, Eye, EyeOff, Settings, Video, Upload, CheckCircle, AlertCircle, Trash2 } from 'lucide-react'
 import { settingsApi } from '../../api/settings'
 
 export default function AdminSettings() {
@@ -18,11 +18,17 @@ export default function AdminSettings() {
 
   const fileRef = useRef(null)
   const [uploadProgress, setUploadProgress] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const videoMutation = useMutation({
     mutationFn: (file) => settingsApi.uploadHeroVideo(file),
     onSuccess: () => { qc.invalidateQueries(['site-settings']); setUploadProgress(null) },
     onError: () => setUploadProgress(null),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => settingsApi.deleteHeroVideo(),
+    onSuccess: () => { qc.invalidateQueries(['site-settings']); setConfirmDelete(false) },
   })
 
   const handleVideoChange = (e) => {
@@ -112,7 +118,7 @@ export default function AdminSettings() {
             </div>
           </div>
 
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex flex-col gap-2 items-end">
             <input
               ref={fileRef}
               type="file"
@@ -122,12 +128,40 @@ export default function AdminSettings() {
             />
             <button
               onClick={() => fileRef.current?.click()}
-              disabled={videoMutation.isPending}
+              disabled={videoMutation.isPending || deleteMutation.isPending}
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-sans text-xs font-semibold rounded-lg transition-colors"
             >
               <Upload size={13} />
               {videoMutation.isPending ? 'Uploading…' : currentVideo ? 'Replace Video' : 'Upload Video'}
             </button>
+
+            {currentVideo && !confirmDelete && (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-red-500 hover:text-red-700 font-sans text-xs font-medium rounded-lg hover:bg-red-50 transition-colors"
+              >
+                <Trash2 size={12} /> Remove Video
+              </button>
+            )}
+
+            {currentVideo && confirmDelete && (
+              <div className="flex items-center gap-2">
+                <span className="font-sans text-xs text-gray-500">Sure?</span>
+                <button
+                  onClick={() => deleteMutation.mutate()}
+                  disabled={deleteMutation.isPending}
+                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-sans text-xs font-semibold rounded-lg transition-colors"
+                >
+                  {deleteMutation.isPending ? 'Deleting…' : 'Yes, delete'}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-3 py-1.5 border border-gray-200 text-gray-600 font-sans text-xs rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

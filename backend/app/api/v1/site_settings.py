@@ -70,6 +70,47 @@ async def upload_hero_video(
     return row
 
 
+@router.delete("/hero-video", response_model=SiteSettingsResponse, dependencies=[Depends(require_admin)])
+async def delete_hero_video(db: AsyncSession = Depends(get_db)):
+    row = await _get_or_create(db)
+    if row.hero_video_url:
+        await _remove_video(row.hero_video_url)
+        row.hero_video_url = None
+        await db.commit()
+        await db.refresh(row)
+    return row
+
+
+async def _remove_video(url: str) -> None:
+    if url.startswith("/uploads/"):
+        local_path = Path(__file__).resolve().parents[4] / "static" / url.lstrip("/")
+        if local_path.exists():
+            local_path.unlink()
+
+    elif "amazonaws.com" in url and app_settings.AWS_BUCKET_NAME and app_settings.AWS_ACCESS_KEY_ID:
+        import boto3
+        key = "/".join(url.split("/")[3:])
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=app_settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=app_settings.AWS_SECRET_ACCESS_KEY,
+            region_name=app_settings.AWS_REGION,
+        )
+        s3.delete_object(Bucket=app_settings.AWS_BUCKET_NAME, Key=key)
+
+    elif "cloudinary.com" in url and app_settings.CLOUDINARY_CLOUD_NAME:
+        import cloudinary.uploader
+        import cloudinary
+        cloudinary.config(
+            cloud_name=app_settings.CLOUDINARY_CLOUD_NAME,
+            api_key=app_settings.CLOUDINARY_API_KEY,
+            api_secret=app_settings.CLOUDINARY_API_SECRET,
+        )
+        parts = url.split("/upload/")[1].split(".")
+        public_id = parts[0]
+        cloudinary.uploader.destroy(public_id, resource_type="video")
+
+
 async def _store_video(contents: bytes, filename: str, content_type: str) -> str:
     if app_settings.AWS_BUCKET_NAME and app_settings.AWS_ACCESS_KEY_ID:
         import boto3
