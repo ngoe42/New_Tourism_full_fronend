@@ -1,8 +1,9 @@
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+import httpx
 from loguru import logger
 
 from app.core.config import settings
+
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 def _build_html(body: str) -> str:
@@ -27,26 +28,36 @@ def _build_html(body: str) -> str:
 
 
 async def send_email(to: str, subject: str, body: str) -> None:
-    """Send email via SendGrid HTTP API (works on Railway / any cloud host)."""
-    if not settings.SENDGRID_API_KEY:
+    """Send email via Brevo (Sendinblue) HTTP API — no SMTP, works on Railway."""
+    if not settings.BREVO_API_KEY:
         raise RuntimeError(
-            "Email not configured. Set SENDGRID_API_KEY in environment variables."
+            "Email not configured. Set BREVO_API_KEY in environment variables."
         )
 
-    logger.info(f"Sending email to {to} via SendGrid")
+    logger.info(f"Sending email to {to} via Brevo")
 
-    message = Mail(
-        from_email=settings.EMAIL_FROM,
-        to_emails=to,
-        subject=subject,
-        html_content=_build_html(body),
-        plain_text_content=body,
-    )
+    payload = {
+        "sender": {"name": settings.EMAIL_FROM_NAME, "email": settings.EMAIL_FROM},
+        "to": [{"email": to}],
+        "subject": subject,
+        "htmlContent": _build_html(body),
+        "textContent": body,
+    }
 
-    try:
-        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
-        response = sg.send(message)
-        logger.info(f"Email sent — status: {response.status_code}")
-    except Exception as e:
-        logger.error(f"SendGrid error: {e}")
-        raise RuntimeError(f"Failed to send email: {e}")
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            BREVO_API_URL,
+            json=payload,
+            headers={
+                "accept": "application/json",
+                "api-key": settings.BREVO_API_KEY,
+                "content-type": "application/json",
+            },
+        )
+
+    if response.status_code not in (200, 201):
+        error_detail = response.json().get("message", response.text)
+        logger.error(f"Brevo error {response.status_code}: {error_detail}")
+        raise RuntimeError(f"Brevo error: {error_detail}")
+
+    logger.info(f"Email sent — messageId: {response.json().get('messageId')}")
