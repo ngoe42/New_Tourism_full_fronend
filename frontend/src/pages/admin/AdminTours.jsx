@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, Search, ImageIcon, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, ImageIcon, X, CheckCircle, AlertCircle, Star } from 'lucide-react'
 import { toursApi } from '../../api/tours'
 import { categories } from '../../data/tours'
+import { resolveImageUrl } from '../../utils/imageUrl'
 
 const TOUR_CATEGORIES = categories.filter((c) => c !== 'All')
 
@@ -21,8 +22,23 @@ function TourForm({ initial, onClose, onSave, saving }) {
     initial?.id ? initial : { ...EMPTY_FORM, category: initial?.category ?? EMPTY_FORM.category }
   )
   const [imageFiles, setImageFiles] = useState([])
+  const [existingImages, setExistingImages] = useState(initial?.images ?? [])
+  const [deletingImageId, setDeletingImageId] = useState(null)
   const fileRef = useRef(null)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  const handleDeleteImage = async (imageId) => {
+    if (!initial?.id) return
+    setDeletingImageId(imageId)
+    try {
+      await toursApi.deleteImage(initial.id, imageId)
+      setExistingImages((prev) => prev.filter((img) => img.id !== imageId))
+    } catch (e) {
+      alert('Failed to delete image: ' + (e.response?.data?.detail ?? e.message))
+    } finally {
+      setDeletingImageId(null)
+    }
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -133,9 +149,45 @@ function TourForm({ initial, onClose, onSave, saving }) {
             ))}
           </div>
 
-          {/* Image Browse */}
+          {/* Existing Images (edit mode) */}
+          {initial?.id && existingImages.length > 0 && (
+            <div className="sm:col-span-2">
+              <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">
+                Current Images ({existingImages.length})
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                {existingImages.map((img) => (
+                  <div key={img.id} className="relative group">
+                    <img
+                      src={resolveImageUrl(img.url)}
+                      alt=""
+                      className="w-24 h-18 object-cover rounded-lg border border-gray-200"
+                      style={{ height: '72px', width: '96px' }}
+                    />
+                    {img.is_cover && (
+                      <span className="absolute bottom-1 left-1 flex items-center gap-0.5 bg-amber-500 text-white text-[9px] font-bold px-1 py-0.5 rounded">
+                        <Star size={8} fill="currentColor" /> Cover
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteImage(img.id)}
+                      disabled={deletingImageId === img.id}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow disabled:opacity-60"
+                    >
+                      {deletingImageId === img.id
+                        ? <div className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin" />
+                        : <X size={10} />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Upload New Images */}
           <div className="sm:col-span-2">
-            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Browse Images</label>
+            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Add Images</label>
             <div className="flex items-center gap-3 flex-wrap">
               <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
                 onChange={(e) => setImageFiles(Array.from(e.target.files))} />
@@ -157,7 +209,7 @@ function TourForm({ initial, onClose, onSave, saving }) {
               <div className="flex gap-2 mt-3 flex-wrap">
                 {imageFiles.map((f, i) => (
                   <img key={i} src={URL.createObjectURL(f)} alt={f.name}
-                    className="w-20 h-16 object-cover rounded-lg border border-gray-200" />
+                    className="w-24 object-cover rounded-lg border border-gray-200" style={{ height: '72px' }} />
                 ))}
               </div>
             )}
@@ -181,11 +233,27 @@ function TourForm({ initial, onClose, onSave, saving }) {
   )
 }
 
+function Toast({ message, type, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t) }, [onClose])
+  const isSuccess = type === 'success'
+  return (
+    <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-sans font-medium text-white transition-all ${
+      isSuccess ? 'bg-green-600' : 'bg-red-500'
+    }`}>
+      {isSuccess ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+      <span>{message}</span>
+      <button onClick={onClose} className="ml-2 opacity-70 hover:opacity-100"><X size={14} /></button>
+    </div>
+  )
+}
+
 export default function AdminTours() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [activeForm, setActiveForm] = useState(null)
+  const [toast, setToast] = useState(null)
+  const showToast = (message, type = 'success') => setToast({ message, type })
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-tours', search],
@@ -203,7 +271,8 @@ export default function AdminTours() {
       }
       return tour
     },
-    onSuccess: () => { qc.invalidateQueries(['admin-tours']); setActiveForm(null) },
+    onSuccess: () => { qc.invalidateQueries(['admin-tours']); setActiveForm(null); showToast('Tour created successfully!') },
+    onError: (e) => showToast(e.response?.data?.detail ?? 'Failed to create tour', 'error'),
   })
 
   const updateMutation = useMutation({
@@ -214,12 +283,14 @@ export default function AdminTours() {
       }
       return tour
     },
-    onSuccess: () => { qc.invalidateQueries(['admin-tours']); setActiveForm(null) },
+    onSuccess: () => { qc.invalidateQueries(['admin-tours']); setActiveForm(null); showToast('Tour updated successfully!') },
+    onError: (e) => showToast(e.response?.data?.detail ?? 'Failed to update tour', 'error'),
   })
 
   const deleteMutation = useMutation({
     mutationFn: toursApi.delete,
-    onSuccess: () => qc.invalidateQueries(['admin-tours']),
+    onSuccess: () => { qc.invalidateQueries(['admin-tours']); showToast('Tour deleted') },
+    onError: (e) => showToast(e.response?.data?.detail ?? 'Failed to delete tour', 'error'),
   })
 
   const handleAddTour = () => {
@@ -241,6 +312,7 @@ export default function AdminTours() {
 
   return (
     <div className="space-y-4">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       {/* Header row */}
       <div className="flex items-center justify-between">
         <p className="font-sans text-sm text-gray-400">
@@ -321,8 +393,22 @@ export default function AdminTours() {
               ) : filtered.map((tour) => (
                 <tr key={tour.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
-                    <div className="font-sans text-sm font-semibold text-gray-900">{tour.title}</div>
-                    <div className="font-sans text-xs text-gray-400">{tour.duration}</div>
+                    <div className="flex items-center gap-3">
+                      {(() => {
+                        const cover = tour.images?.find((i) => i.is_cover) ?? tour.images?.[0]
+                        return cover ? (
+                          <img src={resolveImageUrl(cover.url)} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-100" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <ImageIcon size={14} className="text-gray-300" />
+                          </div>
+                        )
+                      })()}
+                      <div>
+                        <div className="font-sans text-sm font-semibold text-gray-900">{tour.title}</div>
+                        <div className="font-sans text-xs text-gray-400">{tour.duration} · {tour.images?.length ?? 0} img</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 font-sans text-sm text-gray-600">{tour.category}</td>
                   <td className="px-4 py-3 font-sans text-sm text-gray-600">{tour.location}</td>

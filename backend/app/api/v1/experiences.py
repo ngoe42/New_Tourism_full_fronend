@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -71,10 +72,23 @@ async def delete_experience(
     _=Depends(require_admin),
 ):
     repo = ExperienceRepository(db)
+    experience = await repo.get(experience_id)
+    if not experience:
+        raise HTTPException(status_code=404, detail="Experience not found")
+    image_url = experience.image_url
     deleted = await repo.delete(experience_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Experience not found")
     await db.commit()
+    if image_url and image_url.startswith('/uploads/'):
+        try:
+            parts = image_url.split('/uploads/', 1)
+            if len(parts) == 2:
+                local_path = Path(__file__).resolve().parents[3] / "static" / "uploads" / parts[1]
+                if local_path.exists():
+                    local_path.unlink()
+        except Exception:
+            pass
 
 
 @router.post("/reorder", status_code=200)

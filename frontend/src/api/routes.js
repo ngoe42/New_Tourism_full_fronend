@@ -21,9 +21,9 @@ export const routesApi = {
     const form = new FormData()
     form.append('file', file)
     if (caption) form.append('caption', caption)
-    form.append('is_cover', isCover)
+    form.append('is_cover', String(isCover))
     return apiClient
-      .post(`/routes/${routeId}/images`, form)
+      .post(`/routes/${routeId}/images`, form, { headers: { 'Content-Type': undefined } })
       .then((r) => r.data)
   },
 

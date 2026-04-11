@@ -73,7 +73,7 @@ class MediaService:
         return result["secure_url"], result["public_id"]
 
     async def _upload_local(self, contents: bytes, filename: str) -> tuple[str, None]:
-        upload_dir = Path(__file__).resolve().parents[3] / "static" / "uploads"
+        upload_dir = Path(__file__).resolve().parents[2] / "static" / "uploads"
         upload_dir.mkdir(parents=True, exist_ok=True)
         ext = Path(filename).suffix or ".jpg"
         unique_name = f"{uuid.uuid4().hex}{ext}"
@@ -121,6 +121,20 @@ class MediaService:
                 region_name=settings.AWS_REGION,
             )
             s3.delete_object(Bucket=settings.AWS_BUCKET_NAME, Key=public_id)
+
+    async def delete_file(self, url: Optional[str], public_id: Optional[str] = None) -> None:
+        """Best-effort delete a file from storage (local, Cloudinary, or S3)."""
+        try:
+            if public_id:
+                await self._delete_from_provider(public_id)
+            elif url and url.startswith('/uploads/'):
+                parts = url.split('/uploads/', 1)
+                if len(parts) == 2:
+                    local_path = Path(__file__).resolve().parents[2] / "static" / "uploads" / parts[1]
+                    if local_path.exists():
+                        local_path.unlink()
+        except Exception:
+            pass
 
     async def list_all(self, page: int = 1, per_page: int = 20):
         skip = (page - 1) * per_page

@@ -15,7 +15,7 @@ router = APIRouter(tags=["Tours"])
 @router.get("", response_model=PaginatedTours)
 async def list_tours(
     page: int = Query(1, ge=1),
-    per_page: int = Query(12, ge=1, le=50),
+    per_page: int = Query(12, ge=1, le=200),
     q: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
     min_price: Optional[float] = Query(None, ge=0),

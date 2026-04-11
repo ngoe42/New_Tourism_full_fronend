@@ -49,6 +49,8 @@ class RouteService:
 
     async def delete_route(self, route_id: int) -> None:
         route = await self.get_route(route_id)
+        for img in (route.images or []):
+            await self._delete_file(img.url, img.public_id)
         await self.repository.delete(route)
 
     # ── Image management ────────────────────────────────────────────────────
@@ -66,6 +68,27 @@ class RouteService:
             route_id=route.id, url=url, public_id=public_id,
             caption=caption, is_cover=is_cover
         )
+
+    async def _delete_file(self, url, public_id=None) -> None:
+        try:
+            if public_id:
+                if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY:
+                    import cloudinary.uploader
+                    cloudinary.uploader.destroy(public_id)
+                elif settings.AWS_BUCKET_NAME and settings.AWS_ACCESS_KEY_ID:
+                    import boto3
+                    s3 = boto3.client("s3", aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                                      aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                                      region_name=settings.AWS_REGION)
+                    s3.delete_object(Bucket=settings.AWS_BUCKET_NAME, Key=public_id)
+            elif url and url.startswith('/uploads/'):
+                parts = url.split('/uploads/', 1)
+                if len(parts) == 2:
+                    local_path = Path(__file__).resolve().parents[2] / "static" / "uploads" / parts[1]
+                    if local_path.exists():
+                        local_path.unlink()
+        except Exception:
+            pass
 
     async def _store(self, contents: bytes, filename: str, content_type: str):
         if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY:
@@ -87,7 +110,7 @@ class RouteService:
             return (f"https://{settings.AWS_BUCKET_NAME}.s3.{settings.AWS_REGION}"
                     f".amazonaws.com/{key}"), key
         else:
-            upload_dir = Path(__file__).resolve().parents[3] / "static" / "uploads"
+            upload_dir = Path(__file__).resolve().parents[2] / "static" / "uploads"
             upload_dir.mkdir(parents=True, exist_ok=True)
             ext = Path(filename).suffix or ".jpg"
             unique_name = f"{uuid.uuid4().hex}{ext}"
@@ -99,4 +122,5 @@ class RouteService:
         image = await self.repository.get_image(image_id)
         if not image or image.route_id != route_id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+        await self._delete_file(image.url, image.public_id)
         await self.repository.delete_image(image)

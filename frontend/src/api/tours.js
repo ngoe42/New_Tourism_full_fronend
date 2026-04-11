@@ -25,9 +25,9 @@ export const toursApi = {
   uploadImage: (tourId, file, isCover = false) => {
     const form = new FormData()
     form.append('file', file)
-    form.append('is_cover', isCover)
+    form.append('is_cover', String(isCover))
     return apiClient
-      .post(`/tours/${tourId}/images`, form)
+      .post(`/tours/${tourId}/images`, form, { headers: { 'Content-Type': undefined } })
       .then((r) => r.data)
   },
 

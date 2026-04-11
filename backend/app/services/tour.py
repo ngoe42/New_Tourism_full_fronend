@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.tour import Tour, TourImage
 from app.repositories.tour import TourRepository, TourImageRepository
 from app.schemas.tour import TourCreate, TourUpdate, PaginatedTours
+from app.services.media import MediaService
 
 
 def _slugify(text: str) -> str:
@@ -99,6 +100,9 @@ class TourService:
 
     async def delete_tour(self, tour_id: int) -> None:
         tour = await self.get_tour(tour_id)
+        media_svc = MediaService(self.db)
+        for img in (tour.images or []):
+            await media_svc.delete_file(img.url, img.public_id)
         await self.tour_repo.delete(tour)
 
     async def add_image(self, tour_id: int, url: str, public_id: Optional[str] = None, is_cover: bool = False) -> TourImage:
@@ -110,4 +114,5 @@ class TourService:
         image = await self.image_repo.get(image_id)
         if not image:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+        await MediaService(self.db).delete_file(image.url, image.public_id)
         await self.image_repo.delete(image)

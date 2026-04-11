@@ -7,7 +7,7 @@ export const settingsApi = {
     const fd = new FormData()
     fd.append('file', file)
     return apiClient.post('/settings/hero-video', fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': undefined },
       timeout: 120000,
     }).then((r) => r.data)
   },

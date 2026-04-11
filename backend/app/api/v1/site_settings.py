@@ -83,7 +83,7 @@ async def delete_hero_video(db: AsyncSession = Depends(get_db)):
 
 async def _remove_video(url: str) -> None:
     if url.startswith("/uploads/"):
-        local_path = Path(__file__).resolve().parents[4] / "static" / url.lstrip("/")
+        local_path = Path(__file__).resolve().parents[3] / "static" / url.lstrip("/")
         if local_path.exists():
             local_path.unlink()
 
@@ -146,7 +146,7 @@ async def _store_video(contents: bytes, filename: str, content_type: str) -> str
         return result["secure_url"]
 
     else:
-        upload_dir = Path(__file__).resolve().parents[4] / "static" / "uploads" / "videos"
+        upload_dir = Path(__file__).resolve().parents[3] / "static" / "uploads" / "videos"
         upload_dir.mkdir(parents=True, exist_ok=True)
         ext = Path(filename).suffix or ".mp4"
         unique_name = f"hero_{uuid.uuid4().hex}{ext}"
