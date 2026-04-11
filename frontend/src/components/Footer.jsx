@@ -1,139 +1,152 @@
 import { Link } from 'react-router-dom'
-import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, Twitter } from 'lucide-react'
+import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, MessageCircle, Clock, CheckCircle, ChevronRight } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { experiencesApi } from '../api/experiences'
 
-const footerLinks = {
-  Destinations: ['Serengeti', 'Ngorongoro Crater', 'Kilimanjaro', 'Zanzibar', 'Tarangire', 'Ruaha'],
-  Tours: ['Classic Safaris', 'Luxury Safaris', 'Adventure Treks', 'Beach Escapes', 'Cultural Tours', 'Honeymoon'],
-  Company: ['About Us', 'Our Guides', 'Sustainability', 'Press', 'Careers', 'Blog'],
-  Support: ['Plan Your Trip', 'FAQs', 'Travel Insurance', 'Visa Info', 'Health & Safety', 'Contact Us'],
-}
+const navLinks = [
+  { label: 'Safari Tours', href: '/tours' },
+  { label: 'Kilimanjaro Treks', href: '/routes' },
+  { label: 'Experiences', href: '/experiences' },
+  { label: 'About Us', href: '/about' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'Contact', href: '/contact' },
+]
 
 const socials = [
   { icon: Instagram, label: 'Instagram', href: '#' },
   { icon: Facebook, label: 'Facebook', href: '#' },
   { icon: Youtube, label: 'YouTube', href: '#' },
-  { icon: Twitter, label: 'Twitter', href: '#' },
+]
+
+const bookingPoints = [
+  'Free personalised itinerary',
+  'No booking fees',
+  'Flexible cancellation',
+  '24 hr response guarantee',
 ]
 
 export default function Footer() {
+  const { data } = useQuery({
+    queryKey: ['experiences-footer'],
+    queryFn: () => experiencesApi.list(),
+    staleTime: 10 * 60 * 1000,
+  })
+  const experiences = (Array.isArray(data) ? data : (data?.value ?? [])).slice(0, 6)
+
   return (
     <footer className="bg-green-950 text-white">
-      {/* Main footer */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 lg:py-20">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-12">
-          {/* Brand column */}
-          <div className="col-span-2 md:col-span-3 lg:col-span-2">
-            <Link to="/" className="inline-block mb-6" aria-label="Nelson Tours and Safari — Home">
-              <img
-                src="/images/logo/logo.png"
-                alt="Nelson Tours & Safari"
-                className="h-24 w-auto object-contain drop-shadow-lg"
-              />
-            </Link>
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
 
-            <p className="font-sans text-white/60 text-sm leading-relaxed mb-8 max-w-xs">
-              Crafting world-class safari experiences in Tanzania. Born local, built for the world.
-            </p>
-
-            {/* Contact info */}
-            <div className="space-y-3">
-              <a href="tel:+255750005973" className="flex items-center gap-3 group">
-                <Phone size={14} className="text-gold flex-shrink-0" />
-                <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors">+255 750 005 973</span>
+        {/* Brand */}
+        <div>
+          <Link to="/" aria-label="Home">
+            <img src="/images/logo/logo.png" alt="Nelson Tours & Safari" className="h-16 w-auto object-contain drop-shadow mb-3" />
+          </Link>
+          <p className="font-sans text-white/50 text-xs leading-relaxed mb-4 max-w-[220px]">
+            Crafting world-class safari experiences in Tanzania. Born local, built for the world.
+          </p>
+          <div className="flex gap-2.5">
+            {socials.map(({ icon: Icon, label, href }) => (
+              <a key={label} href={href} aria-label={label}
+                className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:border-gold hover:text-gold transition-colors">
+                <Icon size={14} />
               </a>
-              <a href="mailto:contact@nelsontoursandsafari.com" className="flex items-center gap-3 group">
-                <Mail size={14} className="text-gold flex-shrink-0" />
-                <span className="font-sans text-sm text-white/60 group-hover:text-gold transition-colors break-all sm:break-normal">contact@nelsontoursandsafari.com</span>
-              </a>
-              <div className="flex items-center gap-3">
-                <MapPin size={14} className="text-gold flex-shrink-0" />
-                <span className="font-sans text-sm text-white/60">Arusha, Tanzania</span>
-              </div>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            {/* Social links */}
-            <div className="flex gap-3 mt-8">
-              {socials.map((s) => {
-                const Icon = s.icon
-                return (
-                  <a
-                    key={s.label}
-                    href={s.href}
-                    aria-label={s.label}
-                    className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center text-white/50 hover:border-gold hover:text-gold transition-colors duration-300"
-                  >
-                    <Icon size={15} />
-                  </a>
-                )
-              })}
+        {/* Quick links */}
+        <div>
+          <h4 className="font-sans text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Explore</h4>
+          <ul className="space-y-2">
+            {navLinks.map(({ label, href }) => (
+              <li key={label}>
+                <Link to={href} className="font-sans text-sm text-white/60 hover:text-gold transition-colors flex items-center gap-1.5 group">
+                  <ChevronRight size={12} className="text-white/20 group-hover:text-gold transition-colors" />
+                  {label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Experiences */}
+        <div>
+          <h4 className="font-sans text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Experiences</h4>
+          {experiences.length > 0 ? (
+            <ul className="space-y-2">
+              {experiences.map((exp) => (
+                <li key={exp.id}>
+                  <Link to="/experiences" className="font-sans text-sm text-white/60 hover:text-gold transition-colors flex items-center gap-1.5 group">
+                    <ChevronRight size={12} className="text-white/20 group-hover:text-gold transition-colors" />
+                    {exp.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="space-y-2">
+              {['Maasai Village Visit', 'Game Drive Safari', 'Kilimanjaro Trek', 'Zanzibar Beach', 'Hot Air Balloon', 'Bush Dinner'].map((e) => (
+                <li key={e}>
+                  <Link to="/experiences" className="font-sans text-sm text-white/60 hover:text-gold transition-colors flex items-center gap-1.5 group">
+                    <ChevronRight size={12} className="text-white/20 group-hover:text-gold transition-colors" />
+                    {e}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Book with us */}
+        <div>
+          <h4 className="font-sans text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Book With Us</h4>
+          <ul className="space-y-2 mb-5">
+            {bookingPoints.map((p) => (
+              <li key={p} className="flex items-center gap-2">
+                <CheckCircle size={13} className="text-gold flex-shrink-0" />
+                <span className="font-sans text-xs text-white/60">{p}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="space-y-2.5 border-t border-white/10 pt-4">
+            <a href="tel:+255750005973" className="flex items-center gap-2 group">
+              <Phone size={13} className="text-gold flex-shrink-0" />
+              <span className="font-sans text-xs text-white/60 group-hover:text-gold transition-colors">+255 750 005 973</span>
+            </a>
+            <a href="mailto:contact@nelsontoursandsafari.com" className="flex items-center gap-2 group">
+              <Mail size={13} className="text-gold flex-shrink-0" />
+              <span className="font-sans text-xs text-white/60 group-hover:text-gold transition-colors break-all">contact@nelsontoursandsafari.com</span>
+            </a>
+            <div className="flex items-center gap-2">
+              <MapPin size={13} className="text-gold flex-shrink-0" />
+              <span className="font-sans text-xs text-white/60">Arusha, Tanzania</span>
             </div>
           </div>
 
-          {/* Link columns */}
-          {Object.entries(footerLinks).map(([section, links]) => (
-            <div key={section} className="col-span-1 lg:col-span-1">
-              <h4 className="font-sans text-xs font-semibold tracking-[0.15em] uppercase text-white mb-5">
-                {section}
-              </h4>
-              <ul className="space-y-3">
-                {links.map((link) => (
-                  <li key={link}>
-                    <Link
-                      to="/tours"
-                      className="font-sans text-sm text-white/50 hover:text-gold transition-colors duration-200"
-                    >
-                      {link}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <a
+            href="https://wa.me/255750005973"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white font-sans text-xs font-semibold px-4 py-2 rounded-lg transition-colors w-full justify-center"
+          >
+            <MessageCircle size={13} /> Chat on WhatsApp
+          </a>
+          <p className="font-sans text-[10px] text-white/30 text-center mt-2 flex items-center justify-center gap-1">
+            <Clock size={10} /> Average reply within 1 hour
+          </p>
         </div>
-      </div>
 
-      {/* Newsletter strip */}
-      <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <p className="font-serif text-lg font-medium text-white">Stay inspired</p>
-              <p className="font-sans text-sm text-white/50">Safari stories, wildlife news, and exclusive offers.</p>
-            </div>
-            <form onSubmit={(e) => e.preventDefault()} className="flex w-full md:w-auto gap-2">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 md:w-64 bg-white/5 border border-white/10 rounded-full px-5 py-2.5 font-sans text-sm text-white placeholder-white/30 focus:outline-none focus:border-gold transition-colors"
-              />
-              <button
-                type="submit"
-                className="bg-gold text-white font-sans text-sm font-medium px-6 py-2.5 rounded-full hover:bg-gold-dark transition-colors whitespace-nowrap"
-              >
-                Subscribe
-              </button>
-            </form>
-          </div>
-        </div>
       </div>
 
       {/* Bottom bar */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="font-sans text-xs text-white/30">
             © {new Date().getFullYear()} Nelson Tour and Safari. All rights reserved.
           </p>
-          <div className="flex flex-wrap gap-4 sm:gap-6 justify-center sm:justify-start">
-            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((item) => (
-              <Link
-                key={item}
-                to="/"
-                className="font-sans text-xs text-white/30 hover:text-gold transition-colors"
-              >
-                {item}
-              </Link>
-            ))}
-          </div>
+          <p className="font-sans text-xs text-white/20">Licensed by TATO & TTB · Arusha, Tanzania</p>
         </div>
       </div>
     </footer>

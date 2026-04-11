@@ -5,7 +5,7 @@ export function useSiteSettings() {
   const { data } = useQuery({
     queryKey: ['site-settings'],
     queryFn: settingsApi.get,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   })
   return {
     showPrices: data?.show_prices ?? false,
