@@ -51,7 +51,8 @@ async def get_settings(db: AsyncSession = Depends(get_db)):
 @router.put("", response_model=SiteSettingsResponse, dependencies=[Depends(require_admin)])
 async def update_settings(data: SiteSettingsUpdate, db: AsyncSession = Depends(get_db)):
     row = await _get_or_create(db)
-    row.show_prices = data.show_prices
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(row, field, value)
     await db.commit()
     await db.refresh(row)
     await _invalidate_settings()

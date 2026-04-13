@@ -11,6 +11,9 @@ class SiteSettings(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     show_prices: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     hero_video_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    story_image_1: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    story_image_2: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    cta_bg_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

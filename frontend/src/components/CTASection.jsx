@@ -1,14 +1,19 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Phone } from 'lucide-react'
+import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 export default function CTASection() {
+  const { ctaBgImage } = useSiteSettings()
+  const bgSrc = ctaBgImage ? resolveImageUrl(ctaBgImage) : '/images/cta-bg.jpg'
+
   return (
     <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
         <img
-          src="/images/cta-bg.jpg"
+          src={bgSrc}
           alt="Safari sunset Tanzania"
           className="w-full h-full object-cover"
           loading="lazy"

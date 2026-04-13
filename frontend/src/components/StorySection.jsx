@@ -2,13 +2,15 @@ import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import { Link } from 'react-router-dom'
 import { ArrowRight, CheckCircle } from 'lucide-react'
+import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 
-const stories = [
+const STORY_DEFAULTS = [
   {
     label: 'Our Story',
     title: 'Born from a Deep Love\nof the African Wild',
     body: `Nelson Tour and Safari was founded by a passionate team of Tanzanian naturalists who believe that every traveler deserves more than a tour — they deserve a transformation. We grew up on these plains, under these stars, and beside these rivers. We share them with the world not as guides, but as storytellers.`,
-    image: '/images/sections/story-guides.jpg',
+    defaultImage: '/images/sections/story-guides.jpg',
     imageAlt: 'Safari guide with guests at sunset',
     bullets: ['Deep-rooted local expertise', 'Team of certified naturalists', 'TATO & TTB licensed & insured'],
     cta: { label: 'About Our Team', href: '/contact' },
@@ -18,7 +20,7 @@ const stories = [
     label: 'The Experience',
     title: 'Where Luxury Meets\nthe Untamed Wild',
     body: `We curate every detail — from the finest mobile tented camps perched on private conservancies, to gourmet bush dinners by torchlight. Our guiding philosophy: zero compromise on comfort, zero distance from nature. This is Africa in its purest, most private form.`,
-    image: '/images/sections/story-luxury.jpg',
+    defaultImage: '/images/sections/story-luxury.jpg',
     imageAlt: 'Luxury tented safari camp at sunset',
     bullets: ['Private conservancy access', 'Gourmet bush dining experiences', 'Exclusive camp locations'],
     cta: { label: 'View Our Camps', href: '/tours' },
@@ -26,7 +28,7 @@ const stories = [
   },
 ]
 
-function StoryBlock({ story, index }) {
+function StoryBlock({ story, index, dynamicImage }) {
   const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true })
 
   return (
@@ -44,7 +46,7 @@ function StoryBlock({ story, index }) {
         <div className="relative">
           <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl">
             <img
-              src={story.image}
+              src={dynamicImage ? resolveImageUrl(dynamicImage) : story.defaultImage}
               alt={story.imageAlt}
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
               loading="lazy"
@@ -96,11 +98,14 @@ function StoryBlock({ story, index }) {
 }
 
 export default function StorySection() {
+  const { storyImage1, storyImage2 } = useSiteSettings()
+  const dynamicImages = [storyImage1, storyImage2]
+
   return (
     <section className="py-14 sm:py-24 lg:py-36 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 space-y-14 sm:space-y-20 lg:space-y-28">
-        {stories.map((story, i) => (
-          <StoryBlock key={i} story={story} index={i} />
+        {STORY_DEFAULTS.map((story, i) => (
+          <StoryBlock key={i} story={story} index={i} dynamicImage={dynamicImages[i]} />
         ))}
       </div>
     </section>
