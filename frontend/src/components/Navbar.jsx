@@ -8,6 +8,7 @@ import { toursApi } from '../api/tours'
 import { routesApi } from '../api/routes'
 import { experiencesApi } from '../api/experiences'
 import { categories } from '../data/tours'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 const SAFARI_CATEGORIES = categories.filter((c) => c !== 'All')
 
@@ -198,7 +199,7 @@ export default function Navbar() {
                               const cover = activeRouteHover.images?.find(i => i.is_cover) ?? activeRouteHover.images?.[0]
                               return cover ? (
                                 <img
-                                  src={cover.url}
+                                  src={resolveImageUrl(cover.url)}
                                   alt={activeRouteHover.name}
                                   className="w-full h-full object-cover"
                                 />

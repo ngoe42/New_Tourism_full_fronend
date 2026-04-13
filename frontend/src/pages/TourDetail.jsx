@@ -11,6 +11,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { toursApi } from '../api/tours'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 import BookingForm from '../components/BookingForm'
 import TourCard from '../components/TourCard'
 import 'swiper/css'
@@ -71,8 +72,8 @@ export default function TourDetail() {
     )
   }
 
-  const coverImage = tour.images?.find((i) => i.is_cover)?.url ?? tour.images?.[0]?.url ?? '/images/hero-bg.jpg'
-  const galleryImages = tour.images?.length ? tour.images.map((i) => i.url) : [coverImage]
+  const coverImage = resolveImageUrl(tour.images?.find((i) => i.is_cover)?.url ?? tour.images?.[0]?.url ?? '/images/hero-bg.jpg')
+  const galleryImages = tour.images?.length ? tour.images.map((i) => resolveImageUrl(i.url)) : [coverImage]
   const related = relatedData ?? []
 
   return (

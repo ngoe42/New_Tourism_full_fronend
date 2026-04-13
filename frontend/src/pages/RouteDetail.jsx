@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { routesApi } from '../api/routes'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 import BookingForm from '../components/BookingForm'
 
 const TABS = ['Overview', 'Itinerary', "What's Included", 'Packing List']
@@ -61,7 +62,7 @@ export default function RouteDetail() {
         {/* Full background image */}
         {coverImg ? (
           <div className="absolute inset-0">
-            <img src={coverImg.url} alt={route.name} className="w-full h-full object-cover" />
+            <img src={resolveImageUrl(coverImg.url)} alt={route.name} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-green-950 via-green-950/60 to-green-950/20" />
           </div>
         ) : (

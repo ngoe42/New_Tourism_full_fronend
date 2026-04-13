@@ -2,14 +2,16 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Star, Clock, Users, MapPin, ArrowRight } from 'lucide-react'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 export default function TourCard({ tour, index = 0 }) {
   const { showPrices } = useSiteSettings()
-  const coverImage =
+  const coverImage = resolveImageUrl(
     tour.images?.find((i) => i.is_cover)?.url ??
     tour.images?.[0]?.url ??
     tour.image ??
     '/images/hero-bg.jpg'
+  )
   const groupSize = tour.group_size ?? tour.groupSize ?? ''
   const reviewCount = tour.review_count ?? tour.reviewCount ?? 0
 
