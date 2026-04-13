@@ -7,6 +7,7 @@ import { useSiteSettings } from '../hooks/useSiteSettings'
 import apiClient from '../api/client'
 import { resolveImageUrl } from '../utils/imageUrl'
 
+
 const fadeUp = {
   hidden: { opacity: 0, y: 60 },
   visible: (i = 0) => ({
@@ -17,7 +18,8 @@ const fadeUp = {
 }
 
 export default function Hero() {
-  const { heroVideoUrl } = useSiteSettings()
+  const { heroVideoUrl: _rawVideoUrl } = useSiteSettings()
+  const heroVideoUrl = resolveImageUrl(_rawVideoUrl)
   const [videoFailed, setVideoFailed] = useState(false)
   const hasUploadedVideo = !!heroVideoUrl
   const shouldUseVideo = hasUploadedVideo && !videoFailed
