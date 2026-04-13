@@ -80,4 +80,17 @@ app.mount("/uploads", StaticFiles(directory=str(_uploads_dir)), name="uploads")
 
 @app.get("/health", tags=["Health"])
 async def health_check():
-    return {"status": "ok", "version": settings.APP_VERSION, "app": settings.APP_NAME}
+    from app.core.cache import _redis
+    redis_status = "disabled"
+    if _redis is not None:
+        try:
+            await _redis.ping()
+            redis_status = "connected"
+        except Exception:
+            redis_status = "error"
+    return {
+        "status": "ok",
+        "version": settings.APP_VERSION,
+        "app": settings.APP_NAME,
+        "redis": redis_status,
+    }
