@@ -485,6 +485,7 @@ export default function AdminRoutes() {
                 <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider">Route</th>
                 <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Duration</th>
                 <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Difficulty</th>
+                <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Price</th>
                 <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Images</th>
                 <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                 <th className="px-5 py-3" />
@@ -524,6 +525,13 @@ export default function AdminRoutes() {
                     }`}>
                       {route.difficulty ?? '—'}
                     </span>
+                  </td>
+                  <td className="px-5 py-4 hidden lg:table-cell">
+                    {route.price > 0 ? (
+                      <span className="font-sans text-sm font-semibold text-green-800">${route.price.toLocaleString()}</span>
+                    ) : (
+                      <span className="font-sans text-sm text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="px-5 py-4 hidden lg:table-cell">
                     <span className="font-sans text-sm text-gray-500">{route.images?.length ?? 0} photo{(route.images?.length ?? 0) !== 1 ? 's' : ''}</span>

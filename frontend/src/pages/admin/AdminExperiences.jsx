@@ -1,34 +1,60 @@
 import { useState, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, X, Save, Loader2, ImageOff, Upload, Link } from 'lucide-react'
+import {
+  Plus, Pencil, Trash2, Upload, X, Save, Loader2,
+  Image as ImageIcon, Eye, EyeOff, Sparkles,
+} from 'lucide-react'
 import { experiencesApi } from '../../api/experiences'
 import apiClient from '../../api/client'
 import { resolveImageUrl } from '../../utils/imageUrl'
 
 const EMPTY_FORM = { title: '', subtitle: '', description: '', image_url: '', order: 0, is_active: true }
 
-function ExperienceModal({ initial, onClose, onSave, loading }) {
-  const [form, setForm] = useState(initial ?? EMPTY_FORM)
-  const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState(null)
-  const [urlMode, setUrlMode] = useState(false)
-  const fileInputRef = useRef(null)
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
-  const isEdit = !!initial?.id
+/* ── Shared helpers (mirrors AdminRoutes) ──────────────────────────────────── */
+function Field({ label, children }) {
+  return (
+    <div>
+      <label className="block font-sans text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">{label}</label>
+      {children}
+    </div>
+  )
+}
+function Input({ className = '', ...props }) {
+  return (
+    <input
+      className={`w-full border border-gray-200 rounded-lg px-3 py-2 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-600/30 focus:border-green-600 transition ${className}`}
+      {...props}
+    />
+  )
+}
+function Textarea({ className = '', ...props }) {
+  return (
+    <textarea
+      className={`w-full border border-gray-200 rounded-lg px-3 py-2 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-600/30 focus:border-green-600 transition resize-none ${className}`}
+      {...props}
+    />
+  )
+}
 
-  const handleFilePick = async (e) => {
+/* ── Image upload panel ────────────────────────────────────────────────────── */
+function ImageUploader({ imageUrl, onUploaded }) {
+  const fileRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleFile = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploadError(null)
+    setError(null)
     setUploading(true)
     try {
       const fd = new FormData()
       fd.append('file', file)
       const res = await apiClient.post('/media/upload', fd)
-      set('image_url', res.data.url)
+      onUploaded(res.data.url)
     } catch (err) {
-      setUploadError(err?.response?.data?.detail ?? 'Upload failed')
+      setError(err?.response?.data?.detail ?? 'Upload failed')
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -36,348 +62,320 @@ function ExperienceModal({ initial, onClose, onSave, loading }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 16 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.2 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+    <div className="space-y-3">
+      <div
+        onClick={() => fileRef.current?.click()}
+        className={`relative w-full h-56 rounded-xl overflow-hidden bg-gray-100 border-2 border-dashed flex items-center justify-center cursor-pointer transition-colors
+          ${imageUrl ? 'border-transparent' : 'border-gray-200 hover:border-green-600 hover:bg-green-50/20'}`}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="font-serif text-lg font-semibold text-gray-900">
-            {isEdit ? 'Edit Experience' : 'Add Experience'}
+        {imageUrl ? (
+          <>
+            <img src={resolveImageUrl(imageUrl)} alt="Preview" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+              <span className="font-sans text-sm text-white font-semibold bg-black/50 px-4 py-2 rounded-lg">Change photo</span>
+            </div>
+          </>
+        ) : uploading ? (
+          <div className="flex flex-col items-center gap-2 text-green-600">
+            <Loader2 size={28} className="animate-spin" />
+            <span className="font-sans text-sm">Uploading…</span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-gray-400">
+            <Upload size={28} />
+            <span className="font-sans text-sm font-medium">Click to upload image</span>
+            <span className="font-sans text-xs">JPG, PNG, WEBP · max 10 MB</span>
+          </div>
+        )}
+      </div>
+      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleFile} />
+      {error && <p className="font-sans text-xs text-red-500">{error}</p>}
+      {imageUrl && (
+        <div className="flex gap-2">
+          <Input value={imageUrl} readOnly className="flex-1 text-gray-400 text-xs bg-gray-50 cursor-default" />
+          <button type="button" onClick={() => onUploaded('')}
+            className="p-2 text-gray-400 hover:text-red-500 border border-gray-200 rounded-lg hover:border-red-300 transition flex-shrink-0">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── Experience modal (tabbed — mirrors RouteModal) ────────────────────────── */
+function ExperienceModal({ experience, onClose, onSaved }) {
+  const isEdit = !!experience
+  const [form, setForm] = useState(experience ? { ...experience } : { ...EMPTY_FORM })
+  const [saving, setSaving] = useState(false)
+  const [section, setSection] = useState('details')
+  const set = (field, val) => setForm((f) => ({ ...f, [field]: val }))
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      if (isEdit) {
+        await experiencesApi.update(experience.id, form)
+      } else {
+        await experiencesApi.create(form)
+      }
+      onSaved()
+    } catch (err) {
+      alert('Error: ' + (err.response?.data?.detail ?? err.message))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const SECTIONS = [
+    { id: 'details', label: 'Details' },
+    { id: 'image',   label: 'Image'   },
+  ]
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 pt-16 overflow-y-auto">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: 20 }}
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
+          <h2 className="font-serif text-xl font-bold text-gray-900">
+            {isEdit ? `Edit: ${experience.title}` : 'New Experience'}
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-            <X size={16} className="text-gray-500" />
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition">
+            <X size={20} />
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* Image picker */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="font-sans text-xs font-semibold text-gray-600 uppercase tracking-wider">Image *</label>
-              <button
-                type="button"
-                onClick={() => setUrlMode((v) => !v)}
-                className="flex items-center gap-1 font-sans text-[10px] text-gray-400 hover:text-amber-500 transition-colors"
-              >
-                {urlMode ? <><Upload size={10} /> Browse file</> : <><Link size={10} /> Paste URL</>}
-              </button>
-            </div>
+        {/* Section tabs */}
+        <div className="flex gap-1 px-7 pt-4">
+          {SECTIONS.map((s) => (
+            <button key={s.id} type="button" onClick={() => setSection(s.id)}
+              className={`px-4 py-2 rounded-lg font-sans text-sm font-medium whitespace-nowrap transition ${
+                section === s.id ? 'bg-green-950 text-white' : 'text-gray-500 hover:bg-gray-100'
+              }`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
 
-            {/* Preview area / drop zone */}
-            <div
-              onClick={() => !urlMode && fileInputRef.current?.click()}
-              className={`w-full h-44 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center relative border-2 border-dashed transition-colors
-                ${!urlMode ? 'cursor-pointer hover:border-amber-400 hover:bg-amber-50/30' : ''}
-                ${form.image_url ? 'border-transparent' : 'border-gray-200'}`}
-            >
-              {form.image_url ? (
-                <>
-                  <img
-                    src={resolveImageUrl(form.image_url)}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => { e.target.style.display = 'none' }}
-                  />
-                  {!urlMode && (
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                      <span className="font-sans text-xs text-white font-semibold">Change photo</span>
-                    </div>
-                  )}
-                </>
-              ) : uploading ? (
-                <div className="flex flex-col items-center gap-2 text-amber-500">
-                  <Loader2 size={28} className="animate-spin" />
-                  <span className="font-sans text-xs">Uploading…</span>
+        <form onSubmit={handleSubmit}>
+          <div className="px-7 py-6 space-y-5">
+
+            {/* ── DETAILS ──────────────────────────────────────────── */}
+            {section === 'details' && (
+              <>
+                <Field label="Title *">
+                  <Input required value={form.title}
+                    onChange={(e) => set('title', e.target.value)}
+                    placeholder="e.g. Kilimanjaro Summit Trek" />
+                </Field>
+                <Field label="Subtitle">
+                  <Input value={form.subtitle ?? ''}
+                    onChange={(e) => set('subtitle', e.target.value)}
+                    placeholder="e.g. Stand on the Roof of Africa at 5,895 m" />
+                </Field>
+                <Field label="Description">
+                  <Textarea rows={4} value={form.description ?? ''}
+                    onChange={(e) => set('description', e.target.value)}
+                    placeholder="Short description shown on the experience slide…" />
+                </Field>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Display Order">
+                    <Input type="number" min={0} value={form.order}
+                      onChange={(e) => set('order', parseInt(e.target.value) || 0)} />
+                  </Field>
+                  <div>
+                    <label className="block font-sans text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Visibility</label>
+                    <button type="button" onClick={() => set('is_active', !form.is_active)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-sans text-sm font-medium transition border ${
+                        form.is_active
+                          ? 'bg-green-50 border-green-200 text-green-700'
+                          : 'bg-gray-50 border-gray-200 text-gray-500'
+                      }`}>
+                      {form.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
+                      {form.is_active ? 'Active' : 'Hidden'}
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 text-gray-300">
-                  {urlMode ? <ImageOff size={32} /> : <Upload size={32} />}
-                  <span className="font-sans text-xs text-center">
-                    {urlMode ? 'Enter a URL below' : 'Click to browse or drop an image'}
-                  </span>
-                </div>
-              )}
-            </div>
+              </>
+            )}
 
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              className="hidden"
-              onChange={handleFilePick}
-            />
-
-            {/* URL fallback input */}
-            {urlMode && (
-              <input
-                type="url"
-                value={form.image_url}
-                onChange={(e) => set('image_url', e.target.value)}
-                placeholder="https://images.unsplash.com/…"
-                className="mt-2 w-full px-3 py-2.5 border border-gray-200 rounded-xl font-sans text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+            {/* ── IMAGE ────────────────────────────────────────────── */}
+            {section === 'image' && (
+              <ImageUploader
+                imageUrl={form.image_url}
+                onUploaded={(url) => set('image_url', url)}
               />
             )}
 
-            {uploadError && (
-              <p className="mt-1.5 font-sans text-xs text-red-500">{uploadError}</p>
-            )}
           </div>
 
-          <div>
-            <label className="block font-sans text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Title *</label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => set('title', e.target.value)}
-              placeholder="e.g. Kilimanjaro Summit Trek"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl font-sans text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
-            />
+          {/* Footer */}
+          <div className="px-7 py-5 border-t border-gray-100 flex items-center justify-end gap-3">
+            <button type="button" onClick={onClose}
+              className="px-5 py-2 rounded-xl font-sans text-sm text-gray-600 hover:bg-gray-100 transition">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving || !form.title}
+              className="flex items-center gap-2 px-6 py-2 bg-green-950 text-white rounded-xl font-sans text-sm font-medium hover:bg-green-800 transition disabled:opacity-50">
+              {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+              {isEdit ? 'Save Changes' : 'Create Experience'}
+            </button>
           </div>
-
-          <div>
-            <label className="block font-sans text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Subtitle</label>
-            <input
-              type="text"
-              value={form.subtitle}
-              onChange={(e) => set('subtitle', e.target.value)}
-              placeholder="e.g. Stand on the Roof of Africa"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl font-sans text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block font-sans text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Description</label>
-            <textarea
-              rows={3}
-              value={form.description}
-              onChange={(e) => set('description', e.target.value)}
-              placeholder="Short description shown on the slide..."
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl font-sans text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent resize-none"
-            />
-          </div>
-
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block font-sans text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Order</label>
-              <input
-                type="number"
-                min={0}
-                value={form.order}
-                onChange={(e) => set('order', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl font-sans text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
-              />
-            </div>
-            <div className="flex items-end pb-0.5">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <div
-                  onClick={() => set('is_active', !form.is_active)}
-                  className={`w-10 h-5 rounded-full transition-colors duration-200 relative ${form.is_active ? 'bg-green-500' : 'bg-gray-300'}`}
-                >
-                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${form.is_active ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                </div>
-                <span className="font-sans text-sm text-gray-600">Active</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-xl font-sans text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(form)}
-            disabled={loading || !form.title || !form.image_url}
-            className="flex-1 py-2.5 bg-green-950 text-white rounded-xl font-sans text-sm font-medium hover:bg-amber-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            {isEdit ? 'Save Changes' : 'Add Experience'}
-          </button>
-        </div>
+        </form>
       </motion.div>
     </div>
   )
 }
 
+/* ── Main AdminExperiences page ────────────────────────────────────────────── */
 export default function AdminExperiences() {
   const qc = useQueryClient()
-  const [modal, setModal] = useState(null) // null | 'add' | experience object
-  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [modal, setModal] = useState(null) // null | 'new' | experience object
 
   const { data: experiences = [], isLoading } = useQuery({
     queryKey: ['admin-experiences'],
     queryFn: experiencesApi.listAll,
   })
 
-  const createMutation = useMutation({
-    mutationFn: experiencesApi.create,
-    onSuccess: () => { qc.invalidateQueries(['admin-experiences']); qc.invalidateQueries(['experiences']); setModal(null) },
-  })
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }) => experiencesApi.update(id, data),
-    onSuccess: () => { qc.invalidateQueries(['admin-experiences']); qc.invalidateQueries(['experiences']); setModal(null) },
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: experiencesApi.remove,
-    onSuccess: () => { qc.invalidateQueries(['admin-experiences']); qc.invalidateQueries(['experiences']); setDeleteTarget(null) },
-  })
-
-  const toggleActive = (exp) => {
-    updateMutation.mutate({ id: exp.id, is_active: !exp.is_active })
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['admin-experiences'] })
+    qc.invalidateQueries({ queryKey: ['experiences'] })
   }
 
-  const handleSave = (form) => {
-    if (modal?.id) {
-      updateMutation.mutate({ id: modal.id, ...form })
-    } else {
-      createMutation.mutate(form)
+  const onSaved = () => { invalidate(); setModal(null) }
+
+  const deleteExperience = async (exp) => {
+    if (!confirm(`Delete "${exp.title}"? This cannot be undone.`)) return
+    try {
+      await experiencesApi.remove(exp.id)
+      invalidate()
+    } catch (e) {
+      alert('Delete failed: ' + (e.response?.data?.detail ?? e.message))
     }
   }
 
-  const saving = createMutation.isPending || updateMutation.isPending
+  const toggleActive = async (exp) => {
+    try {
+      await experiencesApi.update(exp.id, { ...exp, is_active: !exp.is_active })
+      invalidate()
+    } catch {
+      alert('Update failed')
+    }
+  }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-serif text-2xl font-bold text-gray-900">Experiences</h1>
-          <p className="font-sans text-sm text-gray-500 mt-0.5">Manage the homepage experience slider</p>
+          <p className="font-sans text-sm text-gray-400 mt-0.5">
+            {experiences.length} experience{experiences.length !== 1 ? 's' : ''} total
+          </p>
         </div>
-        <button
-          onClick={() => setModal('add')}
-          className="flex items-center gap-2 bg-green-950 text-white font-sans text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-amber-500 transition-colors"
-        >
-          <Plus size={15} /> Add Experience
+        <button onClick={() => setModal('new')}
+          className="flex items-center gap-2 px-5 py-2.5 bg-green-950 text-white rounded-xl font-sans text-sm font-medium hover:bg-green-800 transition shadow-sm">
+          <Plus size={16} /> New Experience
         </button>
       </div>
 
-      {/* List */}
+      {/* Table */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 size={28} className="animate-spin text-gray-300" />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={28} className="animate-spin text-green-600" />
         </div>
       ) : experiences.length === 0 ? (
-        <div className="text-center py-24 text-gray-400">
-          <p className="font-sans text-sm">No experiences yet. Add your first one.</p>
+        <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
+          <Sparkles size={40} className="text-gray-200 mx-auto mb-4" />
+          <p className="font-serif text-lg text-gray-500 mb-2">No experiences yet</p>
+          <p className="font-sans text-sm text-gray-400 mb-6">Add the first experience slide for the homepage.</p>
+          <button onClick={() => setModal('new')}
+            className="px-5 py-2.5 bg-green-950 text-white rounded-xl font-sans text-sm font-medium hover:bg-green-800 transition">
+            Create First Experience
+          </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {experiences.map((exp, i) => (
-            <motion.div
-              key={exp.id}
-              layout
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.04 }}
-              className={`flex items-center gap-4 bg-white rounded-2xl p-4 shadow-sm border ${exp.is_active ? 'border-gray-100' : 'border-gray-100 opacity-60'}`}
-            >
-              <GripVertical size={16} className="text-gray-300 flex-shrink-0 cursor-grab" />
-
-              {/* Thumbnail */}
-              <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                {exp.image_url ? (
-                  <img src={resolveImageUrl(exp.image_url)} alt={exp.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageOff size={16} className="text-gray-300" />
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-sans text-[10px] font-bold text-gray-400 uppercase tracking-wider">#{exp.order}</span>
-                  {!exp.is_active && (
-                    <span className="px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded font-sans text-[10px] font-semibold">Hidden</span>
-                  )}
-                </div>
-                <p className="font-sans text-sm font-semibold text-gray-900 truncate">{exp.title}</p>
-                {exp.subtitle && <p className="font-sans text-xs text-gray-500 truncate">{exp.subtitle}</p>}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={() => toggleActive(exp)}
-                  title={exp.is_active ? 'Hide' : 'Show'}
-                  className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  {exp.is_active ? <Eye size={15} /> : <EyeOff size={15} />}
-                </button>
-                <button
-                  onClick={() => setModal(exp)}
-                  className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                >
-                  <Pencil size={15} />
-                </button>
-                <button
-                  onClick={() => setDeleteTarget(exp)}
-                  className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            </motion.div>
-          ))}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/50">
+                <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider">Experience</th>
+                <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Subtitle</th>
+                <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Order</th>
+                <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-5 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {experiences.map((exp) => (
+                <tr key={exp.id} className={`hover:bg-gray-50/50 transition-colors ${!exp.is_active ? 'opacity-55' : ''}`}>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-amber-50 flex-shrink-0">
+                        {exp.image_url ? (
+                          <img src={resolveImageUrl(exp.image_url)} alt={exp.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon size={16} className="text-amber-300" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="font-sans text-sm font-semibold text-gray-900">{exp.title}</p>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 hidden md:table-cell">
+                    <span className="font-sans text-sm text-gray-500 line-clamp-1">{exp.subtitle ?? '—'}</span>
+                  </td>
+                  <td className="px-5 py-4 hidden lg:table-cell">
+                    <span className="font-sans text-sm text-gray-500">#{exp.order}</span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-sans text-xs font-semibold ${
+                      exp.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {exp.is_active ? <Eye size={11} /> : <EyeOff size={11} />}
+                      {exp.is_active ? 'Active' : 'Hidden'}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => toggleActive(exp)}
+                        title={exp.is_active ? 'Hide' : 'Show'}
+                        className="p-2 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition">
+                        {exp.is_active ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                      <button onClick={() => setModal(exp)}
+                        className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition">
+                        <Pencil size={15} />
+                      </button>
+                      <button onClick={() => deleteExperience(exp)}
+                        className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* Add/Edit Modal */}
+      {/* Modal */}
       <AnimatePresence>
-        {modal && (
+        {modal !== null && (
           <ExperienceModal
-            initial={modal === 'add' ? null : modal}
+            key={modal === 'new' ? 'new' : modal.id}
+            experience={modal === 'new' ? null : modal}
             onClose={() => setModal(null)}
-            onSave={handleSave}
-            loading={saving}
+            onSaved={onSaved}
           />
-        )}
-      </AnimatePresence>
-
-      {/* Delete confirm */}
-      <AnimatePresence>
-        {deleteTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm"
-            >
-              <h3 className="font-serif text-lg font-semibold text-gray-900 mb-2">Delete Experience</h3>
-              <p className="font-sans text-sm text-gray-500 mb-5">
-                Remove <span className="font-semibold text-gray-700">"{deleteTarget.title}"</span> from the slider? This cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setDeleteTarget(null)}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl font-sans text-sm font-medium text-gray-600 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => deleteMutation.mutate(deleteTarget.id)}
-                  disabled={deleteMutation.isPending}
-                  className="flex-1 py-2.5 bg-red-500 text-white rounded-xl font-sans text-sm font-medium hover:bg-red-600 disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {deleteMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                  Delete
-                </button>
-              </div>
-            </motion.div>
-          </div>
         )}
       </AnimatePresence>
     </div>

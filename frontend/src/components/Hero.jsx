@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowDown, Play, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowDown, Play } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 import apiClient from '../api/client'
@@ -55,16 +55,6 @@ export default function Hero() {
     if (slideIndex >= heroImages.length) setSlideIndex(0)
   }, [slideIndex, heroImages.length])
 
-  const nextSlide = useCallback(() => {
-    if (!heroImages.length) return
-    setSlideIndex((i) => (i + 1) % heroImages.length)
-  }, [heroImages.length])
-
-  const prevSlide = useCallback(() => {
-    if (!heroImages.length) return
-    setSlideIndex((i) => (i - 1 + heroImages.length) % heroImages.length)
-  }, [heroImages.length])
-
   const activeSlideSrc = shouldUseSlideshow ? resolveImageUrl(heroImages[slideIndex]) : null
 
   return (
@@ -79,45 +69,16 @@ export default function Hero() {
                 src={activeSlideSrc}
                 alt=""
                 className="absolute inset-0 w-full h-full object-cover"
-                initial={{ opacity: 0, scale: 1.02 }}
-                animate={{ opacity: 1, scale: [1.02, 1.08] }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.1, ease: 'easeInOut' }}
+                initial={{ opacity: 0, scale: 1.04 }}
+                animate={{ opacity: 1, scale: 1.13 }}
+                exit={{ opacity: 0, scale: 1.0 }}
+                transition={{
+                  opacity: { duration: 1.4, ease: 'easeInOut' },
+                  scale: { duration: 8, ease: 'linear' },
+                }}
               />
             </AnimatePresence>
 
-            {heroImages.length > 1 && (
-              <>
-                <div className="absolute inset-y-0 left-0 flex items-center px-3 z-20">
-                  <button
-                    type="button"
-                    onClick={prevSlide}
-                    className="w-10 h-10 rounded-full bg-black/25 hover:bg-black/40 text-white flex items-center justify-center backdrop-blur-sm transition-colors"
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                </div>
-                <div className="absolute inset-y-0 right-0 flex items-center px-3 z-20">
-                  <button
-                    type="button"
-                    onClick={nextSlide}
-                    className="w-10 h-10 rounded-full bg-black/25 hover:bg-black/40 text-white flex items-center justify-center backdrop-blur-sm transition-colors"
-                  >
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-                <div className="absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                  {heroImages.slice(0, 10).map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setSlideIndex(i)}
-                      className={`h-1.5 rounded-full transition-all ${i === slideIndex ? 'w-6 bg-white/90' : 'w-2.5 bg-white/40 hover:bg-white/60'}`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
           </div>
         ) : (
           <video
