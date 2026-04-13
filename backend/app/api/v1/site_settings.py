@@ -3,14 +3,23 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.config import settings as app_settings
 from app.core.database import get_db
+from app.core.cache import cache_get, cache_set, cache_delete, TTL_LONG
 from app.dependencies.auth import require_admin
 from app.models.site_settings import SiteSettings
 from app.schemas.site_settings import SiteSettingsResponse, SiteSettingsUpdate
+
+_KEY = "site:settings"
+
+
+async def _invalidate_settings() -> None:
+    await cache_delete(_KEY)
 
 router = APIRouter(tags=["Settings"])
 
@@ -31,7 +40,12 @@ async def _get_or_create(db: AsyncSession) -> SiteSettings:
 
 @router.get("", response_model=SiteSettingsResponse)
 async def get_settings(db: AsyncSession = Depends(get_db)):
-    return await _get_or_create(db)
+    cached = await cache_get(_KEY)
+    if cached is not None:
+        return JSONResponse(content=cached)
+    row = await _get_or_create(db)
+    await cache_set(_KEY, jsonable_encoder(row), TTL_LONG)
+    return row
 
 
 @router.put("", response_model=SiteSettingsResponse, dependencies=[Depends(require_admin)])
@@ -40,6 +54,7 @@ async def update_settings(data: SiteSettingsUpdate, db: AsyncSession = Depends(g
     row.show_prices = data.show_prices
     await db.commit()
     await db.refresh(row)
+    await _invalidate_settings()
     return row
 
 
@@ -67,6 +82,7 @@ async def upload_hero_video(
     row.hero_video_url = video_url
     await db.commit()
     await db.refresh(row)
+    await _invalidate_settings()
     return row
 
 
@@ -78,6 +94,7 @@ async def delete_hero_video(db: AsyncSession = Depends(get_db)):
         row.hero_video_url = None
         await db.commit()
         await db.refresh(row)
+        await _invalidate_settings()
     return row
 
 

@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from app.core.config import settings
+from app.core.cache import init_redis, close_redis
 from app.api.v1.router import api_router
 
 
@@ -15,10 +16,12 @@ from app.api.v1.router import api_router
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     app.state.admin_seed_task = asyncio.create_task(_seed_admin_background())
+    await init_redis()
     yield
     seed_task = getattr(app.state, "admin_seed_task", None)
     if seed_task and not seed_task.done():
         seed_task.cancel()
+    await close_redis()
     logger.info("Shutting down...")
 
 

@@ -1,10 +1,13 @@
 from pathlib import Path
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 
 from app.core.database import get_db
+from app.core.cache import cache_get, cache_set, cache_delete, TTL_MEDIUM
 from app.dependencies.auth import require_admin
 from app.models.experience import Experience
 from app.repositories.experience import ExperienceRepository
@@ -15,13 +18,24 @@ from app.schemas.experience import (
     ExperienceReorderItem,
 )
 
+_KEY_ACTIVE = "exp:active"
+
+
+async def _invalidate() -> None:
+    await cache_delete(_KEY_ACTIVE)
+
 router = APIRouter(tags=["Experiences"])
 
 
 @router.get("", response_model=List[ExperienceResponse])
 async def list_experiences(db: AsyncSession = Depends(get_db)):
+    cached = await cache_get(_KEY_ACTIVE)
+    if cached is not None:
+        return JSONResponse(content=cached)
     repo = ExperienceRepository(db)
-    return await repo.get_all_active()
+    data = await repo.get_all_active()
+    await cache_set(_KEY_ACTIVE, jsonable_encoder(data), TTL_MEDIUM)
+    return data
 
 
 @router.get("/all", response_model=List[ExperienceResponse])
@@ -44,6 +58,7 @@ async def create_experience(
     result = await repo.create(experience)
     await db.commit()
     await db.refresh(result)
+    await _invalidate()
     return result
 
 
@@ -62,6 +77,7 @@ async def update_experience(
         raise HTTPException(status_code=404, detail="Experience not found")
     await db.commit()
     await db.refresh(result)
+    await _invalidate()
     return result
 
 
@@ -80,6 +96,7 @@ async def delete_experience(
     if not deleted:
         raise HTTPException(status_code=404, detail="Experience not found")
     await db.commit()
+    await _invalidate()
     if image_url and image_url.startswith('/uploads/'):
         try:
             parts = image_url.split('/uploads/', 1)
@@ -100,4 +117,5 @@ async def reorder_experiences(
     repo = ExperienceRepository(db)
     await repo.bulk_reorder([{"id": i.id, "order": i.order} for i in items])
     await db.commit()
+    await _invalidate()
     return {"ok": True}
