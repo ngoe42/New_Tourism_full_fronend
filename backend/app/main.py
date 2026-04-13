@@ -5,7 +5,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.requests import Request
+from starlette.responses import Response
 from loguru import logger
+
+
+class CachedStaticFiles(StaticFiles):
+    """StaticFiles with long-lived Cache-Control headers for uploaded media."""
+    async def get_response(self, path: str, scope) -> Response:
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=604800, immutable"  # 7 days
+        return response
 
 from app.core.config import settings
 from app.core.cache import init_redis, close_redis
@@ -75,7 +86,7 @@ app.include_router(api_router)
 
 _uploads_dir = Path(__file__).resolve().parents[1] / "static" / "uploads"
 _uploads_dir.mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=str(_uploads_dir)), name="uploads")
+app.mount("/uploads", CachedStaticFiles(directory=str(_uploads_dir)), name="uploads")
 
 
 @app.get("/health", tags=["Health"])
