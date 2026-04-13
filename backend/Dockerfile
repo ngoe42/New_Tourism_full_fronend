@@ -28,7 +28,8 @@ COPY --from=builder /install /usr/local
 
 COPY . .
 
-RUN sed -i 's/\r$//' start.sh && chmod +x start.sh
+RUN sed -i 's/\r$//' start.sh && chmod +x start.sh && \
+    mkdir -p /app/static/uploads
 
 EXPOSE 8000
 
