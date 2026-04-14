@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, Search, ImageIcon, X, CheckCircle, AlertCircle, Star, CheckSquare, XSquare } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, ImageIcon, X, CheckCircle, AlertCircle, Star, CheckSquare, XSquare, Sparkles } from 'lucide-react'
 import { toursApi } from '../../api/tours'
 import { categories } from '../../data/tours'
 import { resolveImageUrl } from '../../utils/imageUrl'
@@ -10,7 +10,7 @@ const TOUR_CATEGORIES = categories.filter((c) => c !== 'All')
 const EMPTY_FORM = {
   title: '', slug: '', subtitle: '', description: '', category: 'Luxury Safaris',
   location: '', duration: '', group_size: '', price: '',
-  included: [], excluded: [],
+  highlights: [], included: [], excluded: [],
   is_featured: false, is_published: true,
 }
 
@@ -186,6 +186,18 @@ function TourForm({ initial, onClose, onSave, saving }) {
             <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Description</label>
             <textarea rows={4} value={form.description} onChange={(e) => set('description', e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" />
+          </div>
+
+          {/* Highlights */}
+          <div className="sm:col-span-2">
+            <ListEditor
+              label="Highlights"
+              icon={Sparkles}
+              iconColor="text-amber-500"
+              value={form.highlights ?? []}
+              onChange={(v) => set('highlights', v)}
+              addPlaceholder="e.g. Big 5 sightings, Sunset bush walks…"
+            />
           </div>
 
           {/* Included */}
