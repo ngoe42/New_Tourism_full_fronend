@@ -23,11 +23,18 @@ function ImageCard({ icon: Icon, iconBg, iconColor, title, description, field, c
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const res = await apiClient.post('/media/upload', fd)
+      const res = await apiClient.post('/media/upload', fd, {
+        headers: { 'Content-Type': undefined },
+        timeout: 60000,
+      })
       await settingsApi.setImage(field, res.data.url)
       onSaved()
     } catch (err) {
-      setError(err?.response?.data?.detail ?? 'Upload failed')
+      const detail = err?.response?.data?.detail
+      const msg = Array.isArray(detail)
+        ? detail.map((d) => d.msg ?? String(d)).join(', ')
+        : (typeof detail === 'string' ? detail : 'Upload failed')
+      setError(msg)
     } finally {
       setUploading(false)
       e.target.value = ''
