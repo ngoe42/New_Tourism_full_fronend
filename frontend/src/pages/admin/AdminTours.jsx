@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, Search, ImageIcon, X, CheckCircle, AlertCircle, Star } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, ImageIcon, X, CheckCircle, AlertCircle, Star, CheckSquare, XSquare } from 'lucide-react'
 import { toursApi } from '../../api/tours'
 import { categories } from '../../data/tours'
 import { resolveImageUrl } from '../../utils/imageUrl'
@@ -10,7 +10,52 @@ const TOUR_CATEGORIES = categories.filter((c) => c !== 'All')
 const EMPTY_FORM = {
   title: '', slug: '', subtitle: '', description: '', category: 'Luxury Safaris',
   location: '', duration: '', group_size: '', price: '',
+  included: [], excluded: [],
   is_featured: false, is_published: true,
+}
+
+function ListEditor({ label, value = [], onChange, addPlaceholder, icon: Icon, iconColor }) {
+  const [draft, setDraft] = useState('')
+  const add = () => {
+    if (!draft.trim()) return
+    onChange([...value, draft.trim()])
+    setDraft('')
+  }
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 font-sans text-xs font-semibold text-gray-600 mb-2">
+        {Icon && <Icon size={13} className={iconColor} />}
+        {label}
+      </label>
+      {value.length > 0 && (
+        <ul className="space-y-1.5 mb-2">
+          {value.map((item, i) => (
+            <li key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
+              <span className="flex-1 font-sans text-sm text-gray-700">{item}</span>
+              <button type="button" onClick={() => onChange(value.filter((_, j) => j !== i))}
+                className="text-gray-400 hover:text-red-500 transition">
+                <X size={13} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }}
+          placeholder={addPlaceholder ?? 'Add item…'}
+          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        />
+        <button type="button" onClick={add}
+          className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-sans text-xs font-semibold transition">
+          Add
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function slugify(str) {
@@ -141,6 +186,30 @@ function TourForm({ initial, onClose, onSave, saving }) {
             <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Description</label>
             <textarea rows={4} value={form.description} onChange={(e) => set('description', e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" />
+          </div>
+
+          {/* Included */}
+          <div className="sm:col-span-2">
+            <ListEditor
+              label="What's Included"
+              icon={CheckSquare}
+              iconColor="text-green-600"
+              value={form.included ?? []}
+              onChange={(v) => set('included', v)}
+              addPlaceholder="e.g. All meals, Park fees, Airport transfers…"
+            />
+          </div>
+
+          {/* Not Included */}
+          <div className="sm:col-span-2">
+            <ListEditor
+              label="Not Included"
+              icon={XSquare}
+              iconColor="text-red-400"
+              value={form.excluded ?? []}
+              onChange={(v) => set('excluded', v)}
+              addPlaceholder="e.g. International flights, Travel insurance…"
+            />
           </div>
 
           {/* Flags */}
