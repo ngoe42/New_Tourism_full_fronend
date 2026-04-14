@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -211,6 +211,11 @@ function RouteModal({ route, onClose, onSaved }) {
   const [form, setForm] = useState(route ? { ...route } : { ...EMPTY_FORM })
   const [saving, setSaving] = useState(false)
   const [section, setSection] = useState('basic')
+  const overlayRef = useRef(null)
+
+  useEffect(() => {
+    overlayRef.current?.scrollTo({ top: 0 })
+  }, [])
 
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }))
 
@@ -244,7 +249,7 @@ function RouteModal({ route, onClose, onSaved }) {
   ]
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 pt-16 overflow-y-auto">
+    <div ref={overlayRef} className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 pt-16 overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

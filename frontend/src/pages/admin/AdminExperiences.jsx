@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -117,6 +117,11 @@ function ExperienceModal({ experience, onClose, onSaved }) {
   const [saving, setSaving] = useState(false)
   const [section, setSection] = useState('details')
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }))
+  const overlayRef = useRef(null)
+
+  useEffect(() => {
+    overlayRef.current?.scrollTo({ top: 0 })
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -141,7 +146,7 @@ function ExperienceModal({ experience, onClose, onSaved }) {
   ]
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 pt-16 overflow-y-auto">
+    <div ref={overlayRef} className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 pt-16 overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

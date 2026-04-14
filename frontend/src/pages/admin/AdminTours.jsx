@@ -25,6 +25,11 @@ function TourForm({ initial, onClose, onSave, saving }) {
   const [existingImages, setExistingImages] = useState(initial?.images ?? [])
   const [deletingImageId, setDeletingImageId] = useState(null)
   const fileRef = useRef(null)
+  const wrapperRef = useRef(null)
+
+  useEffect(() => {
+    wrapperRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
   const handleDeleteImage = async (imageId) => {
@@ -55,7 +60,7 @@ function TourForm({ initial, onClose, onSave, saving }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+    <div ref={wrapperRef} className="bg-white rounded-xl border border-gray-200 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
         <h2 className="font-sans text-base font-bold text-gray-800">
