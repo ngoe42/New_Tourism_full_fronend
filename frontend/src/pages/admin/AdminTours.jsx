@@ -355,6 +355,7 @@ export default function AdminTours() {
       {/* Inline form — shown instead of modal */}
       {activeForm && (
         <TourForm
+          key={activeForm?.id ?? 'new'}
           initial={activeForm}
           onClose={() => setActiveForm(null)}
           onSave={handleSave}

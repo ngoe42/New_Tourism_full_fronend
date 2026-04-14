@@ -569,6 +569,7 @@ export default function AdminRoutes() {
       <AnimatePresence>
         {modal !== null && (
           <RouteModal
+            key={modal === 'new' ? 'new' : modal?.id}
             route={modal === 'new' ? null : modal}
             onClose={() => setModal(null)}
             onSaved={onSaved}
