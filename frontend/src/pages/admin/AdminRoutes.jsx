@@ -479,7 +479,8 @@ export default function AdminRoutes() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
                 <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider">Route</th>
@@ -560,6 +561,7 @@ export default function AdminRoutes() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

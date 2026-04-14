@@ -379,7 +379,8 @@ export default function AdminTours() {
             <div className="w-7 h-7 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px]">
             <thead className="bg-gray-50">
               <tr className="border-b border-gray-200">
                 {['Tour', 'Category', 'Location', 'Price', 'Rating', 'Status', 'Actions'].map((h) => (
@@ -436,6 +437,7 @@ export default function AdminTours() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
