@@ -9,6 +9,7 @@ export function useSiteSettings() {
   })
   return {
     showPrices:    data?.show_prices     ?? false,
+    showBlog:      data?.show_blog       ?? true,
     heroVideoUrl:  data?.hero_video_url  ?? null,
     heroMode:      data?.hero_mode       ?? 'video',
     heroImages:    data?.hero_images     ?? [],

@@ -262,6 +262,11 @@ export default function AdminSettings() {
     onSuccess: invalidate,
   })
 
+  const blogMutation = useMutation({
+    mutationFn: (show_blog) => settingsApi.update({ show_blog }),
+    onSuccess: invalidate,
+  })
+
   const fileRef = useRef(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -288,6 +293,7 @@ export default function AdminSettings() {
   })
 
   const showPrices   = settings?.show_prices     ?? false
+  const showBlog     = settings?.show_blog        ?? true
   const currentVideo = settings?.hero_video_url  ?? null
   const heroMode     = settings?.hero_mode        ?? 'video'
   const heroImages   = settings?.hero_images      ?? []
@@ -332,6 +338,38 @@ export default function AdminSettings() {
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
                 showPrices ? 'translate-x-6' : 'translate-x-0'
+              }`} />
+            </button>
+          </div>
+
+          {/* Blog Toggle */}
+          <div className="flex items-start justify-between gap-6 p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+                <Settings size={18} className="text-purple-500" />
+              </div>
+              <div>
+                <h3 className="font-sans text-sm font-semibold text-gray-900">Show Blog in Navigation</h3>
+                <p className="font-sans text-xs text-gray-400 mt-0.5 leading-relaxed">
+                  When disabled, the Blog link is hidden from the navbar and footer. The page still exists.
+                </p>
+                <div className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-full font-sans text-[11px] font-semibold ${
+                  showBlog ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {showBlog ? <Eye size={11} /> : <EyeOff size={11} />}
+                  {showBlog ? 'Visible in nav' : 'Hidden from nav'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => blogMutation.mutate(!showBlog)}
+              disabled={isLoading || blogMutation.isPending}
+              className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-60 ${
+                showBlog ? 'bg-green-600' : 'bg-gray-300'
+              }`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                showBlog ? 'translate-x-6' : 'translate-x-0'
               }`} />
             </button>
           </div>

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ChevronDown, ChevronRight, LayoutDashboard, LogOut, MapPin, Clock, ArrowRight, Mountain, Phone, Mail } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 import { toursApi } from '../api/tours'
 import { routesApi } from '../api/routes'
 import { experiencesApi } from '../api/experiences'
@@ -23,6 +24,8 @@ const staticLinks = [
 ]
 
 export default function Navbar() {
+  const { showBlog } = useSiteSettings()
+  const visibleLinks = staticLinks.filter((l) => l.href !== '/blog' || showBlog)
   const [scrolled, setScrolled]         = useState(false)
   const [menuOpen, setMenuOpen]         = useState(false)
   const [mobileExpanded, setMobileExpanded] = useState(null)
@@ -116,7 +119,7 @@ export default function Navbar() {
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-7">
-            {staticLinks.map((link) => (
+            {visibleLinks.map((link) => (
               <div
                 key={link.label}
                 className="relative"
@@ -671,7 +674,7 @@ export default function Navbar() {
 
                   {/* Flat links */}
                   {[
-                    { label: 'Blog',    href: '/blog' },
+                    ...(showBlog ? [{ label: 'Blog', href: '/blog' }] : []),
                     { label: 'About',   href: '/#about' },
                     { label: 'Contact', href: '/contact' },
                   ].map((link) => (

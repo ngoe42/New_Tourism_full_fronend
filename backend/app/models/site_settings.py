@@ -16,6 +16,7 @@ class SiteSettings(Base):
     cta_bg_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     hero_mode: Mapped[str] = mapped_column(String(20), default="video", nullable=False)
     hero_images: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    show_blog: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

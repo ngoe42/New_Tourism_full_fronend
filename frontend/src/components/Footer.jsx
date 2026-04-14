@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, MessageCircle, Clock, CheckCircle, ChevronRight } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { experiencesApi } from '../api/experiences'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 const navLinks = [
   { label: 'Safari Tours', href: '/tours' },
@@ -26,6 +27,8 @@ const bookingPoints = [
 ]
 
 export default function Footer() {
+  const { showBlog } = useSiteSettings()
+  const visibleNavLinks = navLinks.filter((l) => l.href !== '/blog' || showBlog)
   const { data } = useQuery({
     queryKey: ['experiences-footer'],
     queryFn: () => experiencesApi.list(),
@@ -59,7 +62,7 @@ export default function Footer() {
         <div>
           <h4 className="font-sans text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">Explore</h4>
           <ul className="space-y-2">
-            {navLinks.map(({ label, href }) => (
+            {visibleNavLinks.map(({ label, href }) => (
               <li key={label}>
                 <Link to={href} className="font-sans text-sm text-white/60 hover:text-gold transition-colors flex items-center gap-1.5 group">
                   <ChevronRight size={12} className="text-white/20 group-hover:text-gold transition-colors" />

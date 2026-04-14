@@ -6,6 +6,7 @@ from pydantic import BaseModel, field_validator
 class SiteSettingsResponse(BaseModel):
     id: int
     show_prices: bool
+    show_blog: bool = True
     hero_video_url: Optional[str] = None
     hero_mode: str = "video"
     hero_images: list[str] = []
@@ -25,6 +26,7 @@ class SiteSettingsResponse(BaseModel):
 class SiteSettingsUpdate(BaseModel):
     """All fields optional — only provided fields are updated."""
     show_prices: Optional[bool] = None
+    show_blog: Optional[bool] = None
     hero_mode: Optional[str] = None
     story_image_1: Optional[str] = None
     story_image_2: Optional[str] = None
