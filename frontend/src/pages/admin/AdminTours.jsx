@@ -338,8 +338,21 @@ export default function AdminTours() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [activeForm, setActiveForm] = useState(null)
+  const [fetchingId, setFetchingId] = useState(null)
   const [toast, setToast] = useState(null)
   const showToast = (message, type = 'success') => setToast({ message, type })
+
+  const handleEditTour = async (tour) => {
+    setFetchingId(tour.id)
+    try {
+      const full = await toursApi.getById(tour.id)
+      setActiveForm(full)
+    } catch {
+      setActiveForm(tour)
+    } finally {
+      setFetchingId(null)
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-tours', search],
@@ -510,9 +523,12 @@ export default function AdminTours() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1.5">
-                      <button onClick={() => setActiveForm(tour)}
-                        className="p-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-600 text-gray-400 transition-colors">
-                        <Pencil size={14} />
+                      <button onClick={() => handleEditTour(tour)}
+                        disabled={fetchingId === tour.id}
+                        className="p-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-600 text-gray-400 transition-colors disabled:opacity-60">
+                        {fetchingId === tour.id
+                          ? <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          : <Pencil size={14} />}
                       </button>
                       <button onClick={() => { if (confirm(`Delete "${tour.title}"? This cannot be undone.`)) deleteMutation.mutate(tour.id) }}
                         className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 transition-colors">
