@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowDown, Play } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
 import { useSiteSettings } from '../hooks/useSiteSettings'
-import apiClient from '../api/client'
 import { resolveImageUrl } from '../utils/imageUrl'
 
+const SLIDE_DURATION = 7000
 
 const fadeUp = {
   hidden: { opacity: 0, y: 60 },
@@ -18,38 +17,26 @@ const fadeUp = {
 }
 
 export default function Hero() {
-  const { heroVideoUrl: _rawVideoUrl } = useSiteSettings()
+  const { heroVideoUrl: _rawVideoUrl, heroMode, heroImages: rawHeroImages } = useSiteSettings()
   const heroVideoUrl = resolveImageUrl(_rawVideoUrl)
+  const heroImages = (rawHeroImages ?? []).filter(Boolean)
+
   const [videoFailed, setVideoFailed] = useState(false)
-  const hasUploadedVideo = !!heroVideoUrl
-  const shouldUseVideo = hasUploadedVideo && !videoFailed
-
-  const { data: heroImagesData = [] } = useQuery({
-    queryKey: ['hero-images'],
-    queryFn: () => apiClient.get('/media/hero-images', { params: { limit: 40 } }).then((r) => r.data),
-    enabled: !shouldUseVideo,
-    staleTime: 1000 * 60,
-    retry: 1,
-  })
-
-  const heroImages = useMemo(
-    () => (Array.isArray(heroImagesData) ? heroImagesData.filter(Boolean) : []),
-    [heroImagesData]
-  )
-
-  const shouldUseSlideshow = !shouldUseVideo && heroImages.length > 0
-  const videoSrc = shouldUseVideo ? heroVideoUrl : '/videos/hero.mp4'
-  const ext = (videoSrc.split('?')[0].split('#')[0].split('.').pop() || '').toLowerCase()
-  const videoType = ext === 'webm' ? 'video/webm' : ext === 'mov' ? 'video/quicktime' : 'video/mp4'
-
   const [slideIndex, setSlideIndex] = useState(0)
 
+  const wantVideo  = heroMode === 'video' || heroMode === 'both'
+  const wantImages = heroMode === 'images' || heroMode === 'both'
+
+  const shouldUseVideo     = wantVideo && !!heroVideoUrl && !videoFailed
+  const shouldUseSlideshow = !shouldUseVideo && wantImages && heroImages.length > 0
+
+  const videoSrc  = heroVideoUrl || '/videos/hero.mp4'
+  const ext       = (videoSrc.split('?')[0].split('#')[0].split('.').pop() || '').toLowerCase()
+  const videoType = ext === 'webm' ? 'video/webm' : ext === 'mov' ? 'video/quicktime' : 'video/mp4'
+
   useEffect(() => {
-    if (!shouldUseSlideshow) return
-    if (heroImages.length <= 1) return
-    const t = setInterval(() => {
-      setSlideIndex((i) => (i + 1) % heroImages.length)
-    }, 7000)
+    if (!shouldUseSlideshow || heroImages.length <= 1) return
+    const t = setInterval(() => setSlideIndex((i) => (i + 1) % heroImages.length), SLIDE_DURATION)
     return () => clearInterval(t)
   }, [shouldUseSlideshow, heroImages.length])
 

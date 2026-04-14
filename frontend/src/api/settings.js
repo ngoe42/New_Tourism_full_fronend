@@ -21,4 +21,10 @@ export const settingsApi = {
   },
 
   deleteHeroVideo: () => apiClient.delete('/settings/hero-video').then((r) => r.data),
+
+  addHeroImage: (url) =>
+    apiClient.post('/settings/hero-images', { url }).then((r) => r.data),
+
+  removeHeroImage: (idx) =>
+    apiClient.delete(`/settings/hero-images/${idx}`).then((r) => r.data),
 }

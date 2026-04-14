@@ -13,7 +13,7 @@ from app.core.database import get_db
 from app.core.cache import cache_get, cache_set, cache_delete, TTL_LONG
 from app.dependencies.auth import require_admin
 from app.models.site_settings import SiteSettings
-from app.schemas.site_settings import SiteSettingsResponse, SiteSettingsUpdate
+from app.schemas.site_settings import SiteSettingsResponse, SiteSettingsUpdate, HeroImageAdd
 
 _KEY = "site:settings"
 
@@ -56,6 +56,32 @@ async def update_settings(data: SiteSettingsUpdate, db: AsyncSession = Depends(g
     await db.commit()
     await db.refresh(row)
     await _invalidate_settings()
+    return row
+
+
+@router.post("/hero-images", response_model=SiteSettingsResponse, dependencies=[Depends(require_admin)])
+async def add_hero_image(data: HeroImageAdd, db: AsyncSession = Depends(get_db)):
+    row = await _get_or_create(db)
+    images = list(row.hero_images or [])
+    if data.url not in images:
+        images.append(data.url)
+    row.hero_images = images
+    await db.commit()
+    await db.refresh(row)
+    await _invalidate_settings()
+    return row
+
+
+@router.delete("/hero-images/{idx}", response_model=SiteSettingsResponse, dependencies=[Depends(require_admin)])
+async def remove_hero_image(idx: int, db: AsyncSession = Depends(get_db)):
+    row = await _get_or_create(db)
+    images = list(row.hero_images or [])
+    if 0 <= idx < len(images):
+        images.pop(idx)
+        row.hero_images = images
+        await db.commit()
+        await db.refresh(row)
+        await _invalidate_settings()
     return row
 
 

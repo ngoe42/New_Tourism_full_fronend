@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   DollarSign, Eye, EyeOff, Settings, Video, Upload,
   CheckCircle, AlertCircle, Trash2, Image as ImageIcon,
+  Monitor, Film, Images, Plus, X,
 } from 'lucide-react'
 import { settingsApi } from '../../api/settings'
 import apiClient from '../../api/client'
@@ -129,6 +130,123 @@ function ImageCard({ icon: Icon, iconBg, iconColor, title, description, field, c
   )
 }
 
+/* ── Hero Images gallery card ───────────────────────────────────────────── */
+function HeroImagesCard({ images, onSaved }) {
+  const fileRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError(null)
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await apiClient.post('/media/upload', fd, {
+        headers: { 'Content-Type': undefined },
+        timeout: 60000,
+      })
+      await settingsApi.addHeroImage(res.data.url)
+      onSaved()
+    } catch (err) {
+      const detail = err?.response?.data?.detail
+      const msg = Array.isArray(detail)
+        ? detail.map((d) => d.msg ?? String(d)).join(', ')
+        : (typeof detail === 'string' ? detail : 'Upload failed')
+      setError(msg)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleRemove = async (idx) => {
+    try {
+      await settingsApi.removeHeroImage(idx)
+      onSaved()
+    } catch {
+      setError('Remove failed')
+    }
+  }
+
+  return (
+    <div className="p-6">
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+          <Images size={18} className="text-indigo-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-sans text-sm font-semibold text-gray-900">Hero Slideshow Images</h3>
+          <p className="font-sans text-xs text-gray-400 mt-0.5 leading-relaxed">
+            Images used in the hero slideshow. Upload multiple for an auto-cycling carousel.
+          </p>
+
+          {images.length > 0 && (
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {images.map((url, idx) => (
+                <div key={idx} className="relative group aspect-video rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                  <img
+                    src={resolveImageUrl(url)}
+                    alt={`Hero ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    onClick={() => handleRemove(idx)}
+                    className="absolute top-1 right-1 w-5 h-5 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X size={11} />
+                  </button>
+                  <div className="absolute bottom-1 left-1 bg-black/50 text-white font-sans text-[9px] px-1.5 py-0.5 rounded">
+                    {idx + 1}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {images.length === 0 && (
+            <div className="mt-3 border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
+              <Images size={24} className="text-gray-300 mx-auto mb-2" />
+              <p className="font-sans text-xs text-gray-400">No hero images uploaded yet</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <AlertCircle size={12} className="text-red-500" />
+              <span className="font-sans text-[11px] text-red-500">{error}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-shrink-0">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleFile}
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-950 hover:bg-green-800 disabled:opacity-60 text-white font-sans text-xs font-semibold rounded-lg transition-colors"
+          >
+            {uploading ? (
+              <span className="animate-spin">⏳</span>
+            ) : (
+              <Plus size={13} />
+            )}
+            {uploading ? 'Uploading…' : 'Add Image'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── Main page ───────────────────────────────────────────────────────────── */
 export default function AdminSettings() {
   const qc = useQueryClient()
@@ -164,8 +282,15 @@ export default function AdminSettings() {
     e.target.value = ''
   }
 
-  const showPrices  = settings?.show_prices     ?? false
-  const currentVideo = settings?.hero_video_url ?? null
+  const heroModeMutation = useMutation({
+    mutationFn: (hero_mode) => settingsApi.update({ hero_mode }),
+    onSuccess: invalidate,
+  })
+
+  const showPrices   = settings?.show_prices     ?? false
+  const currentVideo = settings?.hero_video_url  ?? null
+  const heroMode     = settings?.hero_mode        ?? 'video'
+  const heroImages   = settings?.hero_images      ?? []
 
   return (
     <div className="space-y-8 max-w-2xl">
@@ -219,6 +344,47 @@ export default function AdminSettings() {
         <h2 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Hero Section</h2>
         <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
 
+          {/* Hero Mode */}
+          <div className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <Monitor size={18} className="text-blue-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-sans text-sm font-semibold text-gray-900">Hero Display Mode</h3>
+                <p className="font-sans text-xs text-gray-400 mt-0.5 leading-relaxed">
+                  Choose what appears as the hero background on the home page.
+                </p>
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  {[
+                    { value: 'video',  label: 'Video Only',  Icon: Film   },
+                    { value: 'images', label: 'Images Only', Icon: Images  },
+                    { value: 'both',   label: 'Both',        Icon: Monitor },
+                  ].map(({ value, label, Icon }) => (
+                    <button
+                      key={value}
+                      onClick={() => heroModeMutation.mutate(value)}
+                      disabled={heroModeMutation.isPending}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-sans text-xs font-semibold border transition-all ${
+                        heroMode === value
+                          ? 'bg-green-950 text-white border-green-950'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-green-950 hover:text-green-950'
+                      }`}
+                    >
+                      <Icon size={13} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="font-sans text-[11px] text-gray-400 mt-2">
+                  {heroMode === 'video'  && 'Shows only the uploaded video. Images are ignored.'}
+                  {heroMode === 'images' && 'Shows only the uploaded hero images as a slideshow. Video is ignored.'}
+                  {heroMode === 'both'   && 'Shows video if available. If video fails or is removed, falls back to the image slideshow.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Hero Video */}
           <div className="flex items-start justify-between gap-6 p-6">
             <div className="flex items-start gap-4 flex-1 min-w-0">
@@ -271,12 +437,8 @@ export default function AdminSettings() {
             </div>
           </div>
 
-          {/* Hero slideshow note */}
-          <div className="px-6 py-4 bg-gray-50/50">
-            <p className="font-sans text-xs text-gray-400">
-              <span className="font-semibold text-gray-600">Hero slideshow images</span> are automatically collected from published tours, routes, and active experiences. Manage them in their respective sections.
-            </p>
-          </div>
+          {/* Hero Images */}
+          <HeroImagesCard images={heroImages} onSaved={invalidate} />
 
         </div>
       </section>

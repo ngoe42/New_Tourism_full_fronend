@@ -10,6 +10,8 @@ export function useSiteSettings() {
   return {
     showPrices:    data?.show_prices     ?? false,
     heroVideoUrl:  data?.hero_video_url  ?? null,
+    heroMode:      data?.hero_mode       ?? 'video',
+    heroImages:    data?.hero_images     ?? [],
     storyImage1:   data?.story_image_1   ?? null,
     storyImage2:   data?.story_image_2   ?? null,
     ctaBgImage:    data?.cta_bg_image    ?? null,
