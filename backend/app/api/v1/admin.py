@@ -2,6 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -44,9 +45,15 @@ async def send_reply_email(
 
     # Auto-enrich from booking record when booking_id is supplied
     if data.booking_id:
-        from app.repositories.booking import BookingRepository
-        repo = BookingRepository(db)
-        booking = await repo.get(data.booking_id)
+        from sqlalchemy.orm import selectinload
+        from app.models.booking import Booking as BookingModel
+        from app.models.tour import Tour as TourModel
+        result = await db.execute(
+            select(BookingModel)
+            .options(selectinload(BookingModel.tour))
+            .where(BookingModel.id == data.booking_id)
+        )
+        booking = result.scalar_one_or_none()
         if booking:
             if price is None and booking.total_price:
                 price = float(booking.total_price)
@@ -56,7 +63,10 @@ async def send_reply_email(
                 from app.core.config import settings as _s
                 subject_line = f"Payment Details — Booking #{booking.id}"
                 payment_link = f"mailto:{_s.EMAIL_FROM}?subject={subject_line.replace(' ', '%20')}"
-            await repo.update(booking, {"is_replied": True})
+            for key, value in {"is_replied": True}.items():
+                if hasattr(booking, key):
+                    setattr(booking, key, value)
+            await db.flush()
 
     try:
         await send_email(

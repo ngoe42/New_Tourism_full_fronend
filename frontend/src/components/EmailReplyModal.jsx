@@ -21,6 +21,8 @@ export default function EmailReplyModal({ recipient, subject: defaultSubject, in
   const qc = useQueryClient()
   const [subject, setSubject] = useState(defaultSubject ?? '')
   const [body, setBody] = useState('')
+  const [editItemName, setEditItemName] = useState(itemName ?? '')
+  const [editPrice, setEditPrice] = useState(price != null ? String(price) : '')
   const textareaRef = useRef(null)
 
   useEffect(() => {
@@ -35,8 +37,8 @@ export default function EmailReplyModal({ recipient, subject: defaultSubject, in
         body,
         inquiry_id: inquiryId ?? null,
         booking_id: bookingId ?? null,
-        item_name: itemName ?? null,
-        price: price ?? null,
+        item_name: editItemName.trim() || null,
+        price: editPrice ? parseFloat(editPrice) : null,
         payment_link: paymentLink ?? null,
       }),
     onSuccess: () => {
@@ -137,37 +139,45 @@ export default function EmailReplyModal({ recipient, subject: defaultSubject, in
                 />
               </div>
 
-              {/* Payment details preview */}
-              {(price || itemName || paymentLink) && (
-                <div className="mx-4 mb-3 border border-amber-200 rounded-xl overflow-hidden">
-                  <div className="bg-green-950 px-3 py-2 flex items-center gap-2">
-                    <DollarSign size={12} className="text-amber-400" />
-                    <span className="font-sans text-[11px] font-bold text-amber-400 uppercase tracking-widest">Payment Details Block</span>
-                  </div>
-                  <div className="bg-amber-50/60 px-3 py-2 space-y-1">
-                    {itemName && (
-                      <div className="flex justify-between">
-                        <span className="font-sans text-xs text-gray-500">Package</span>
-                        <span className="font-sans text-xs font-semibold text-gray-800">{itemName}</span>
-                      </div>
-                    )}
-                    {price && (
-                      <div className="flex justify-between">
-                        <span className="font-sans text-xs text-gray-500">Total Price</span>
-                        <span className="font-sans text-xs font-bold text-green-900">USD {price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    )}
-                    {(paymentLink || bookingId) && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <ExternalLink size={11} className="text-amber-600" />
-                        <span className="font-sans text-[11px] text-amber-700">
-                          {paymentLink ?? 'Payment button auto-included in email'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+              {/* Payment details — always shown so admin can fill */}
+              <div className="mx-4 mb-3 border border-amber-200 rounded-xl overflow-hidden">
+                <div className="bg-green-950 px-3 py-2 flex items-center gap-2">
+                  <DollarSign size={12} className="text-amber-400" />
+                  <span className="font-sans text-[11px] font-bold text-amber-400 uppercase tracking-widest">Payment Details (included in email)</span>
                 </div>
-              )}
+                <div className="bg-amber-50/50 px-3 py-2.5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-sans text-xs text-gray-500 w-20 flex-shrink-0">Package</span>
+                    <input
+                      type="text"
+                      value={editItemName}
+                      onChange={(e) => setEditItemName(e.target.value)}
+                      placeholder="e.g. Serengeti Safari 7 Days"
+                      className="flex-1 border border-amber-200 rounded-lg px-2 py-1 font-sans text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-sans text-xs text-gray-500 w-20 flex-shrink-0">Price (USD)</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editPrice}
+                      onChange={(e) => setEditPrice(e.target.value)}
+                      placeholder="e.g. 2500"
+                      className="flex-1 border border-amber-200 rounded-lg px-2 py-1 font-sans text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
+                    />
+                  </div>
+                  {(paymentLink || bookingId) && (
+                    <div className="flex items-center gap-1 pt-0.5">
+                      <ExternalLink size={10} className="text-amber-600" />
+                      <span className="font-sans text-[11px] text-amber-700">
+                        {paymentLink ?? 'Payment button auto-included in email'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Error */}
               {mutation.isError && (
