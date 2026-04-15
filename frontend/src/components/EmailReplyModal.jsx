@@ -1,20 +1,23 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Send, Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { X, Send, Mail, CheckCircle, AlertCircle, Loader2, DollarSign, ExternalLink } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '../api/admin'
 
 /**
  * EmailReplyModal
  * Props:
- *   recipient  — { name, email }
- *   subject    — pre-filled subject string
- *   inquiryId  — optional, marks inquiry as replied on send
- *   bookingId  — optional, marks booking as replied on send
+ *   recipient    — { name, email }
+ *   subject      — pre-filled subject string
+ *   inquiryId    — optional, marks inquiry as replied on send
+ *   bookingId    — optional, marks booking as replied on send; auto-fills price+link on backend
+ *   itemName     — optional, tour/package name shown in payment block
+ *   price        — optional, numeric price shown in payment block
+ *   paymentLink  — optional, override URL for the payment button
  *   invalidateKey — react-query key to invalidate after success
- *   onClose    — called to dismiss
+ *   onClose      — called to dismiss
  */
-export default function EmailReplyModal({ recipient, subject: defaultSubject, inquiryId, bookingId, invalidateKey, onClose }) {
+export default function EmailReplyModal({ recipient, subject: defaultSubject, inquiryId, bookingId, itemName, price, paymentLink, invalidateKey, onClose }) {
   const qc = useQueryClient()
   const [subject, setSubject] = useState(defaultSubject ?? '')
   const [body, setBody] = useState('')
@@ -32,6 +35,9 @@ export default function EmailReplyModal({ recipient, subject: defaultSubject, in
         body,
         inquiry_id: inquiryId ?? null,
         booking_id: bookingId ?? null,
+        item_name: itemName ?? null,
+        price: price ?? null,
+        payment_link: paymentLink ?? null,
       }),
     onSuccess: () => {
       if (invalidateKey) qc.invalidateQueries([invalidateKey])
@@ -130,6 +136,36 @@ export default function EmailReplyModal({ recipient, subject: defaultSubject, in
                   className="w-full font-sans text-sm text-gray-800 placeholder-gray-300 resize-none focus:outline-none bg-transparent leading-relaxed"
                 />
               </div>
+
+              {/* Payment details preview */}
+              {(price || itemName || paymentLink) && (
+                <div className="mx-4 mb-3 border border-amber-200 rounded-xl overflow-hidden">
+                  <div className="bg-green-950 px-3 py-2 flex items-center gap-2">
+                    <DollarSign size={12} className="text-amber-400" />
+                    <span className="font-sans text-[11px] font-bold text-amber-400 uppercase tracking-widest">Payment Details Block</span>
+                  </div>
+                  <div className="bg-amber-50/60 px-3 py-2 space-y-1">
+                    {itemName && (
+                      <div className="flex justify-between">
+                        <span className="font-sans text-xs text-gray-500">Package</span>
+                        <span className="font-sans text-xs font-semibold text-gray-800">{itemName}</span>
+                      </div>
+                    )}
+                    {price && (
+                      <div className="flex justify-between">
+                        <span className="font-sans text-xs text-gray-500">Total Price</span>
+                        <span className="font-sans text-xs font-bold text-green-900">USD {price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    )}
+                    {(paymentLink || bookingId) && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <ExternalLink size={11} className="text-amber-600" />
+                        <span className="font-sans text-[11px] text-amber-700">{paymentLink ?? 'Booking link auto-attached'}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Error */}
               {mutation.isError && (

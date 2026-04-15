@@ -145,8 +145,10 @@ export default function AdminBookings() {
       {replyTarget && (
         <EmailReplyModal
           recipient={{ name: replyTarget.contact_name, email: replyTarget.contact_email }}
-          subject={`Re: Your Nelson Tours & Safari Booking${replyTarget.tour?.title ? ` \u2014 ${replyTarget.tour.title}` : ''}`}
+          subject={`Re: Your Nelson Tours & Safari Booking${replyTarget.tour?.title ? ` — ${replyTarget.tour.title}` : ''}`}
           bookingId={replyTarget.id}
+          itemName={replyTarget.tour?.title ?? undefined}
+          price={replyTarget.total_price ?? undefined}
           invalidateKey="admin-bookings"
           onClose={() => setReplyTarget(null)}
         />

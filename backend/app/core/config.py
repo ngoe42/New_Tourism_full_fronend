@@ -36,6 +36,7 @@ class Settings(BaseSettings):
 
     SENDGRID_API_KEY: Optional[str] = None
     EMAIL_FROM: str = "ngoekenedy@gmail.com"
+    FRONTEND_URL: str = "https://nelsontoursandsafari.com"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod

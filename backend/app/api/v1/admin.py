@@ -27,6 +27,10 @@ class SendEmailRequest(BaseModel):
     body: str
     inquiry_id: Optional[int] = None
     booking_id: Optional[int] = None
+    # Optional payment details — auto-filled from booking when booking_id is set
+    item_name: Optional[str] = None
+    price: Optional[float] = None
+    payment_link: Optional[str] = None
 
 
 @router.post("/send-email", dependencies=[Depends(require_admin)])
@@ -34,8 +38,34 @@ async def send_reply_email(
     data: SendEmailRequest,
     db: AsyncSession = Depends(get_db),
 ):
+    item_name = data.item_name
+    price = data.price
+    payment_link = data.payment_link
+
+    # Auto-enrich from booking record when booking_id is supplied
+    if data.booking_id:
+        from app.repositories.booking import BookingRepository
+        repo = BookingRepository(db)
+        booking = await repo.get(data.booking_id)
+        if booking:
+            if price is None and booking.total_price:
+                price = float(booking.total_price)
+            if item_name is None and booking.tour:
+                item_name = booking.tour.title
+            if payment_link is None:
+                from app.core.config import settings as _s
+                payment_link = f"{_s.FRONTEND_URL}/bookings/{booking.id}"
+            await repo.update(booking, {"is_replied": True})
+
     try:
-        await send_email(to=data.to, subject=data.subject, body=data.body)
+        await send_email(
+            to=data.to,
+            subject=data.subject,
+            body=data.body,
+            item_name=item_name,
+            price=price,
+            payment_link=payment_link,
+        )
     except RuntimeError as e:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
     except Exception as e:
@@ -47,12 +77,5 @@ async def send_reply_email(
     if data.inquiry_id:
         svc = InquiryService(db)
         await svc.update(data.inquiry_id, InquiryUpdate(is_replied=True, is_read=True))
-
-    if data.booking_id:
-        from app.repositories.booking import BookingRepository
-        repo = BookingRepository(db)
-        booking = await repo.get(data.booking_id)
-        if booking:
-            await repo.update(booking, {"is_replied": True})
 
     return {"message": "Email sent successfully"}
