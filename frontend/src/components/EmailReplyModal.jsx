@@ -157,10 +157,12 @@ export default function EmailReplyModal({ recipient, subject: defaultSubject, in
                         <span className="font-sans text-xs font-bold text-green-900">USD {price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                       </div>
                     )}
-                    {paymentLink && (
+                    {(paymentLink || bookingId) && (
                       <div className="flex items-center gap-1 mt-1">
                         <ExternalLink size={11} className="text-amber-600" />
-                        <span className="font-sans text-[11px] text-amber-700">{paymentLink}</span>
+                        <span className="font-sans text-[11px] text-amber-700">
+                          {paymentLink ?? 'Payment button auto-included in email'}
+                        </span>
                       </div>
                     )}
                   </div>

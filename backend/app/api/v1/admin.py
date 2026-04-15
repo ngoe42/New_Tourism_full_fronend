@@ -52,6 +52,10 @@ async def send_reply_email(
                 price = float(booking.total_price)
             if item_name is None and booking.tour:
                 item_name = booking.tour.title
+            if payment_link is None:
+                from app.core.config import settings as _s
+                subject_line = f"Payment Details — Booking #{booking.id}"
+                payment_link = f"mailto:{_s.EMAIL_FROM}?subject={subject_line.replace(' ', '%20')}"
             await repo.update(booking, {"is_replied": True})
 
     try:
