@@ -49,7 +49,7 @@ export default function Hero() {
   return (
     <section className="relative h-screen min-h-[600px] sm:min-h-[700px] overflow-hidden flex items-center">
       {/* Video background */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 overflow-hidden">
         {shouldUseSlideshow ? (
           <div className="absolute inset-0 overflow-hidden">
             <AnimatePresence mode="sync">
@@ -76,7 +76,8 @@ export default function Hero() {
             loop
             playsInline
             poster="/images/hero-bg.jpg"
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover will-change-transform"
+            style={{ transform: 'translateZ(0)' }}
             onError={() => setVideoFailed(true)}
           >
             <source src={videoSrc} type={videoType} />
