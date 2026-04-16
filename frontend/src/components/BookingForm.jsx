@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, Users, Mail, Phone, MessageSquare, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
+import { Calendar, Users, Mail, Phone, MessageSquare, CheckCircle, Loader2, AlertCircle, CreditCard, ExternalLink } from 'lucide-react'
 import { bookingsApi } from '../api/bookings'
 import { inquiriesApi } from '../api/inquiries'
 import { useAuth } from '../context/AuthContext'
@@ -17,8 +17,9 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
     guests: '2',
     message: '',
   })
-  const [status, setStatus] = useState('idle') // idle | loading | success | error
+  const [status, setStatus] = useState('idle') // idle | loading | redirecting | success | error
   const [errorMsg, setErrorMsg] = useState('')
+  const [paymentUrl, setPaymentUrl] = useState(null)
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -30,7 +31,7 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
     setErrorMsg('')
     try {
       if (user && tourId) {
-        await bookingsApi.create({
+        const booking = await bookingsApi.create({
           tour_id: tourId,
           travel_date: form.date,
           guests: parseInt(form.guests),
@@ -39,6 +40,24 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
           contact_email: form.email,
           contact_phone: form.phone || undefined,
         })
+
+        if (booking.payment_redirect_url) {
+          setPaymentUrl(booking.payment_redirect_url)
+          setStatus('redirecting')
+          setTimeout(() => { window.location.href = booking.payment_redirect_url }, 2000)
+        } else {
+          try {
+            const payment = await bookingsApi.initiatePayment(booking.id)
+            if (payment.redirect_url) {
+              setPaymentUrl(payment.redirect_url)
+              setStatus('redirecting')
+              setTimeout(() => { window.location.href = payment.redirect_url }, 2000)
+              return
+            }
+          } catch {
+          }
+          setStatus('success')
+        }
       } else {
         await inquiriesApi.create({
           name: form.name,
@@ -47,8 +66,8 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
           message: `Booking inquiry for ${tourTitle || 'a tour'}. Travel date: ${form.date}. Guests: ${form.guests}. ${form.message}`.trim(),
           tour_interest: tourTitle || undefined,
         })
+        setStatus('success')
       }
-      setStatus('success')
     } catch (err) {
       setStatus('error')
       setErrorMsg(
@@ -58,6 +77,34 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
   }
 
   const total = tourPrice > 0 ? tourPrice * parseInt(form.guests || '1') : null
+
+  if (status === 'redirecting') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className={`${compact ? '' : 'bg-white rounded-3xl p-8'} flex flex-col items-center text-center py-8`}
+      >
+        <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mb-5">
+          <CreditCard size={32} className="text-amber-600" />
+        </div>
+        <h3 className="font-serif text-2xl font-semibold text-green-950 mb-2">Booking Created!</h3>
+        <p className="font-sans text-gray-500 text-sm leading-relaxed max-w-xs mb-1">
+          Redirecting you to our secure Pesapal payment page…
+        </p>
+        <p className="font-sans text-gray-400 text-xs mb-5">Visa · Mastercard · M-Pesa · Airtel Money</p>
+        <Loader2 size={20} className="animate-spin text-amber-500 mb-4" />
+        {paymentUrl && (
+          <a
+            href={paymentUrl}
+            className="flex items-center gap-1.5 text-sm font-sans text-gold underline underline-offset-2"
+          >
+            Click here if not redirected automatically <ExternalLink size={13} />
+          </a>
+        )}
+      </motion.div>
+    )
+  }
 
   if (status === 'success') {
     return (
@@ -200,16 +247,16 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
 
       <button
         type="submit"
-        disabled={status === 'loading'}
+        disabled={status === 'loading' || status === 'redirecting'}
         className="w-full bg-green-950 text-white font-sans font-medium py-4 rounded-xl hover:bg-gold transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed tracking-wide text-sm uppercase"
       >
         {status === 'loading' ? (
           <>
             <Loader2 size={16} className="animate-spin" />
-            Sending Request...
+            Processing...
           </>
         ) : (
-          'Send Booking Request'
+          user && tourId ? 'Book & Proceed to Payment' : 'Send Booking Request'
         )}
       </button>
 

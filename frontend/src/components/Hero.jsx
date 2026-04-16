@@ -51,23 +51,22 @@ export default function Hero() {
       {/* Video background */}
       <div className="absolute inset-0">
         {shouldUseSlideshow ? (
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 overflow-hidden">
             <AnimatePresence mode="sync">
               <motion.img
                 key={activeSlideSrc}
                 src={activeSlideSrc}
                 alt=""
-                className="absolute inset-0 w-full h-full object-cover"
-                initial={{ opacity: 0, scale: 1.04 }}
-                animate={{ opacity: 1, scale: 1.13 }}
-                exit={{ opacity: 0, scale: 1.0 }}
+                className="absolute inset-0 w-full h-full object-cover will-change-transform"
+                initial={{ opacity: 0, scale: 1.08 }}
+                animate={{ opacity: 1, scale: 1.15 }}
+                exit={{ opacity: 0 }}
                 transition={{
                   opacity: { duration: 1.4, ease: 'easeInOut' },
                   scale: { duration: 8, ease: 'linear' },
                 }}
               />
             </AnimatePresence>
-
           </div>
         ) : (
           <video

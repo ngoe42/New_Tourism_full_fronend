@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     SENDGRID_API_KEY: Optional[str] = None
     EMAIL_FROM: str = "ngoekenedy@gmail.com"
     FRONTEND_URL: str = "https://nelsontoursandsafari.com"
+    BACKEND_URL: str = "https://api.nelsontoursandsafari.com"
+
+    PESAPAL_CONSUMER_KEY: Optional[str] = None
+    PESAPAL_CONSUMER_SECRET: Optional[str] = None
+    PESAPAL_ENVIRONMENT: str = "sandbox"
+    PESAPAL_IPN_ID: Optional[str] = None
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod

@@ -30,6 +30,12 @@ class Booking(Base):
     contact_email: Mapped[str] = mapped_column(String(255), nullable=False)
     contact_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    pesapal_order_tracking_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    pesapal_merchant_reference: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    payment_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    payment_redirect_url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

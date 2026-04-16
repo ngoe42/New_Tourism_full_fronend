@@ -25,6 +25,7 @@ import Experiences from './pages/Experiences'
 import Blog from './pages/Blog'
 import About from './pages/About'
 import WhatsAppButton from './components/WhatsAppButton'
+import PaymentCallback from './pages/PaymentCallback'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +66,7 @@ function AppRoutes() {
         <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
         <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
         <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
+        <Route path="/payment/callback" element={<PaymentCallback />} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>

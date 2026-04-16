@@ -36,6 +36,12 @@ class BookingRepository(BaseRepository[Booking]):
         )
         return result.scalar_one()
 
+    async def get_by_tracking_id(self, tracking_id: str) -> Optional[Booking]:
+        result = await self.db.execute(
+            select(Booking).where(Booking.pesapal_order_tracking_id == tracking_id)
+        )
+        return result.scalar_one_or_none()
+
     async def get_total_revenue(self) -> float:
         result = await self.db.execute(
             select(func.sum(Booking.total_price)).where(Booking.status == BookingStatus.confirmed)

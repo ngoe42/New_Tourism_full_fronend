@@ -15,4 +15,10 @@ export const bookingsApi = {
 
   updateStatus: (id, status, notes) =>
     apiClient.put(`/bookings/${id}/status`, { status, notes }).then((r) => r.data),
+
+  initiatePayment: (bookingId) =>
+    apiClient.post(`/payments/initiate/${bookingId}`).then((r) => r.data),
+
+  pollPaymentStatus: (bookingId) =>
+    apiClient.get(`/payments/status/${bookingId}`).then((r) => r.data),
 }

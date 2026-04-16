@@ -50,6 +50,10 @@ class BookingResponse(BaseModel):
     contact_email: str
     contact_phone: Optional[str] = None
     notes: Optional[str] = None
+    pesapal_order_tracking_id: Optional[str] = None
+    pesapal_merchant_reference: Optional[str] = None
+    payment_status: Optional[str] = None
+    payment_redirect_url: Optional[str] = None
     tour: Optional[BookingTourInfo] = None
     user: Optional[BookingUserInfo] = None
     created_at: datetime
