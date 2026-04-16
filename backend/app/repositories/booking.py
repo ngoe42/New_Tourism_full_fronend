@@ -1,6 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from app.models.booking import Booking, BookingStatus
 from app.repositories.base import BaseRepository
 
@@ -9,14 +10,45 @@ class BookingRepository(BaseRepository[Booking]):
     def __init__(self, db: AsyncSession):
         super().__init__(Booking, db)
 
+    @staticmethod
+    def _eager(stmt):
+        """Eagerly load tour & user to avoid lazy-load in async mode."""
+        return stmt.options(selectinload(Booking.tour), selectinload(Booking.user))
+
+    async def get(self, id: int) -> Optional[Booking]:
+        result = await self.db.execute(
+            self._eager(select(Booking).where(Booking.id == id))
+        )
+        return result.scalar_one_or_none()
+
+    async def create(self, obj: Booking) -> Booking:
+        self.db.add(obj)
+        await self.db.flush()
+        result = await self.db.execute(
+            self._eager(select(Booking).where(Booking.id == obj.id))
+        )
+        return result.scalar_one()
+
+    async def update(self, obj: Booking, data: dict) -> Booking:
+        for key, value in data.items():
+            if value is not None and hasattr(obj, key):
+                setattr(obj, key, value)
+        await self.db.flush()
+        result = await self.db.execute(
+            self._eager(select(Booking).where(Booking.id == obj.id))
+        )
+        return result.scalar_one()
+
     async def get_by_user(self, user_id: int, skip: int = 0, limit: int = 20) -> list[Booking]:
         result = await self.db.execute(
-            select(Booking)
-            .where(Booking.user_id == user_id)
-            .order_by(Booking.created_at.desc())
-            .offset(skip).limit(limit)
+            self._eager(
+                select(Booking)
+                .where(Booking.user_id == user_id)
+                .order_by(Booking.created_at.desc())
+                .offset(skip).limit(limit)
+            )
         )
-        return list(result.scalars().all())
+        return list(result.scalars().unique().all())
 
     async def count_by_user(self, user_id: int) -> int:
         result = await self.db.execute(
@@ -26,9 +58,11 @@ class BookingRepository(BaseRepository[Booking]):
 
     async def get_all_paginated(self, skip: int = 0, limit: int = 20) -> list[Booking]:
         result = await self.db.execute(
-            select(Booking).order_by(Booking.created_at.desc()).offset(skip).limit(limit)
+            self._eager(
+                select(Booking).order_by(Booking.created_at.desc()).offset(skip).limit(limit)
+            )
         )
-        return list(result.scalars().all())
+        return list(result.scalars().unique().all())
 
     async def count_by_status(self, status: BookingStatus) -> int:
         result = await self.db.execute(
@@ -38,7 +72,9 @@ class BookingRepository(BaseRepository[Booking]):
 
     async def get_by_tracking_id(self, tracking_id: str) -> Optional[Booking]:
         result = await self.db.execute(
-            select(Booking).where(Booking.pesapal_order_tracking_id == tracking_id)
+            self._eager(
+                select(Booking).where(Booking.pesapal_order_tracking_id == tracking_id)
+            )
         )
         return result.scalar_one_or_none()
 
