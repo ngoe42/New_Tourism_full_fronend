@@ -31,12 +31,12 @@ class PaymentService:
 
     # ── Initiate Payment ─────────────────────────────────────────────
 
-    async def initiate_payment(self, booking_id: int, user: User) -> dict:
+    async def initiate_payment(self, booking_id: int, user: User | None) -> dict:
         """Create a Pesapal order for the given booking and return the redirect URL."""
         booking = await self.booking_repo.get(booking_id)
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
-        if booking.user_id != user.id and user.role.value != "admin":
+        if user and booking.user_id and booking.user_id != user.id and user.role.value != "admin":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
         if not settings.PESAPAL_CONSUMER_KEY or not settings.PESAPAL_CONSUMER_SECRET:
@@ -132,12 +132,12 @@ class PaymentService:
 
     # ── Poll Status ──────────────────────────────────────────────────
 
-    async def get_payment_status(self, booking_id: int, user: User) -> dict:
+    async def get_payment_status(self, booking_id: int, user: User | None) -> dict:
         """Poll Pesapal for latest payment status and sync to booking."""
         booking = await self.booking_repo.get(booking_id)
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
-        if booking.user_id != user.id and user.role.value != "admin":
+        if user and booking.user_id and booking.user_id != user.id and user.role.value != "admin":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
         if not booking.pesapal_order_tracking_id:

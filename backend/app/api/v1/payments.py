@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user_optional
 from app.models.user import User
 from app.services.payment import PaymentService
 
@@ -14,7 +14,7 @@ router = APIRouter(tags=["Payments"])
 @router.post("/initiate/{booking_id}")
 async def initiate_payment(
     booking_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
     """Initiate a Pesapal payment for an existing booking. Returns redirect_url."""
@@ -37,7 +37,7 @@ async def pesapal_ipn(
 @router.get("/status/{booking_id}")
 async def payment_status(
     booking_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
     """Poll the current Pesapal payment status for a booking."""
