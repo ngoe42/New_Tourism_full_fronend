@@ -125,3 +125,83 @@ async def health_check():
         "app": settings.APP_NAME,
         "redis": redis_status,
     }
+
+
+@app.get("/debug/booking-test", tags=["Debug"])
+async def debug_booking_test():
+    """Temporary diagnostic — remove after fixing the 500."""
+    import traceback
+    from sqlalchemy import text, inspect as sa_inspect
+    from app.core.database import AsyncSessionLocal
+
+    results = {}
+
+    # 1. Check DB connection
+    try:
+        async with AsyncSessionLocal() as db:
+            row = await db.execute(text("SELECT 1"))
+            results["db_connection"] = "ok"
+    except Exception as e:
+        results["db_connection"] = f"FAIL: {e}"
+        return results
+
+    # 2. Check alembic version
+    try:
+        async with AsyncSessionLocal() as db:
+            row = await db.execute(text("SELECT version_num FROM alembic_version"))
+            versions = [r[0] for r in row.fetchall()]
+            results["alembic_versions"] = versions
+    except Exception as e:
+        results["alembic_versions"] = f"FAIL: {e}"
+
+    # 3. Check bookings table schema (is user_id nullable?)
+    try:
+        async with AsyncSessionLocal() as db:
+            row = await db.execute(text(
+                "SELECT column_name, is_nullable, data_type "
+                "FROM information_schema.columns "
+                "WHERE table_name = 'bookings' AND column_name = 'user_id'"
+            ))
+            col = row.fetchone()
+            results["user_id_column"] = {
+                "column": col[0], "nullable": col[1], "type": col[2]
+            } if col else "NOT FOUND"
+    except Exception as e:
+        results["user_id_column"] = f"FAIL: {e}"
+
+    # 4. Check Pesapal config
+    results["pesapal_key_set"] = bool(settings.PESAPAL_CONSUMER_KEY)
+    results["pesapal_key_preview"] = (settings.PESAPAL_CONSUMER_KEY or "")[:5] + "..."
+    results["pesapal_env"] = settings.PESAPAL_ENVIRONMENT
+    results["backend_url"] = settings.BACKEND_URL
+
+    # 5. Try a test booking insert + rollback
+    try:
+        from app.models.booking import Booking, BookingStatus
+        from datetime import date
+        async with AsyncSessionLocal() as db:
+            test = Booking(
+                user_id=None,
+                tour_id=1,
+                travel_date=date(2026, 1, 1),
+                guests=1,
+                total_price=100.0,
+                status=BookingStatus.pending,
+                contact_name="Test",
+                contact_email="test@test.com",
+            )
+            db.add(test)
+            await db.flush()
+            results["test_insert_null_user"] = f"ok — id={test.id}"
+            await db.rollback()
+    except Exception as e:
+        results["test_insert_null_user"] = f"FAIL: {traceback.format_exc()}"
+
+    # 6. Check slowapi / limiter
+    try:
+        from app.core.limiter import _get_client_ip
+        results["limiter_func"] = str(_get_client_ip)
+    except Exception as e:
+        results["limiter"] = f"FAIL: {e}"
+
+    return results
