@@ -43,6 +43,14 @@ Railway Project
 | `FIRST_ADMIN_PASSWORD` | *(choose a strong password)* |
 | `ALLOWED_ORIGINS` | *(leave blank for now — fill in Step 5)* |
 | `REDIS_URL` | *(optional — add Redis plugin if needed)* |
+| `SENDGRID_API_KEY` | *(your SendGrid API key)* |
+| `EMAIL_FROM` | *(your verified SendGrid sender email)* |
+| `BACKEND_URL` | `https://YOUR-BACKEND-URL.railway.app` *(fill after Step 3)* |
+| `FRONTEND_URL` | `https://YOUR-FRONTEND-URL.railway.app` *(fill after Step 4)* |
+| `PESAPAL_CONSUMER_KEY` | *(from Pesapal dashboard — sandbox or live)* |
+| `PESAPAL_CONSUMER_SECRET` | *(from Pesapal dashboard)* |
+| `PESAPAL_ENVIRONMENT` | `sandbox` (use `live` for production) |
+| `PESAPAL_IPN_ID` | *(leave blank — auto-registered on first booking)* |
 
 > **Tip:** In Railway, go to PostgreSQL plugin → **Connect** and use **"Add to service"** to automatically inject `DATABASE_URL` into the backend service.
 
@@ -112,13 +120,27 @@ railway run --service backend python seed.py
 
 ### Backend
 ```env
-DATABASE_URL=postgresql://...          # from Railway PostgreSQL plugin
+DATABASE_URL=postgresql://...                    # from Railway PostgreSQL plugin
 SECRET_KEY=your-super-secret-64-chars
 DEBUG=False
 ENVIRONMENT=production
 ALLOWED_ORIGINS=https://frontend-xxx.railway.app
 FIRST_ADMIN_EMAIL=admin@nelsontoursandsafari.com
 FIRST_ADMIN_PASSWORD=YourSecurePassword123!
+
+# Email
+SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxx
+EMAIL_FROM=bookings@nelsontoursandsafari.com
+
+# URLs (use your actual Railway service URLs)
+BACKEND_URL=https://backend-xxx.railway.app
+FRONTEND_URL=https://frontend-xxx.railway.app
+
+# Pesapal Payment Gateway
+PESAPAL_CONSUMER_KEY=your-pesapal-consumer-key
+PESAPAL_CONSUMER_SECRET=your-pesapal-consumer-secret
+PESAPAL_ENVIRONMENT=live                         # sandbox | live
+PESAPAL_IPN_ID=                                  # leave blank — auto-registered
 ```
 
 ### Frontend
