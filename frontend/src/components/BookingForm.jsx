@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, Users, Mail, Phone, MessageSquare, CheckCircle, Loader2, AlertCircle, CreditCard, ExternalLink } from 'lucide-react'
+import { Calendar, Users, Mail, Phone, MessageSquare, CheckCircle, Loader2, AlertCircle, CreditCard } from 'lucide-react'
 import { bookingsApi } from '../api/bookings'
 import { inquiriesApi } from '../api/inquiries'
 import { useAuth } from '../context/AuthContext'
@@ -17,9 +17,10 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
     guests: '2',
     message: '',
   })
-  const [status, setStatus] = useState('idle') // idle | loading | redirecting | success | error
+  const [status, setStatus] = useState('idle') // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState('')
   const [paymentUrl, setPaymentUrl] = useState(null)
+  const [bookingRef, setBookingRef] = useState(null)
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -30,7 +31,7 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
     setStatus('loading')
     setErrorMsg('')
     try {
-      if (user && tourId) {
+      if (tourId) {
         const booking = await bookingsApi.create({
           tour_id: tourId,
           travel_date: form.date,
@@ -41,23 +42,17 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
           contact_phone: form.phone || undefined,
         })
 
+        setBookingRef(booking.id)
         if (booking.payment_redirect_url) {
           setPaymentUrl(booking.payment_redirect_url)
-          setStatus('redirecting')
-          setTimeout(() => { window.location.href = booking.payment_redirect_url }, 2000)
         } else {
           try {
             const payment = await bookingsApi.initiatePayment(booking.id)
-            if (payment.redirect_url) {
-              setPaymentUrl(payment.redirect_url)
-              setStatus('redirecting')
-              setTimeout(() => { window.location.href = payment.redirect_url }, 2000)
-              return
-            }
+            if (payment.redirect_url) setPaymentUrl(payment.redirect_url)
           } catch {
           }
-          setStatus('success')
         }
+        setStatus('success')
       } else {
         await inquiriesApi.create({
           name: form.name,
@@ -78,34 +73,6 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
 
   const total = tourPrice > 0 ? tourPrice * parseInt(form.guests || '1') : null
 
-  if (status === 'redirecting') {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className={`${compact ? '' : 'bg-white rounded-3xl p-8'} flex flex-col items-center text-center py-8`}
-      >
-        <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mb-5">
-          <CreditCard size={32} className="text-amber-600" />
-        </div>
-        <h3 className="font-serif text-2xl font-semibold text-green-950 mb-2">Booking Created!</h3>
-        <p className="font-sans text-gray-500 text-sm leading-relaxed max-w-xs mb-1">
-          Redirecting you to our secure Pesapal payment page…
-        </p>
-        <p className="font-sans text-gray-400 text-xs mb-5">Visa · Mastercard · M-Pesa · Airtel Money</p>
-        <Loader2 size={20} className="animate-spin text-amber-500 mb-4" />
-        {paymentUrl && (
-          <a
-            href={paymentUrl}
-            className="flex items-center gap-1.5 text-sm font-sans text-gold underline underline-offset-2"
-          >
-            Click here if not redirected automatically <ExternalLink size={13} />
-          </a>
-        )}
-      </motion.div>
-    )
-  }
-
   if (status === 'success') {
     return (
       <motion.div
@@ -116,13 +83,31 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
         <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-5">
           <CheckCircle size={32} className="text-green-600" />
         </div>
-        <h3 className="font-serif text-2xl font-semibold text-green-950 mb-2">Request Received!</h3>
-        <p className="font-sans text-gray-500 text-sm leading-relaxed max-w-xs">
-          Our safari specialists will contact you within 24 hours to finalize your dream journey.
+        <h3 className="font-serif text-2xl font-semibold text-green-950 mb-2">
+          {bookingRef ? 'Booking Request Sent Successfully!' : 'Request Received!'}
+        </h3>
+        <p className="font-sans text-gray-500 text-sm leading-relaxed max-w-xs mb-1">
+          {bookingRef
+            ? `A confirmation email has been sent to ${form.email} with your booking details and payment link.`
+            : 'Our safari specialists will contact you within 24 hours to finalize your dream journey.'}
         </p>
+        {bookingRef && (
+          <p className="font-sans text-xs text-gray-400 mb-5">Booking Reference: #{bookingRef}</p>
+        )}
+        {paymentUrl && (
+          <a
+            href={paymentUrl}
+            className="mt-3 mb-2 flex items-center gap-2 px-6 py-3 bg-[#c9a96e] text-white font-sans text-sm font-semibold rounded-xl hover:bg-amber-700 transition-colors"
+          >
+            <CreditCard size={16} /> Complete Payment Now
+          </a>
+        )}
+        {paymentUrl && (
+          <p className="font-sans text-[11px] text-gray-400 mb-4">Visa · Mastercard · M-Pesa · Airtel Money</p>
+        )}
         <button
-          onClick={() => setStatus('idle')}
-          className="mt-6 text-sm font-sans text-gold hover:text-gold-dark transition-colors"
+          onClick={() => { setStatus('idle'); setPaymentUrl(null); setBookingRef(null) }}
+          className="mt-4 text-sm font-sans text-[#c9a96e] hover:underline transition-colors"
         >
           Submit another request
         </button>
@@ -256,7 +241,7 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
             Processing...
           </>
         ) : (
-          user && tourId ? 'Book & Proceed to Payment' : 'Send Booking Request'
+          tourId ? 'Book & Proceed to Payment' : 'Send Booking Request'
         )}
       </button>
 

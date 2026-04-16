@@ -44,10 +44,12 @@ async def send_reply_email(
     payment_link = data.payment_link
 
     # Auto-enrich from booking record when booking_id is supplied
+    include_terms = False
+
     if data.booking_id:
         from sqlalchemy.orm import selectinload
         from app.models.booking import Booking as BookingModel
-        from app.models.tour import Tour as TourModel
+        from app.core.config import settings as _s
         result = await db.execute(
             select(BookingModel)
             .options(selectinload(BookingModel.tour))
@@ -58,11 +60,14 @@ async def send_reply_email(
             if price is None and booking.total_price:
                 price = float(booking.total_price)
             if item_name is None and booking.tour:
-                item_name = booking.tour.title
+                item_name = f"{booking.tour.title} · {booking.guests} guest{'s' if booking.guests != 1 else ''}"
             if payment_link is None:
-                from app.core.config import settings as _s
-                subject_line = f"Payment Details — Booking #{booking.id}"
-                payment_link = f"mailto:{_s.EMAIL_FROM}?subject={subject_line.replace(' ', '%20')}"
+                # Use stored Pesapal redirect URL first; fall back to contact page
+                payment_link = (
+                    booking.payment_redirect_url
+                    or f"{_s.FRONTEND_URL}/contact"
+                )
+            include_terms = True
             for key, value in {"is_replied": True}.items():
                 if hasattr(booking, key):
                     setattr(booking, key, value)
@@ -76,6 +81,8 @@ async def send_reply_email(
             item_name=item_name,
             price=price,
             payment_link=payment_link,
+            btn_label="Complete Payment",
+            include_terms=include_terms,
         )
     except RuntimeError as e:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))

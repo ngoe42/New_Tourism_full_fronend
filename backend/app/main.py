@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.requests import Request
 from starlette.responses import Response
 from loguru import logger
@@ -20,6 +22,7 @@ class CachedStaticFiles(StaticFiles):
 
 from app.core.config import settings
 from app.core.cache import init_redis, close_redis
+from app.core.limiter import limiter
 from app.api.v1.router import api_router
 
 
@@ -72,6 +75,9 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.DEBUG else None,
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

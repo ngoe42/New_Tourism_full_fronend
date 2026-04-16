@@ -40,7 +40,7 @@ class BookingUserInfo(BaseModel):
 class BookingResponse(BaseModel):
     id: int
     tour_id: int
-    user_id: int
+    user_id: Optional[int] = None
     travel_date: date
     guests: int
     total_price: float

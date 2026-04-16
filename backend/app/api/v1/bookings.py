@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.dependencies.auth import get_current_user, require_admin
+from app.core.limiter import limiter
+from app.dependencies.auth import get_current_user, get_current_user_optional, require_admin
 from app.models.user import User
 from app.schemas.booking import BookingCreate, BookingResponse, BookingStatusUpdate, PaginatedBookings
 from app.services.booking import BookingService
@@ -11,9 +12,11 @@ router = APIRouter(tags=["Bookings"])
 
 
 @router.post("", response_model=BookingResponse, status_code=201)
+@limiter.limit("5/hour")
 async def create_booking(
+    request: Request,
     data: BookingCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
     service = BookingService(db)

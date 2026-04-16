@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.limiter import limiter
 from app.dependencies.auth import require_admin
 from app.schemas.inquiry import InquiryCreate, InquiryResponse, InquiryUpdate, PaginatedInquiries
 from app.services.inquiry import InquiryService
@@ -10,7 +11,8 @@ router = APIRouter(tags=["Inquiries"])
 
 
 @router.post("", response_model=InquiryResponse, status_code=201)
-async def create_inquiry(data: InquiryCreate, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/hour")
+async def create_inquiry(request: Request, data: InquiryCreate, db: AsyncSession = Depends(get_db)):
     service = InquiryService(db)
     return await service.create(data)
 

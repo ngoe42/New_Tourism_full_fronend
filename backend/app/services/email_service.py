@@ -11,6 +11,7 @@ def _payment_block(
     item_name: Optional[str],
     price: Optional[float],
     payment_link: Optional[str],
+    btn_label: str = "Complete Payment",
 ) -> str:
     """Returns an HTML payment-details section, or empty string if nothing to show."""
     if not price and not payment_link:
@@ -32,23 +33,28 @@ def _payment_block(
     ) if item_name else ""
 
     btn_html = (
-        f'<div style="text-align:center; margin-top:20px;">'
+        f'<div style="margin-top:24px;">'
         f'<a href="{payment_link}" '
-        f'style="display:inline-block; background:#c9a96e; color:#fff; font-size:14px; font-weight:700; '
-        f'padding:14px 32px; border-radius:8px; text-decoration:none; letter-spacing:0.5px;">'
-        f'Complete Payment &rarr;'
-        f'</a></div>'
+        f'style="display:block; width:100%; box-sizing:border-box; background:#c9a96e; color:#fff !important; '
+        f'font-size:16px; font-weight:800; padding:18px 24px; border-radius:10px; '
+        f'text-decoration:none; letter-spacing:1px; text-align:center; text-transform:uppercase;">'
+        f'{btn_label} &rarr;'
+        f'</a>'
+        f'<p style="margin:10px 0 0; text-align:center; font-size:11px; color:#aaa;">'
+        f'Or copy this link: <a href="{payment_link}" style="color:#c9a96e; word-break:break-all;">{payment_link}</a>'
+        f'</p>'
+        f'</div>'
     ) if payment_link else ""
 
     return f"""
     <div style="margin:24px 32px 0; border:2px solid #c9a96e; border-radius:10px; overflow:hidden;">
-      <div style="background:#0f3d2e; padding:12px 20px;">
+      <div style="background:#0f3d2e; padding:14px 20px; display:flex; align-items:center; gap:8px;">
         <p style="margin:0; color:#c9a96e; font-size:11px; text-transform:uppercase; letter-spacing:2px; font-weight:700;">
-          Payment Details
+          &#128274;&nbsp; Secure Payment Details
         </p>
       </div>
-      <div style="padding:16px 20px;">
-        <table style="width:100%; border-collapse:collapse;">
+      <div style="padding:20px 20px 24px;">
+        <table style="width:100%; border-collapse:collapse; margin-bottom:4px;">
           {item_html}
           {price_html}
         </table>
@@ -124,9 +130,10 @@ def _build_html(
     item_name: Optional[str] = None,
     price: Optional[float] = None,
     payment_link: Optional[str] = None,
+    btn_label: str = "Complete Payment",
     include_terms: bool = False,
 ) -> str:
-    payment_section = _payment_block(item_name, price, payment_link)
+    payment_section = _payment_block(item_name, price, payment_link, btn_label)
     terms_section = _payment_terms_block() if include_terms else ""
     return f"""
     <html>
@@ -158,6 +165,7 @@ async def send_email(
     item_name: Optional[str] = None,
     price: Optional[float] = None,
     payment_link: Optional[str] = None,
+    btn_label: str = "Complete Payment",
     include_terms: bool = False,
 ) -> None:
     """Send email via SendGrid.  Optionally includes payment-details and terms blocks."""
@@ -170,7 +178,7 @@ async def send_email(
 
     from sendgrid.helpers.mail import ReplyTo
 
-    html = _build_html(body, item_name=item_name, price=price, payment_link=payment_link, include_terms=include_terms)
+    html = _build_html(body, item_name=item_name, price=price, payment_link=payment_link, btn_label=btn_label, include_terms=include_terms)
 
     plain = body
     if price:

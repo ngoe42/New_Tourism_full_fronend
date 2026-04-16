@@ -20,7 +20,7 @@ class BookingService:
         self.booking_repo = BookingRepository(db)
         self.tour_repo = TourRepository(db)
 
-    async def create_booking(self, data: BookingCreate, user: User) -> Booking:
+    async def create_booking(self, data: BookingCreate, user: User | None) -> Booking:
         tour = await self.tour_repo.get(data.tour_id)
         if not tour or not tour.is_published:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tour not found")
@@ -28,7 +28,7 @@ class BookingService:
         total_price = tour.price * data.guests
 
         booking = Booking(
-            user_id=user.id,
+            user_id=user.id if user else None,
             tour_id=data.tour_id,
             travel_date=data.travel_date,
             guests=data.guests,
@@ -76,11 +76,27 @@ class BookingService:
         if settings.SENDGRID_API_KEY:
             try:
                 name = data.contact_name.split()[0]
+
+                # Always have a payment link in the email. Use the Pesapal redirect
+                # URL if available; otherwise direct the customer to contact us.
+                email_payment_link = payment_link or f"{settings.FRONTEND_URL}/contact"
+                has_pesapal = payment_link is not None
+
+                if has_pesapal:
+                    payment_instruction = (
+                        f"Please complete your deposit payment using the button below "
+                        f"to secure your reservation."
+                    )
+                else:
+                    payment_instruction = (
+                        f"To complete your payment and secure this reservation, "
+                        f"please contact our team — we will send you a secure payment link within the hour."
+                    )
+
                 body = (
                     f"Dear {name},\n\n"
                     f"Thank you for choosing Nelson Tours & Safari!\n\n"
-                    f"Your booking request has been received and is pending payment confirmation. "
-                    f"Please complete your deposit payment using the button below to secure your reservation.\n\n"
+                    f"Your booking request has been received. {payment_instruction}\n\n"
                     f"Booking Reference : #{booking.id}\n"
                     f"Tour              : {tour.title}\n"
                     f"Travel Date       : {data.travel_date.strftime('%B %d, %Y')}\n"
@@ -95,7 +111,8 @@ class BookingService:
                     body=body,
                     item_name=f"{tour.title} · {data.guests} guest{'s' if data.guests > 1 else ''}",
                     price=total_price,
-                    payment_link=payment_link,
+                    payment_link=email_payment_link,
+                    btn_label="Complete Payment" if has_pesapal else "Contact Us to Pay",
                     include_terms=True,
                 )
             except Exception as exc:
@@ -107,7 +124,7 @@ class BookingService:
         booking = await self.booking_repo.get(booking_id)
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
-        if booking.user_id != user.id and user.role.value != "admin":
+        if user.role.value != "admin" and booking.user_id != user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         return booking
 
