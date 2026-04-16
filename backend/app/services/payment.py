@@ -53,13 +53,13 @@ class PaymentService:
 
         merchant_reference = f"NTS-{booking.id}-{uuid.uuid4().hex[:8].upper()}"
         callback_url = f"{settings.FRONTEND_URL}/payment/callback"
-        ipn_id = await self._get_or_register_ipn_id()
 
         name_parts = booking.contact_name.split(" ", 1)
         first_name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else "."
 
         try:
+            ipn_id = await self._get_or_register_ipn_id()
             result = await self.pesapal.submit_order(
                 merchant_reference=merchant_reference,
                 amount=booking.total_price,
@@ -73,10 +73,10 @@ class PaymentService:
                 last_name=last_name,
             )
         except Exception as exc:
-            logger.error(f"Pesapal submit_order failed for booking {booking_id}: {exc}")
+            logger.error(f"Pesapal payment initiation failed for booking {booking_id}: {exc}")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Payment gateway error — please try again",
+                detail=f"Payment gateway error: {exc}",
             )
 
         await self.booking_repo.update(booking, {
