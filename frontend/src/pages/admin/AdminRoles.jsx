@@ -5,6 +5,7 @@ import {
   Shield, Plus, Edit2, Trash2, X, Check, Users, Lock
 } from 'lucide-react'
 import { userManagementApi } from '../../api/userManagement'
+import extractError from '../../utils/extractError'
 
 const MODULE_COLORS = {
   dashboard: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -162,7 +163,7 @@ export default function AdminRoles() {
           <RoleFormModal
             title="Create New Role"
             permissions={permissions}
-            error={createMut.error?.response?.data?.detail}
+            error={createMut.error ? extractError(createMut.error) : null}
             isLoading={createMut.isPending}
             onClose={() => { setShowModal(false); createMut.reset() }}
             onSubmit={(data) => createMut.mutate(data)}
@@ -177,7 +178,7 @@ export default function AdminRoles() {
             title={`Edit ${editRole.name}`}
             permissions={permissions}
             initialData={editRole}
-            error={updateMut.error?.response?.data?.detail}
+            error={updateMut.error ? extractError(updateMut.error) : null}
             isLoading={updateMut.isPending}
             onClose={() => { setEditRole(null); updateMut.reset() }}
             onSubmit={(data) => updateMut.mutate({ id: editRole.id, data })}

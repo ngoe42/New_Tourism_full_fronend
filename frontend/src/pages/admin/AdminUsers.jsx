@@ -6,6 +6,7 @@ import {
   ChevronDown, UserCheck, UserX, Eye, EyeOff
 } from 'lucide-react'
 import { userManagementApi } from '../../api/userManagement'
+import extractError from '../../utils/extractError'
 
 export default function AdminUsers() {
   const qc = useQueryClient()
@@ -174,7 +175,7 @@ export default function AdminUsers() {
           <UserFormModal
             title="Create New User"
             roles={roles}
-            error={createMut.error?.response?.data?.detail}
+            error={createMut.error ? extractError(createMut.error) : null}
             isLoading={createMut.isPending}
             onClose={() => { setShowModal(false); createMut.reset() }}
             onSubmit={(data) => createMut.mutate(data)}
@@ -189,7 +190,7 @@ export default function AdminUsers() {
             title={`Edit ${editUser.name}`}
             roles={roles}
             initialData={editUser}
-            error={updateMut.error?.response?.data?.detail}
+            error={updateMut.error ? extractError(updateMut.error) : null}
             isLoading={updateMut.isPending}
             onClose={() => { setEditUser(null); updateMut.reset() }}
             onSubmit={(data) => updateMut.mutate({ id: editUser.id, data })}

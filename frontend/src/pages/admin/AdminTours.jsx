@@ -58,6 +58,19 @@ function ListEditor({ label, value = [], onChange, addPlaceholder, icon: Icon, i
   )
 }
 
+function extractError(err, fallback = 'Something went wrong') {
+  const detail = err?.response?.data?.detail
+  if (!detail) return err?.message || fallback
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail.map((d) => {
+      const field = d.loc?.slice(-1)[0]
+      return field ? `${field}: ${d.msg}` : d.msg
+    }).join('; ')
+  }
+  return fallback
+}
+
 function slugify(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
@@ -371,7 +384,7 @@ export default function AdminTours() {
       return tour
     },
     onSuccess: () => { qc.invalidateQueries(['admin-tours']); setActiveForm(null); showToast('Tour created successfully!') },
-    onError: (e) => showToast(e.response?.data?.detail ?? 'Failed to create tour', 'error'),
+    onError: (e) => showToast(extractError(e, 'Failed to create tour'), 'error'),
   })
 
   const updateMutation = useMutation({
@@ -383,13 +396,13 @@ export default function AdminTours() {
       return tour
     },
     onSuccess: () => { qc.invalidateQueries(['admin-tours']); setActiveForm(null); showToast('Tour updated successfully!') },
-    onError: (e) => showToast(e.response?.data?.detail ?? 'Failed to update tour', 'error'),
+    onError: (e) => showToast(extractError(e, 'Failed to update tour'), 'error'),
   })
 
   const deleteMutation = useMutation({
     mutationFn: toursApi.delete,
     onSuccess: () => { qc.invalidateQueries(['admin-tours']); showToast('Tour deleted') },
-    onError: (e) => showToast(e.response?.data?.detail ?? 'Failed to delete tour', 'error'),
+    onError: (e) => showToast(extractError(e, 'Failed to delete tour'), 'error'),
   })
 
   const handleAddTour = () => {
