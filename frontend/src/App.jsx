@@ -21,6 +21,8 @@ import AdminInquiries from './pages/admin/AdminInquiries'
 import AdminExperiences from './pages/admin/AdminExperiences'
 import AdminRoutes from './pages/admin/AdminRoutes'
 import AdminSettings from './pages/admin/AdminSettings'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminRoles from './pages/admin/AdminRoles'
 import Experiences from './pages/Experiences'
 import Blog from './pages/Blog'
 import About from './pages/About'
@@ -78,6 +80,8 @@ function AppRoutes() {
           <Route path="experiences" element={<AdminExperiences />} />
           <Route path="routes" element={<AdminRoutes />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="roles" element={<AdminRoles />} />
         </Route>
       </Routes>
     </>

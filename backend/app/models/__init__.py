@@ -1,4 +1,5 @@
 from app.models.user import User, UserRole
+from app.models.role import Role, Permission, role_permissions
 from app.models.tour import Tour, TourImage
 from app.models.booking import Booking, BookingStatus
 from app.models.inquiry import Inquiry
@@ -12,6 +13,9 @@ from app.models.site_settings import SiteSettings
 __all__ = [
     "User",
     "UserRole",
+    "Role",
+    "Permission",
+    "role_permissions",
     "Tour",
     "TourImage",
     "Booking",

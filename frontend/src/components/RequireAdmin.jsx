@@ -12,7 +12,12 @@ export default function RequireAdmin({ children }) {
     )
   }
 
-  if (!user || user.role !== 'admin') {
+  const hasAccess = user && (
+    user.role === 'admin' ||
+    (user.permissions && user.permissions.includes('view_dashboard'))
+  )
+
+  if (!hasAccess) {
     return <Navigate to="/" replace />
   }
 

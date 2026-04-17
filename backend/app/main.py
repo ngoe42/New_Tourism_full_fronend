@@ -44,15 +44,24 @@ async def _seed_admin():
     from app.core.security import get_password_hash
     from app.models.user import User, UserRole
     from app.repositories.user import UserRepository
+    from app.services.user_management import UserManagementService
 
     async with AsyncSessionLocal() as db:
+        # Seed roles & permissions first
+        await UserManagementService.seed_roles_and_permissions(db)
+        await db.commit()
+
         repo = UserRepository(db)
         if not await repo.email_exists(settings.FIRST_ADMIN_EMAIL):
+            from app.repositories.role import RoleRepository
+            role_repo = RoleRepository(db)
+            admin_role = await role_repo.get_by_name("Admin")
             admin = User(
                 email=settings.FIRST_ADMIN_EMAIL,
                 name="Admin",
                 hashed_password=get_password_hash(settings.FIRST_ADMIN_PASSWORD),
                 role=UserRole.admin,
+                role_id=admin_role.id if admin_role else None,
             )
             await repo.create(admin)
             await db.commit()

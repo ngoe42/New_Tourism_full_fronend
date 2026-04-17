@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, users, tours, bookings, inquiries, trip_plans, media, testimonials, admin, experiences, routes, site_settings, payments
+from app.api.v1 import auth, users, tours, bookings, inquiries, trip_plans, media, testimonials, admin, experiences, routes, site_settings, payments, user_management
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -17,3 +17,4 @@ api_router.include_router(experiences.router, prefix="/experiences", tags=["Expe
 api_router.include_router(routes.router, prefix="/routes", tags=["Routes"])
 api_router.include_router(admin.router, prefix="/admin", tags=["Admin"])
 api_router.include_router(site_settings.router, prefix="/settings", tags=["Settings"])
+api_router.include_router(user_management.router, prefix="/manage", tags=["User Management"])

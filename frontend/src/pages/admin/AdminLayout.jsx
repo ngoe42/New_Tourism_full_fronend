@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation, Link } from 'react-router-do
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Map, CalendarCheck, MessageSquare,
-  Mail, LogOut, Menu, Globe, Bell, CalendarClock, Inbox, Star, Images, Mountain, Settings
+  Mail, LogOut, Menu, Globe, Bell, CalendarClock, Inbox, Star, Images, Mountain, Settings, Users, Shield
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
@@ -18,6 +18,8 @@ const PAGE_TITLES = {
   '/admin/experiences': 'Experiences',
   '/admin/routes': 'Kilimanjaro Routes',
   '/admin/settings': 'Site Settings',
+  '/admin/users': 'User Management',
+  '/admin/roles': 'Roles & Permissions',
 }
 
 function NotifBadge({ count }) {
@@ -97,6 +99,8 @@ export default function AdminLayout() {
     { to: '/admin/inquiries',    label: 'Inquiries',    icon: Mail,            end: false, badge: pendingInquiries },
     { to: '/admin/experiences',  label: 'Experiences',  icon: Images,          end: false, badge: 0 },
     { to: '/admin/routes',        label: 'Routes',       icon: Mountain,        end: false, badge: 0 },
+    { to: '/admin/users',          label: 'Users',        icon: Users,           end: false, badge: 0 },
+    { to: '/admin/roles',          label: 'Roles',        icon: Shield,          end: false, badge: 0 },
     { to: '/admin/settings',       label: 'Settings',     icon: Settings,        end: false, badge: 0 },
   ]
 

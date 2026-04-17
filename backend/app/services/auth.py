@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.models.user import User, UserRole
 from app.repositories.user import UserRepository
 from app.schemas.auth import TokenResponse
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserResponse
 
 
 class AuthService:
@@ -55,7 +55,7 @@ class AuthService:
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            user=user,
+            user=UserResponse.from_user(user),
         )
 
     async def refresh_access_token(self, refresh_token: str) -> dict:

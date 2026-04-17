@@ -15,7 +15,7 @@ router = APIRouter(tags=["Authentication"])
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     user = await service.register(data)
-    return user
+    return UserResponse.from_user(user)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -32,4 +32,4 @@ async def refresh(data: RefreshRequest, db: AsyncSession = Depends(get_db)):
 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
-    return current_user
+    return UserResponse.from_user(current_user)
