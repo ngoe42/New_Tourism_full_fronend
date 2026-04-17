@@ -39,8 +39,8 @@ class Tour(Base):
     images: Mapped[list["TourImage"]] = relationship(
         "TourImage", back_populates="tour", cascade="all, delete-orphan", lazy="selectin"
     )
-    bookings: Mapped[list["Booking"]] = relationship("Booking", back_populates="tour", lazy="selectin")
-    testimonials: Mapped[list["Testimonial"]] = relationship("Testimonial", back_populates="tour", lazy="selectin")
+    bookings: Mapped[list["Booking"]] = relationship("Booking", back_populates="tour", lazy="selectin", passive_deletes=True)
+    testimonials: Mapped[list["Testimonial"]] = relationship("Testimonial", back_populates="tour", lazy="selectin", passive_deletes=True)
 
 
 class TourImage(Base):
