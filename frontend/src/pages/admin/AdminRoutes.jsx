@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { routesApi } from '../../api/routes'
 import { resolveImageUrl } from '../../utils/imageUrl'
+import extractError from '../../utils/extractError'
 
 const EMPTY_FORM = {
   name: '', slug: '', nickname: '', nickname_explanation: '',
@@ -142,7 +143,7 @@ function RouteImages({ route, onRefresh }) {
       setCaption('')
       onRefresh()
     } catch (e) {
-      alert('Upload failed: ' + (e.response?.data?.detail ?? e.message))
+      alert(extractError(e, 'Upload failed'))
     } finally {
       setUploading(false)
     }
@@ -234,7 +235,7 @@ function RouteModal({ route, onClose, onSaved }) {
         onSaved(false)
       }
     } catch (err) {
-      alert('Error: ' + (err.response?.data?.detail ?? err.message))
+      alert(extractError(err, 'Save failed'))
     } finally {
       setSaving(false)
     }
@@ -443,7 +444,7 @@ export default function AdminRoutes() {
       qc.invalidateQueries({ queryKey: ['admin-routes'] })
       qc.invalidateQueries({ queryKey: ['nav-routes'] })
     } catch (e) {
-      alert('Delete failed: ' + (e.response?.data?.detail ?? e.message))
+      alert(extractError(e, 'Delete failed'))
     }
   }
 

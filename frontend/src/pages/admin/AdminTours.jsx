@@ -97,7 +97,7 @@ function TourForm({ initial, onClose, onSave, saving }) {
       await toursApi.deleteImage(initial.id, imageId)
       setExistingImages((prev) => prev.filter((img) => img.id !== imageId))
     } catch (e) {
-      alert('Failed to delete image: ' + (e.response?.data?.detail ?? e.message))
+      alert(extractError(e, 'Failed to delete image'))
     } finally {
       setDeletingImageId(null)
     }

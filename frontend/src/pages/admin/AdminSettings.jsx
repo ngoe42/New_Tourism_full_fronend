@@ -8,6 +8,7 @@ import {
 import { settingsApi } from '../../api/settings'
 import apiClient from '../../api/client'
 import { resolveImageUrl } from '../../utils/imageUrl'
+import extractError from '../../utils/extractError'
 
 /* ── Reusable image-upload card ──────────────────────────────────────────── */
 function ImageCard({ icon: Icon, iconBg, iconColor, title, description, field, currentUrl, onSaved }) {
@@ -31,11 +32,7 @@ function ImageCard({ icon: Icon, iconBg, iconColor, title, description, field, c
       await settingsApi.setImage(field, res.data.url)
       onSaved()
     } catch (err) {
-      const detail = err?.response?.data?.detail
-      const msg = Array.isArray(detail)
-        ? detail.map((d) => d.msg ?? String(d)).join(', ')
-        : (typeof detail === 'string' ? detail : 'Upload failed')
-      setError(msg)
+      setError(extractError(err, 'Upload failed'))
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -151,11 +148,7 @@ function HeroImagesCard({ images, onSaved }) {
       await settingsApi.addHeroImage(res.data.url)
       onSaved()
     } catch (err) {
-      const detail = err?.response?.data?.detail
-      const msg = Array.isArray(detail)
-        ? detail.map((d) => d.msg ?? String(d)).join(', ')
-        : (typeof detail === 'string' ? detail : 'Upload failed')
-      setError(msg)
+      setError(extractError(err, 'Upload failed'))
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -443,7 +436,7 @@ export default function AdminSettings() {
                 {videoMutation.isError && (
                   <div className="mt-2 flex items-center gap-1.5">
                     <AlertCircle size={12} className="text-red-500" />
-                    <span className="font-sans text-[11px] text-red-500">{videoMutation.error?.response?.data?.detail || 'Upload failed'}</span>
+                    <span className="font-sans text-[11px] text-red-500">{extractError(videoMutation.error, 'Upload failed')}</span>
                   </div>
                 )}
               </div>

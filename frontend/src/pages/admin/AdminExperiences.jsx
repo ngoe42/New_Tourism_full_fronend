@@ -8,6 +8,7 @@ import {
 import { experiencesApi } from '../../api/experiences'
 import apiClient from '../../api/client'
 import { resolveImageUrl } from '../../utils/imageUrl'
+import extractError from '../../utils/extractError'
 
 const EMPTY_FORM = { title: '', subtitle: '', description: '', image_url: '', order: 0, is_active: true }
 
@@ -57,11 +58,7 @@ function ImageUploader({ imageUrl, onUploaded }) {
       })
       onUploaded(res.data.url)
     } catch (err) {
-      const detail = err?.response?.data?.detail
-      const msg = Array.isArray(detail)
-        ? detail.map((d) => d.msg ?? String(d)).join(', ')
-        : (typeof detail === 'string' ? detail : 'Upload failed')
-      setError(msg)
+      setError(extractError(err, 'Upload failed'))
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -134,7 +131,7 @@ function ExperienceModal({ experience, onClose, onSaved }) {
       }
       onSaved()
     } catch (err) {
-      alert('Error: ' + (err.response?.data?.detail ?? err.message))
+      alert(extractError(err, 'Save failed'))
     } finally {
       setSaving(false)
     }
@@ -268,7 +265,7 @@ export default function AdminExperiences() {
       await experiencesApi.remove(exp.id)
       invalidate()
     } catch (e) {
-      alert('Delete failed: ' + (e.response?.data?.detail ?? e.message))
+      alert(extractError(e, 'Delete failed'))
     }
   }
 
