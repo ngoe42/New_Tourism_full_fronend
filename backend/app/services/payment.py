@@ -10,6 +10,7 @@ from app.models.booking import Booking, BookingStatus
 from app.models.user import User
 from app.repositories.booking import BookingRepository
 from app.repositories.tour import TourRepository
+from app.services.booking import send_booking_confirmation_email
 from app.services.pesapal import PesapalService
 
 
@@ -79,12 +80,28 @@ class PaymentService:
                 detail=f"Payment gateway error: {exc}",
             )
 
+        # Check whether a confirmation email was already sent during create_booking.
+        # If not (Pesapal failed then), send it now with the payment link.
+        email_already_sent = booking.payment_redirect_url is not None
+
         await self.booking_repo.update(booking, {
             "pesapal_order_tracking_id": result["order_tracking_id"],
             "pesapal_merchant_reference": merchant_reference,
             "payment_status": "PENDING",
             "payment_redirect_url": result["redirect_url"],
         })
+
+        if not email_already_sent:
+            await send_booking_confirmation_email(
+                booking=booking,
+                tour_title=booking.tour.title if booking.tour else f"Booking #{booking.id}",
+                contact_name=booking.contact_name,
+                contact_email=booking.contact_email,
+                travel_date=booking.travel_date,
+                guests=booking.guests,
+                total_price=booking.total_price,
+                payment_link=result["redirect_url"],
+            )
 
         return {
             "redirect_url": result["redirect_url"],

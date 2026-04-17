@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -77,6 +78,35 @@ class BookingRepository(BaseRepository[Booking]):
             )
         )
         return result.scalar_one_or_none()
+
+    async def has_confirmed_overlap(
+        self,
+        tour_id: int,
+        travel_date: date,
+        duration_days: int,
+        exclude_booking_id: int | None = None,
+    ) -> bool:
+        """Return True if a confirmed & paid booking already covers the date range."""
+        window = timedelta(days=max(duration_days - 1, 0))
+        range_start = travel_date - window
+        range_end = travel_date + window
+
+        stmt = (
+            select(func.count())
+            .select_from(Booking)
+            .where(
+                Booking.tour_id == tour_id,
+                Booking.status == BookingStatus.confirmed,
+                Booking.payment_status == "COMPLETED",
+                Booking.travel_date >= range_start,
+                Booking.travel_date <= range_end,
+            )
+        )
+        if exclude_booking_id:
+            stmt = stmt.where(Booking.id != exclude_booking_id)
+
+        result = await self.db.execute(stmt)
+        return result.scalar_one() > 0
 
     async def get_total_revenue(self) -> float:
         result = await self.db.execute(

@@ -1,3 +1,4 @@
+import re
 import uuid
 
 from fastapi import HTTPException, status
@@ -14,6 +15,68 @@ from app.services.email_service import send_email
 from app.services.pesapal import PesapalService
 
 
+def _parse_duration_days(duration: str) -> int:
+    """Extract the number of days from a string like '3 Days', '7 days / 6 nights'."""
+    m = re.search(r'(\d+)\s*day', duration, re.IGNORECASE)
+    return int(m.group(1)) if m else 1
+
+
+async def send_booking_confirmation_email(
+    booking: "Booking",
+    tour_title: str,
+    contact_name: str,
+    contact_email: str,
+    travel_date,
+    guests: int,
+    total_price: float,
+    payment_link: str | None,
+) -> None:
+    """Send booking confirmation email. Re-usable from create_booking & initiate_payment."""
+    if not settings.SENDGRID_API_KEY:
+        return
+    try:
+        name = contact_name.split()[0]
+
+        email_payment_link = payment_link or f"{settings.FRONTEND_URL}/contact"
+        has_pesapal = payment_link is not None
+
+        if has_pesapal:
+            payment_instruction = (
+                f"Please complete your deposit payment using the button below "
+                f"to secure your reservation."
+            )
+        else:
+            payment_instruction = (
+                f"To complete your payment and secure this reservation, "
+                f"please contact our team — we will send you a secure payment link within the hour."
+            )
+
+        body = (
+            f"Dear {name},\n\n"
+            f"Thank you for choosing Nelson Tours & Safari!\n\n"
+            f"Your booking request has been received. {payment_instruction}\n\n"
+            f"Booking Reference : #{booking.id}\n"
+            f"Tour              : {tour_title}\n"
+            f"Travel Date       : {travel_date.strftime('%B %d, %Y')}\n"
+            f"Guests            : {guests}\n\n"
+            f"Our team will be in touch within 24 hours to assist with any questions.\n\n"
+            f"We look forward to crafting an unforgettable safari experience for you.\n\n"
+            f"Warm regards,\nNelson Tours & Safari Team"
+        )
+        await send_email(
+            to=contact_email,
+            subject=f"Booking Request Received — {tour_title} | Nelson Tours & Safari",
+            body=body,
+            item_name=f"{tour_title} · {guests} guest{'s' if guests > 1 else ''}",
+            price=total_price,
+            payment_link=email_payment_link,
+            btn_label="Complete Payment" if has_pesapal else "Contact Us to Pay",
+            include_terms=True,
+        )
+    except Exception as exc:
+        logger.error(f"Booking confirmation email failed for #{booking.id}: {exc}")
+
+
 class BookingService:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -24,6 +87,13 @@ class BookingService:
         tour = await self.tour_repo.get(data.tour_id)
         if not tour or not tour.is_published:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tour not found")
+
+        duration_days = _parse_duration_days(tour.duration)
+        if await self.booking_repo.has_confirmed_overlap(tour.id, data.travel_date, duration_days):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This tour is already booked and confirmed for the selected dates. Please choose different dates.",
+            )
 
         total_price = tour.price * data.guests
 
@@ -73,50 +143,25 @@ class BookingService:
             except Exception as exc:
                 logger.error(f"Pesapal init failed for booking #{booking.id}: {exc}")
 
-        if settings.SENDGRID_API_KEY:
-            try:
-                name = data.contact_name.split()[0]
-
-                # Always have a payment link in the email. Use the Pesapal redirect
-                # URL if available; otherwise direct the customer to contact us.
-                email_payment_link = payment_link or f"{settings.FRONTEND_URL}/contact"
-                has_pesapal = payment_link is not None
-
-                if has_pesapal:
-                    payment_instruction = (
-                        f"Please complete your deposit payment using the button below "
-                        f"to secure your reservation."
-                    )
-                else:
-                    payment_instruction = (
-                        f"To complete your payment and secure this reservation, "
-                        f"please contact our team — we will send you a secure payment link within the hour."
-                    )
-
-                body = (
-                    f"Dear {name},\n\n"
-                    f"Thank you for choosing Nelson Tours & Safari!\n\n"
-                    f"Your booking request has been received. {payment_instruction}\n\n"
-                    f"Booking Reference : #{booking.id}\n"
-                    f"Tour              : {tour.title}\n"
-                    f"Travel Date       : {data.travel_date.strftime('%B %d, %Y')}\n"
-                    f"Guests            : {data.guests}\n\n"
-                    f"Our team will be in touch within 24 hours to assist with any questions.\n\n"
-                    f"We look forward to crafting an unforgettable safari experience for you.\n\n"
-                    f"Warm regards,\nNelson Tours & Safari Team"
-                )
-                await send_email(
-                    to=data.contact_email,
-                    subject=f"Booking Request Received — {tour.title} | Nelson Tours & Safari",
-                    body=body,
-                    item_name=f"{tour.title} · {data.guests} guest{'s' if data.guests > 1 else ''}",
-                    price=total_price,
-                    payment_link=email_payment_link,
-                    btn_label="Complete Payment" if has_pesapal else "Contact Us to Pay",
-                    include_terms=True,
-                )
-            except Exception as exc:
-                logger.error(f"Booking confirmation email failed for #{booking.id}: {exc}")
+        # Send confirmation email now ONLY when:
+        #  • Pesapal succeeded (payment_link is set), OR
+        #  • Pesapal is not configured at all (fall back to contact link).
+        # When Pesapal IS configured but failed, the email is deferred to
+        # initiate_payment so the customer always gets the payment link.
+        pesapal_configured = bool(
+            settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET
+        )
+        if payment_link is not None or not pesapal_configured:
+            await send_booking_confirmation_email(
+                booking=booking,
+                tour_title=tour.title,
+                contact_name=data.contact_name,
+                contact_email=data.contact_email,
+                travel_date=data.travel_date,
+                guests=data.guests,
+                total_price=total_price,
+                payment_link=payment_link,
+            )
 
         return booking
 

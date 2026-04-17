@@ -24,6 +24,11 @@ export default function Hero() {
   const [videoFailed, setVideoFailed] = useState(false)
   const [slideIndex, setSlideIndex] = useState(0)
 
+  // Reset failure flag whenever the video URL changes (e.g. after new upload)
+  useEffect(() => {
+    setVideoFailed(false)
+  }, [heroVideoUrl])
+
   const wantVideo  = heroMode === 'video' || heroMode === 'both'
   const wantImages = heroMode === 'images' || heroMode === 'both'
 
@@ -31,8 +36,6 @@ export default function Hero() {
   const shouldUseSlideshow = !shouldUseVideo && wantImages && heroImages.length > 0
 
   const videoSrc  = heroVideoUrl || '/videos/hero.mp4'
-  const ext       = (videoSrc.split('?')[0].split('#')[0].split('.').pop() || '').toLowerCase()
-  const videoType = ext === 'webm' ? 'video/webm' : ext === 'mov' ? 'video/quicktime' : 'video/mp4'
 
   useEffect(() => {
     if (!shouldUseSlideshow || heroImages.length <= 1) return
@@ -71,6 +74,7 @@ export default function Hero() {
         ) : (
           <video
             key={videoSrc}
+            src={videoSrc}
             autoPlay
             muted
             loop
@@ -79,9 +83,7 @@ export default function Hero() {
             className="absolute inset-0 w-full h-full object-cover will-change-transform"
             style={{ transform: 'translateZ(0)' }}
             onError={() => setVideoFailed(true)}
-          >
-            <source src={videoSrc} type={videoType} />
-          </video>
+          />
         )}
         {/* Multi-layer gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-[#0f3d2e]/80 pointer-events-none" />
