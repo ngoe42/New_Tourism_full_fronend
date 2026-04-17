@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, Search, ImageIcon, X, CheckCircle, AlertCircle, Star, CheckSquare, XSquare, Sparkles } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, ImageIcon, X, CheckCircle, AlertCircle, Star, CheckSquare, XSquare, Sparkles, CalendarDays, ChevronUp, ChevronDown, GripVertical } from 'lucide-react'
 import { toursApi } from '../../api/tours'
 import { categories } from '../../data/tours'
 import { resolveImageUrl } from '../../utils/imageUrl'
@@ -10,7 +10,7 @@ const TOUR_CATEGORIES = categories.filter((c) => c !== 'All')
 const EMPTY_FORM = {
   title: '', slug: '', subtitle: '', description: '', category: 'Luxury Safaris',
   location: '', duration: '', group_size: '', price: '',
-  highlights: [], included: [], excluded: [],
+  highlights: [], itinerary: [], included: [], excluded: [],
   is_featured: false, is_published: true,
 }
 
@@ -54,6 +54,97 @@ function ListEditor({ label, value = [], onChange, addPlaceholder, icon: Icon, i
           Add
         </button>
       </div>
+    </div>
+  )
+}
+
+function ItineraryEditor({ value = [], onChange }) {
+  const addDay = () => {
+    onChange([...value, { day: value.length + 1, title: '', description: '' }])
+  }
+
+  const updateDay = (index, field, val) => {
+    const updated = value.map((d, i) => (i === index ? { ...d, [field]: val } : d))
+    onChange(updated)
+  }
+
+  const removeDay = (index) => {
+    const updated = value.filter((_, i) => i !== index).map((d, i) => ({ ...d, day: i + 1 }))
+    onChange(updated)
+  }
+
+  const moveDay = (index, direction) => {
+    const newIndex = index + direction
+    if (newIndex < 0 || newIndex >= value.length) return
+    const updated = [...value]
+    const temp = updated[index]
+    updated[index] = updated[newIndex]
+    updated[newIndex] = temp
+    onChange(updated.map((d, i) => ({ ...d, day: i + 1 })))
+  }
+
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 font-sans text-xs font-semibold text-gray-600 mb-2">
+        <CalendarDays size={13} className="text-blue-500" />
+        Day-by-Day Itinerary
+      </label>
+
+      {value.length > 0 && (
+        <div className="space-y-3 mb-3">
+          {value.map((day, i) => (
+            <div key={i} className="bg-gray-50 rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                {/* Reorder buttons */}
+                <div className="flex flex-col gap-0.5">
+                  <button type="button" onClick={() => moveDay(i, -1)} disabled={i === 0}
+                    className="text-gray-400 hover:text-gray-600 disabled:opacity-30 transition">
+                    <ChevronUp size={14} />
+                  </button>
+                  <button type="button" onClick={() => moveDay(i, 1)} disabled={i === value.length - 1}
+                    className="text-gray-400 hover:text-gray-600 disabled:opacity-30 transition">
+                    <ChevronDown size={14} />
+                  </button>
+                </div>
+
+                {/* Day badge */}
+                <span className="flex-shrink-0 w-16 text-center bg-green-100 text-green-800 font-sans text-[11px] font-bold px-2 py-1 rounded-full">
+                  Day {day.day}
+                </span>
+
+                {/* Title */}
+                <input
+                  type="text"
+                  value={day.title}
+                  onChange={(e) => updateDay(i, 'title', e.target.value)}
+                  placeholder="Day title (e.g. Arrival & Welcome)"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+
+                {/* Remove */}
+                <button type="button" onClick={() => removeDay(i)}
+                  className="text-gray-400 hover:text-red-500 transition p-1">
+                  <X size={14} />
+                </button>
+              </div>
+
+              <textarea
+                value={day.description}
+                onChange={(e) => updateDay(i, 'description', e.target.value)}
+                placeholder="Describe the activities for this day…"
+                rows={2}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 font-sans text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button type="button" onClick={addDay}
+        className="flex items-center gap-1.5 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg font-sans text-xs font-semibold transition border border-green-200">
+        <Plus size={13} />
+        Add Day {value.length + 1}
+      </button>
     </div>
   )
 }
@@ -234,6 +325,14 @@ function TourForm({ initial, onClose, onSave, saving }) {
               value={form.excluded ?? []}
               onChange={(v) => set('excluded', v)}
               addPlaceholder="e.g. International flights, Travel insurance…"
+            />
+          </div>
+
+          {/* Day-by-Day Itinerary */}
+          <div className="sm:col-span-2">
+            <ItineraryEditor
+              value={form.itinerary ?? []}
+              onChange={(v) => set('itinerary', v)}
             />
           </div>
 
