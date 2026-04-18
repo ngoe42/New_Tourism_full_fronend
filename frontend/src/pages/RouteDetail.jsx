@@ -383,7 +383,7 @@ export default function RouteDetail() {
                   {!showPrices && (
                     <p className="font-serif text-xl font-semibold text-green-950 mb-6">Request a Quote</p>
                   )}
-                  <BookingForm tourTitle={route.name} tourPrice={showPrices ? route.price || undefined : undefined} />
+                  <BookingForm routeId={route.id} tourTitle={route.name} tourPrice={showPrices ? route.price || undefined : undefined} />
                 </div>
 
                 {/* Quick stats card */}

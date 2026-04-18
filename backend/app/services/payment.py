@@ -92,15 +92,19 @@ class PaymentService:
         })
 
         if not email_already_sent:
+            tour = booking.tour
             await send_booking_confirmation_email(
                 booking=booking,
-                tour_title=booking.tour.title if booking.tour else f"Booking #{booking.id}",
+                tour_title=tour.title if tour else f"Booking #{booking.id}",
                 contact_name=booking.contact_name,
                 contact_email=booking.contact_email,
                 travel_date=booking.travel_date,
                 guests=booking.guests,
                 total_price=booking.total_price,
                 payment_link=result["redirect_url"],
+                tour_location=tour.location if tour else "",
+                tour_duration=tour.duration if tour else "",
+                tour_included=tour.included if tour else [],
             )
 
         return {

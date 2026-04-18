@@ -6,7 +6,7 @@ import { inquiriesApi } from '../api/inquiries'
 import { useAuth } from '../context/AuthContext'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 
-export default function BookingForm({ tourId = null, tourTitle = '', tourPrice = 0, compact = false }) {
+export default function BookingForm({ tourId = null, routeId = null, tourTitle = '', tourPrice = 0, compact = false }) {
   const { user } = useAuth()
   const { showPrices } = useSiteSettings()
   const [form, setForm] = useState({
@@ -54,13 +54,19 @@ export default function BookingForm({ tourId = null, tourTitle = '', tourPrice =
         }
         setStatus('success')
       } else {
-        await inquiriesApi.create({
+        const inquiryPayload = {
           name: form.name,
           email: form.email,
           phone: form.phone || undefined,
-          message: `Booking inquiry for ${tourTitle || 'a tour'}. Travel date: ${form.date}. Guests: ${form.guests}. ${form.message}`.trim(),
+          message: form.message || `Booking inquiry for ${tourTitle || 'a route'}.`,
           tour_interest: tourTitle || undefined,
-        })
+        }
+        if (routeId) {
+          inquiryPayload.route_id = routeId
+          inquiryPayload.travel_date = form.date || undefined
+          inquiryPayload.guests = parseInt(form.guests)
+        }
+        await inquiriesApi.create(inquiryPayload)
         setStatus('success')
       }
     } catch (err) {

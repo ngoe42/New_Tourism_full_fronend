@@ -227,25 +227,23 @@ async def send_inquiry_confirmation_email(
     tour_interest: Optional[str],
     message: Optional[str],
 ) -> None:
-    """Send confirmation to customer + notification to admin when an inquiry is submitted."""
+    """Generic inquiry confirmation (contact form / no route selected)."""
     first = name.split()[0]
     subject_line = tour_interest or "Your Safari Inquiry"
 
-    # ── Customer confirmation ────────────────────────────────────────────────
     customer_body = (
         f"Dear {first},\n\n"
         f"Thank you for reaching out to Nelson Tours & Safari!\n\n"
         f"We have received your inquiry"
         + (f" about {tour_interest}" if tour_interest else "")
         + f" and our safari specialists will contact you within 24 hours to craft your perfect journey.\n\n"
-        f"Your Inquiry Summary\n"
+        f"Your Inquiry Details\n"
         f"--------------------\n"
         f"Name    : {name}\n"
         f"Email   : {email}\n"
         + (f"Interest: {tour_interest}\n" if tour_interest else "")
         + (f"Message : {message}\n" if message else "")
-        + f"\nIn the meantime, feel free to explore our tours and Kilimanjaro routes on our website.\n\n"
-        f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
+        + f"\nWarm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
     )
     await send_email(
         to=email,
@@ -253,7 +251,6 @@ async def send_inquiry_confirmation_email(
         body=customer_body,
     )
 
-    # ── Admin notification ───────────────────────────────────────────────────
     admin_body = (
         f"New Inquiry Received\n"
         f"====================\n"
@@ -261,11 +258,111 @@ async def send_inquiry_confirmation_email(
         f"Email   : {email}\n"
         + (f"Interest: {tour_interest}\n" if tour_interest else "")
         + (f"Message :\n{message}\n" if message else "")
-        + f"\nReply directly to {email} or log in to the admin panel to manage this inquiry."
+        + f"\nReply directly to {email} or log in to the admin panel."
     )
     await send_email(
         to=settings.EMAIL_FROM,
         subject=f"[New Inquiry] {name} — {subject_line}",
+        body=admin_body,
+    )
+
+
+async def send_route_booking_email(
+    name: str,
+    email: str,
+    phone: Optional[str],
+    route_name: str,
+    route_nickname: Optional[str],
+    route_duration: str,
+    route_difficulty: Optional[str],
+    route_max_altitude: Optional[str],
+    route_price: float,
+    route_included: Optional[list],
+    route_best_season: Optional[str],
+    travel_date,
+    guests: int,
+    special_requests: Optional[str],
+) -> None:
+    """Rich route/Kilimanjaro booking confirmation sent on form submit."""
+    first = name.split()[0]
+    full_name = route_nickname or route_name
+    price_per_person = route_price
+    total = price_per_person * guests
+
+    date_str = travel_date.strftime("%B %d, %Y") if travel_date else "To be confirmed"
+
+    included_lines = ""
+    if route_included:
+        included_lines = "\nWhat's Included\n" + "-" * 30 + "\n"
+        included_lines += "\n".join(f"✓  {item}" for item in route_included[:8])
+        if len(route_included) > 8:
+            included_lines += f"\n   ... and {len(route_included) - 8} more items"
+        included_lines += "\n"
+
+    season_line = f"Best Season      : {route_best_season}\n" if route_best_season else ""
+    altitude_line = f"Max Altitude     : {route_max_altitude}\n" if route_max_altitude else ""
+    difficulty_line = f"Difficulty       : {route_difficulty}\n" if route_difficulty else ""
+    phone_line = f"Phone            : {phone}\n" if phone else ""
+    requests_line = f"\nSpecial Requests : {special_requests}\n" if special_requests else ""
+
+    body = (
+        f"Dear {first},\n\n"
+        f"Thank you for your Kilimanjaro booking inquiry!\n\n"
+        f"We have received your request for the {full_name} and our team will contact you "
+        f"within 24 hours to confirm availability and finalize your booking with a secure payment link.\n\n"
+        f"Your Booking Summary\n"
+        f"{'=' * 40}\n"
+        f"Route            : {route_name}\n"
+        f"Duration         : {route_duration}\n"
+        + difficulty_line
+        + altitude_line
+        + season_line
+        + f"Travel Date      : {date_str}\n"
+        f"Number of Guests : {guests} {'Guest' if guests == 1 else 'Guests'}\n"
+        f"Price Per Person : USD {price_per_person:,.2f}\n"
+        f"{'=' * 40}\n"
+        + included_lines
+        + f"\nYour Contact Details\n"
+        f"--------------------\n"
+        f"Name             : {name}\n"
+        f"Email            : {email}\n"
+        + phone_line
+        + requests_line
+        + f"\nOur safari specialists will reach out to you shortly with:\n"
+        f"  • Availability confirmation for your selected dates\n"
+        f"  • A full itinerary and packing list\n"
+        f"  • A secure payment link to lock in your spot\n\n"
+        f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
+    )
+
+    await send_email(
+        to=email,
+        subject=f"Kilimanjaro Booking Request — {route_name} | Nelson Tours & Safari",
+        body=body,
+        item_name=f"{route_name} · {guests} {'Guest' if guests == 1 else 'Guests'}",
+        price=total,
+        include_terms=True,
+    )
+
+    admin_body = (
+        f"New Kilimanjaro Booking Request\n"
+        f"{'=' * 40}\n"
+        f"Route       : {route_name}\n"
+        f"Duration    : {route_duration}\n"
+        f"Travel Date : {date_str}\n"
+        f"Guests      : {guests}\n"
+        f"Total Est.  : USD {total:,.2f}\n\n"
+        f"Customer\n"
+        f"--------\n"
+        f"Name  : {name}\n"
+        f"Email : {email}\n"
+        + (f"Phone : {phone}\n" if phone else "")
+        + (f"Notes : {special_requests}\n" if special_requests else "")
+        + f"\nReply to {email} or view in the admin panel → Inquiries."
+    )
+    await send_email(
+        to=settings.EMAIL_FROM,
+        subject=f"[Kilimanjaro Booking] {name} — {route_name}",
         body=admin_body,
     )
 

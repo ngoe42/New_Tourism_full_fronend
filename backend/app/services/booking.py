@@ -30,6 +30,9 @@ async def send_booking_confirmation_email(
     guests: int,
     total_price: float,
     payment_link: str | None,
+    tour_location: str = "",
+    tour_duration: str = "",
+    tour_included: list | None = None,
 ) -> None:
     """Send booking confirmation email. Re-usable from create_booking & initiate_payment."""
     try:
@@ -40,32 +43,49 @@ async def send_booking_confirmation_email(
 
         if has_pesapal:
             payment_instruction = (
-                f"Please complete your deposit payment using the button below "
-                f"to secure your reservation."
+                "Please complete your deposit payment using the button below "
+                "to secure your reservation."
             )
         else:
             payment_instruction = (
-                f"To complete your payment and secure this reservation, "
-                f"please contact our team — we will send you a secure payment link within the hour."
+                "To complete your payment and secure this reservation, "
+                "please contact our team — we will send you a secure payment link within the hour."
             )
+
+        location_line = f"Location          : {tour_location}\n" if tour_location else ""
+        duration_line = f"Duration          : {tour_duration}\n" if tour_duration else ""
+
+        included_block = ""
+        if tour_included:
+            included_block = "\nWhat's Included\n" + "-" * 30 + "\n"
+            included_block += "\n".join(f"✓  {item}" for item in tour_included[:8])
+            if len(tour_included) > 8:
+                included_block += f"\n   ... and {len(tour_included) - 8} more items"
+            included_block += "\n"
 
         body = (
             f"Dear {name},\n\n"
             f"Thank you for choosing Nelson Tours & Safari!\n\n"
             f"Your booking request has been received. {payment_instruction}\n\n"
+            f"Booking Summary\n"
+            f"{'=' * 40}\n"
             f"Booking Reference : #{booking.id}\n"
             f"Tour              : {tour_title}\n"
-            f"Travel Date       : {travel_date.strftime('%B %d, %Y')}\n"
-            f"Guests            : {guests}\n\n"
-            f"Our team will be in touch within 24 hours to assist with any questions.\n\n"
+            + location_line
+            + duration_line
+            + f"Travel Date       : {travel_date.strftime('%B %d, %Y')}\n"
+            f"Number of Guests  : {guests} {'Guest' if guests == 1 else 'Guests'}\n"
+            f"{'=' * 40}\n"
+            + included_block
+            + f"\nOur team will be in touch within 24 hours to assist with any questions.\n\n"
             f"We look forward to crafting an unforgettable safari experience for you.\n\n"
-            f"Warm regards,\nNelson Tours & Safari Team"
+            f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
         )
         await send_email(
             to=contact_email,
-            subject=f"Booking Request Received — {tour_title} | Nelson Tours & Safari",
+            subject=f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
             body=body,
-            item_name=f"{tour_title} · {guests} guest{'s' if guests > 1 else ''}",
+            item_name=f"{tour_title} · {guests} {'Guest' if guests == 1 else 'Guests'}",
             price=total_price,
             payment_link=email_payment_link,
             btn_label="Complete Payment" if has_pesapal else "Contact Us to Pay",
@@ -159,6 +179,9 @@ class BookingService:
                 guests=data.guests,
                 total_price=total_price,
                 payment_link=payment_link,
+                tour_location=tour.location or "",
+                tour_duration=tour.duration or "",
+                tour_included=tour.included or [],
             )
 
         try:

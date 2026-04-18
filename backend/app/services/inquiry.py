@@ -5,8 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.inquiry import Inquiry
 from app.repositories.inquiry import InquiryRepository
+from app.repositories.route import RouteRepository
 from app.schemas.inquiry import InquiryCreate, InquiryUpdate, PaginatedInquiries
-from app.services.email_service import send_inquiry_confirmation_email
+from app.services.email_service import send_inquiry_confirmation_email, send_route_booking_email
 
 
 class InquiryService:
@@ -25,12 +26,40 @@ class InquiryService:
         inquiry = await self.repo.create(inquiry)
 
         try:
-            await send_inquiry_confirmation_email(
-                name=data.name,
-                email=data.email,
-                tour_interest=data.tour_interest,
-                message=data.message,
-            )
+            if data.route_id:
+                route_repo = RouteRepository(self.db)
+                route = await route_repo.get_by_id(data.route_id)
+                if route:
+                    await send_route_booking_email(
+                        name=data.name,
+                        email=data.email,
+                        phone=data.phone,
+                        route_name=route.name,
+                        route_nickname=route.nickname,
+                        route_duration=route.duration,
+                        route_difficulty=route.difficulty,
+                        route_max_altitude=route.max_altitude,
+                        route_price=route.price,
+                        route_included=route.included,
+                        route_best_season=route.best_season,
+                        travel_date=data.travel_date,
+                        guests=data.guests or 1,
+                        special_requests=data.message,
+                    )
+                else:
+                    await send_inquiry_confirmation_email(
+                        name=data.name,
+                        email=data.email,
+                        tour_interest=data.tour_interest,
+                        message=data.message,
+                    )
+            else:
+                await send_inquiry_confirmation_email(
+                    name=data.name,
+                    email=data.email,
+                    tour_interest=data.tour_interest,
+                    message=data.message,
+                )
         except Exception as exc:
             logger.error(f"Inquiry email failed for {data.email}: {exc}")
 
