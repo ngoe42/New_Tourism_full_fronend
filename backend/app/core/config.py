@@ -1,7 +1,9 @@
 from pydantic_settings import BaseSettings
 from pydantic import AnyHttpUrl, field_validator, model_validator
 from typing import List, Optional
-import secrets
+import warnings
+
+_DEV_SECRET_KEY = "dev-only-insecure-key-change-this-in-production-karibu-safari"
 
 
 class Settings(BaseSettings):
@@ -10,7 +12,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     ENVIRONMENT: str = "production"
 
-    SECRET_KEY: str = secrets.token_urlsafe(32)
+    SECRET_KEY: str = _DEV_SECRET_KEY
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -50,7 +52,7 @@ class Settings(BaseSettings):
         return v
 
     @model_validator(mode="after")
-    def normalise_db_urls(self) -> "Settings":
+    def normalise_and_validate(self) -> "Settings":
         def _to_asyncpg(url: str) -> str:
             if url.startswith("postgres://"):
                 return "postgresql+asyncpg://" + url[len("postgres://"):]
@@ -72,6 +74,13 @@ class Settings(BaseSettings):
             self.DATABASE_URL_SYNC = _to_psycopg2(self.DATABASE_URL)
         else:
             self.DATABASE_URL_SYNC = _to_psycopg2(self.DATABASE_URL_SYNC)
+
+        if self.SECRET_KEY == _DEV_SECRET_KEY and self.ENVIRONMENT == "production":
+            warnings.warn(
+                "SECRET_KEY is using the insecure development default in a production environment! "
+                "Set a strong SECRET_KEY environment variable immediately.",
+                stacklevel=2,
+            )
         return self
 
     def get_allowed_origins(self) -> List[str]:

@@ -12,7 +12,7 @@ from app.core.security import (
 from app.core.config import settings
 from app.models.user import User, UserRole
 from app.repositories.user import UserRepository
-from app.schemas.auth import TokenResponse
+from app.schemas.auth import TokenResponse, AccessTokenResponse
 from app.schemas.user import UserCreate, UserResponse
 
 
@@ -58,7 +58,7 @@ class AuthService:
             user=UserResponse.from_user(user),
         )
 
-    async def refresh_access_token(self, refresh_token: str) -> dict:
+    async def refresh_access_token(self, refresh_token: str) -> AccessTokenResponse:
         payload = decode_token(refresh_token)
         if not payload or payload.get("type") != "refresh":
             raise HTTPException(
@@ -75,4 +75,5 @@ class AuthService:
             subject=user.id,
             expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         )
-        return {"access_token": access_token, "token_type": "bearer"}
+        new_refresh_token = create_refresh_token(subject=user.id)
+        return AccessTokenResponse(access_token=access_token, refresh_token=new_refresh_token)
