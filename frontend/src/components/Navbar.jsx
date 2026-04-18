@@ -170,6 +170,7 @@ export default function Navbar() {
                               <div
                                 key={route.id}
                                 onMouseEnter={() => setActiveRouteHover(route)}
+                                onClick={() => { navigate(`/routes/${route.slug}`); setActiveDropdown(null) }}
                                 className={`px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors duration-150 flex items-center justify-between group ${
                                   activeRouteHover?.id === route.id ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
                                 }`}
@@ -181,8 +182,8 @@ export default function Navbar() {
                           )}
                         </div>
                         <div className="p-3 border-t border-gray-100 bg-gray-50">
-                          <Link to="/routes" className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
-                            Compare All Routes <ArrowRight size={11} />
+                          <Link to="/routes" onClick={() => setActiveDropdown(null)} className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
+                            View All Kilimanjaro Routes <ArrowRight size={11} />
                           </Link>
                         </div>
                       </div>
@@ -250,13 +251,15 @@ export default function Navbar() {
 
                             <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
                               <Link
-                                to={`/routes/${activeRouteHover.slug}`}
+                                to="/routes"
+                                onClick={() => setActiveDropdown(null)}
                                 className="text-center font-sans text-xs font-semibold text-green-800 border border-green-800/20 bg-white hover:bg-gray-50 py-2 rounded-lg transition-colors"
                               >
-                                More Details
+                                View All Routes
                               </Link>
                               <Link
-                                to={`/contact?interest=${activeRouteHover.name}`}
+                                to={`/routes/${activeRouteHover.slug}`}
+                                onClick={() => setActiveDropdown(null)}
                                 className="text-center font-sans text-xs font-semibold text-white bg-green-800 hover:bg-green-700 py-2 rounded-lg transition-colors shadow-md"
                               >
                                 Book Now
