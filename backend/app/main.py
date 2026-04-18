@@ -29,6 +29,10 @@ from app.api.v1.router import api_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
+    if settings.SENDGRID_API_KEY:
+        logger.info(f"[email] SendGrid configured ✓ — sending from {settings.EMAIL_FROM}")
+    else:
+        logger.warning("[email] SENDGRID_API_KEY is NOT set — all emails will be silently skipped!")
     app.state.admin_seed_task = asyncio.create_task(_seed_admin_background())
     await init_redis()
     yield

@@ -35,6 +35,7 @@ async def send_booking_confirmation_email(
     tour_included: list | None = None,
 ) -> None:
     """Send booking confirmation email. Re-usable from create_booking & initiate_payment."""
+    logger.info(f"[email] Preparing booking confirmation for #{booking.id} → {contact_email}")
     try:
         name = contact_name.split()[0]
 
@@ -92,7 +93,7 @@ async def send_booking_confirmation_email(
             include_terms=True,
         )
     except Exception as exc:
-        logger.error(f"Booking confirmation email failed for #{booking.id}: {exc}")
+        logger.error(f"[email] Booking confirmation FAILED for #{booking.id}: {type(exc).__name__}: {exc}")
 
 
 class BookingService:
@@ -161,28 +162,24 @@ class BookingService:
             except Exception as exc:
                 logger.error(f"Pesapal init failed for booking #{booking.id}: {exc}")
 
-        # Send confirmation email now ONLY when:
-        #  • Pesapal succeeded (payment_link is set), OR
-        #  • Pesapal is not configured at all (fall back to contact link).
-        # When Pesapal IS configured but failed, the email is deferred to
-        # initiate_payment so the customer always gets the payment link.
-        pesapal_configured = bool(
-            settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET
+        # Always send confirmation email immediately after booking is created.
+        # If Pesapal succeeded, payment_link contains the redirect URL.
+        # If Pesapal failed or is not configured, payment_link is None and
+        # send_booking_confirmation_email will fall back to a contact link.
+        logger.info(f"Booking #{booking.id} created — sending confirmation to {data.contact_email} (payment_link={'set' if payment_link else 'none'})")
+        await send_booking_confirmation_email(
+            booking=booking,
+            tour_title=tour.title,
+            contact_name=data.contact_name,
+            contact_email=data.contact_email,
+            travel_date=data.travel_date,
+            guests=data.guests,
+            total_price=total_price,
+            payment_link=payment_link,
+            tour_location=tour.location or "",
+            tour_duration=tour.duration or "",
+            tour_included=tour.included or [],
         )
-        if payment_link is not None or not pesapal_configured:
-            await send_booking_confirmation_email(
-                booking=booking,
-                tour_title=tour.title,
-                contact_name=data.contact_name,
-                contact_email=data.contact_email,
-                travel_date=data.travel_date,
-                guests=data.guests,
-                total_price=total_price,
-                payment_link=payment_link,
-                tour_location=tour.location or "",
-                tour_duration=tour.duration or "",
-                tour_included=tour.included or [],
-            )
 
         try:
             await send_booking_admin_notification(

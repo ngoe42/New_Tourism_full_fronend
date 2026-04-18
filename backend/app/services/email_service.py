@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 
 from sendgrid import SendGridAPIClient
@@ -173,10 +174,9 @@ async def send_email(
         logger.warning("Email not sent: SENDGRID_API_KEY is not configured.")
         return False
 
-    logger.info(f"Sending email to {to} via SendGrid")
+    logger.info(f"[email] Sending '{subject}' to {to}")
 
     from sendgrid.helpers.mail import ReplyTo
-    import asyncio
 
     html = _build_html(body, item_name=item_name, price=price, payment_link=payment_link, btn_label=btn_label, include_terms=include_terms)
 
@@ -214,10 +214,13 @@ async def send_email(
         sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
         # sg.send() is synchronous — run in a thread pool to avoid blocking the event loop
         response = await asyncio.to_thread(sg.send, message)
-        logger.info(f"Email sent to {to} — status: {response.status_code}")
+        logger.info(f"[email] ✓ Sent '{subject}' to {to} — HTTP {response.status_code}")
         return True
     except Exception as e:
-        logger.error(f"SendGrid error sending to {to}: {e}")
+        body_preview = ""
+        if hasattr(e, "body"):
+            body_preview = f" | body: {e.body}"
+        logger.error(f"[email] ✗ SendGrid FAILED sending to {to}: {type(e).__name__}: {e}{body_preview}")
         return False
 
 
