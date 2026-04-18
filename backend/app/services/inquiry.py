@@ -1,10 +1,12 @@
 from typing import Optional
 from fastapi import HTTPException, status
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.inquiry import Inquiry
 from app.repositories.inquiry import InquiryRepository
 from app.schemas.inquiry import InquiryCreate, InquiryUpdate, PaginatedInquiries
+from app.services.email_service import send_inquiry_confirmation_email
 
 
 class InquiryService:
@@ -20,7 +22,19 @@ class InquiryService:
             message=data.message,
             tour_interest=data.tour_interest,
         )
-        return await self.repo.create(inquiry)
+        inquiry = await self.repo.create(inquiry)
+
+        try:
+            await send_inquiry_confirmation_email(
+                name=data.name,
+                email=data.email,
+                tour_interest=data.tour_interest,
+                message=data.message,
+            )
+        except Exception as exc:
+            logger.error(f"Inquiry email failed for {data.email}: {exc}")
+
+        return inquiry
 
     async def get(self, inquiry_id: int) -> Inquiry:
         inquiry = await self.repo.get(inquiry_id)

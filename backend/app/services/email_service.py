@@ -167,16 +167,16 @@ async def send_email(
     payment_link: Optional[str] = None,
     btn_label: str = "Complete Payment",
     include_terms: bool = False,
-) -> None:
-    """Send email via SendGrid.  Optionally includes payment-details and terms blocks."""
+) -> bool:
+    """Send email via SendGrid. Returns True on success, False if not configured or on error."""
     if not settings.SENDGRID_API_KEY:
-        raise RuntimeError(
-            "Email not configured. Set SENDGRID_API_KEY in environment variables."
-        )
+        logger.warning("Email not sent: SENDGRID_API_KEY is not configured.")
+        return False
 
     logger.info(f"Sending email to {to} via SendGrid")
 
     from sendgrid.helpers.mail import ReplyTo
+    import asyncio
 
     html = _build_html(body, item_name=item_name, price=price, payment_link=payment_link, btn_label=btn_label, include_terms=include_terms)
 
@@ -212,8 +212,92 @@ async def send_email(
 
     try:
         sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
-        response = sg.send(message)
-        logger.info(f"Email sent — status: {response.status_code}")
+        # sg.send() is synchronous — run in a thread pool to avoid blocking the event loop
+        response = await asyncio.to_thread(sg.send, message)
+        logger.info(f"Email sent to {to} — status: {response.status_code}")
+        return True
     except Exception as e:
-        logger.error(f"SendGrid error: {e}")
-        raise RuntimeError(f"Failed to send email: {e}")
+        logger.error(f"SendGrid error sending to {to}: {e}")
+        return False
+
+
+async def send_inquiry_confirmation_email(
+    name: str,
+    email: str,
+    tour_interest: Optional[str],
+    message: Optional[str],
+) -> None:
+    """Send confirmation to customer + notification to admin when an inquiry is submitted."""
+    first = name.split()[0]
+    subject_line = tour_interest or "Your Safari Inquiry"
+
+    # ── Customer confirmation ────────────────────────────────────────────────
+    customer_body = (
+        f"Dear {first},\n\n"
+        f"Thank you for reaching out to Nelson Tours & Safari!\n\n"
+        f"We have received your inquiry"
+        + (f" about {tour_interest}" if tour_interest else "")
+        + f" and our safari specialists will contact you within 24 hours to craft your perfect journey.\n\n"
+        f"Your Inquiry Summary\n"
+        f"--------------------\n"
+        f"Name    : {name}\n"
+        f"Email   : {email}\n"
+        + (f"Interest: {tour_interest}\n" if tour_interest else "")
+        + (f"Message : {message}\n" if message else "")
+        + f"\nIn the meantime, feel free to explore our tours and Kilimanjaro routes on our website.\n\n"
+        f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
+    )
+    await send_email(
+        to=email,
+        subject=f"We received your inquiry — {subject_line} | Nelson Tours & Safari",
+        body=customer_body,
+    )
+
+    # ── Admin notification ───────────────────────────────────────────────────
+    admin_body = (
+        f"New Inquiry Received\n"
+        f"====================\n"
+        f"Name    : {name}\n"
+        f"Email   : {email}\n"
+        + (f"Interest: {tour_interest}\n" if tour_interest else "")
+        + (f"Message :\n{message}\n" if message else "")
+        + f"\nReply directly to {email} or log in to the admin panel to manage this inquiry."
+    )
+    await send_email(
+        to=settings.EMAIL_FROM,
+        subject=f"[New Inquiry] {name} — {subject_line}",
+        body=admin_body,
+    )
+
+
+async def send_booking_admin_notification(
+    booking_id: int,
+    tour_title: str,
+    contact_name: str,
+    contact_email: str,
+    contact_phone: Optional[str],
+    travel_date,
+    guests: int,
+    total_price: float,
+) -> None:
+    """Notify the admin that a new booking has been created."""
+    body = (
+        f"New Booking Received\n"
+        f"====================\n"
+        f"Booking Ref : #{booking_id}\n"
+        f"Tour        : {tour_title}\n"
+        f"Travel Date : {travel_date.strftime('%B %d, %Y')}\n"
+        f"Guests      : {guests}\n"
+        f"Total Price : USD {total_price:,.2f}\n\n"
+        f"Customer Details\n"
+        f"----------------\n"
+        f"Name  : {contact_name}\n"
+        f"Email : {contact_email}\n"
+        + (f"Phone : {contact_phone}\n" if contact_phone else "")
+        + f"\nLog in to the admin panel to review and confirm this booking."
+    )
+    await send_email(
+        to=settings.EMAIL_FROM,
+        subject=f"[New Booking #{booking_id}] {contact_name} — {tour_title}",
+        body=body,
+    )

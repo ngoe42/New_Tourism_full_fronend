@@ -11,7 +11,7 @@ from app.models.user import User
 from app.repositories.booking import BookingRepository
 from app.repositories.tour import TourRepository
 from app.schemas.booking import BookingCreate, BookingStatusUpdate, PaginatedBookings
-from app.services.email_service import send_email
+from app.services.email_service import send_email, send_booking_admin_notification
 from app.services.pesapal import PesapalService
 
 
@@ -32,8 +32,6 @@ async def send_booking_confirmation_email(
     payment_link: str | None,
 ) -> None:
     """Send booking confirmation email. Re-usable from create_booking & initiate_payment."""
-    if not settings.SENDGRID_API_KEY:
-        return
     try:
         name = contact_name.split()[0]
 
@@ -162,6 +160,20 @@ class BookingService:
                 total_price=total_price,
                 payment_link=payment_link,
             )
+
+        try:
+            await send_booking_admin_notification(
+                booking_id=booking.id,
+                tour_title=tour.title,
+                contact_name=data.contact_name,
+                contact_email=data.contact_email,
+                contact_phone=data.contact_phone,
+                travel_date=data.travel_date,
+                guests=data.guests,
+                total_price=total_price,
+            )
+        except Exception as exc:
+            logger.error(f"Admin booking notification failed for #{booking.id}: {exc}")
 
         return booking
 
