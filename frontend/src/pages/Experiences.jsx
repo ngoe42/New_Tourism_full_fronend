@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Loader2, ArrowRight, Compass } from 'lucide-react'
 import { experiencesApi } from '../api/experiences'
 import ExperiencesSlider from '../components/ExperiencesSlider'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 export default function Experiences() {
   const { data, isLoading } = useQuery({
@@ -46,7 +47,7 @@ export default function Experiences() {
                   {/* Image */}
                   <div className="relative h-56 overflow-hidden">
                     <img
-                      src={exp.image_url}
+                      src={resolveImageUrl(exp.image_url)}
                       alt={exp.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />

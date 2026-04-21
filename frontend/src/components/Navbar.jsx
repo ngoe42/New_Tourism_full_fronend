@@ -455,7 +455,7 @@ export default function Navbar() {
                           {/* Cover image */}
                           <div className="relative h-48 flex-shrink-0 overflow-hidden">
                             {activeExpHover.image_url ? (
-                              <img src={activeExpHover.image_url} alt={activeExpHover.title} className="w-full h-full object-cover" />
+                              <img src={resolveImageUrl(activeExpHover.image_url)} alt={activeExpHover.title} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full bg-gradient-to-br from-green-900 to-amber-800 flex items-center justify-center">
                                 <Mountain size={32} className="text-white/30" />
