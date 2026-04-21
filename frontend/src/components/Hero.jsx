@@ -141,7 +141,7 @@ export default function Hero() {
               Explore Tours
               <ArrowDown size={16} />
             </Link>
-            <Link to="/contact" className="btn-outline inline-flex items-center gap-2">
+            <Link to="/tours" className="btn-outline inline-flex items-center gap-2">
               <Play size={14} fill="white" />
               Plan Your Trip
             </Link>
