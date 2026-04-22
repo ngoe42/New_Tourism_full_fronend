@@ -46,6 +46,16 @@ const STATUS_MAP = {
     ctaTo: '/contact',
     ctaStyle: 'bg-amber-600 hover:bg-amber-700',
   },
+  UNKNOWN: {
+    icon: AlertCircle,
+    color: 'text-gray-400',
+    bg: 'bg-gray-50',
+    title: 'Payment Status Unknown',
+    message: 'We could not determine your payment status. If you completed payment, check your email — otherwise please try again.',
+    cta: 'Back to Tours',
+    ctaTo: '/tours',
+    ctaStyle: 'bg-gray-700 hover:bg-gray-800',
+  },
 }
 
 const MAX_POLLS = 8
@@ -298,9 +308,17 @@ export default function PaymentCallback() {
           >
             {config.cta} <ArrowRight size={15} />
           </Link>
+          {bookingId && ['FAILED', 'INVALID', 'REVERSED', 'UNKNOWN'].includes(paymentStatus) && (
+            <Link
+              to={`/payment/resume?id=${bookingId}`}
+              className="font-sans text-sm font-medium text-[#c9a96e] hover:underline transition-colors text-center"
+            >
+              Try Payment Again
+            </Link>
+          )}
           <Link
             to="/"
-            className="font-sans text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            className="font-sans text-sm text-gray-400 hover:text-gray-600 transition-colors text-center"
           >
             Return to Home
           </Link>

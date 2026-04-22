@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, AlertCircle, CheckCircle, XCircle, Shield, ArrowLeft } from 'lucide-react'
+import { Loader2, AlertCircle, CheckCircle, XCircle, Shield, ArrowLeft, RefreshCw } from 'lucide-react'
 import { bookingsApi } from '../api/bookings'
 
 const MAX_POLLS = 24
@@ -15,8 +15,11 @@ export default function PaymentResume() {
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [iframeReady, setIframeReady] = useState(false)
+  const [iframeError, setIframeError] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState(null)
   const pollTimer = useRef(null)
+  const iframeTimeout = useRef(null)
 
   const startPolling = (count = 0) => {
     if (count >= MAX_POLLS) return
@@ -35,6 +38,28 @@ export default function PaymentResume() {
     }, POLL_INTERVAL_MS)
   }
 
+  const armIframeTimeout = () => {
+    clearTimeout(iframeTimeout.current)
+    iframeTimeout.current = setTimeout(() => {
+      setIframeError(true)
+    }, 15000)
+  }
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    setIframeError(false)
+    setIframeReady(false)
+    try {
+      const res = await bookingsApi.refreshPaymentLink(bookingId)
+      setData((prev) => ({ ...prev, redirect_url: res.redirect_url }))
+      armIframeTimeout()
+    } catch {
+      setIframeError(true)
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   useEffect(() => {
     if (!bookingId) {
       setError('No booking ID provided.')
@@ -49,13 +74,14 @@ export default function PaymentResume() {
           setPaymentStatus('COMPLETED')
         } else {
           setTimeout(() => startPolling(0), 8000)
+          armIframeTimeout()
         }
       })
       .catch(() => {
         setError('Payment link not found or has expired. Please contact us for assistance.')
         setLoading(false)
       })
-    return () => clearTimeout(pollTimer.current)
+    return () => { clearTimeout(pollTimer.current); clearTimeout(iframeTimeout.current) }
   }, [bookingId])
 
   const isSuccess = paymentStatus === 'COMPLETED'
@@ -196,12 +222,41 @@ export default function PaymentResume() {
           </AnimatePresence>
 
           {/* Loading shimmer while iframe loads */}
-          {!iframeReady && !paymentStatus && (
+          {!iframeReady && !paymentStatus && !iframeError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none">
               <Loader2 size={28} className="animate-spin text-[#c9a96e]" />
               <p className="font-sans text-sm text-gray-400">Loading secure payment form…</p>
             </div>
           )}
+
+          {/* Iframe load failure / expired link */}
+          <AnimatePresence>
+            {iframeError && !paymentStatus && (
+              <motion.div
+                key="iframe-error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center bg-white z-10"
+              >
+                <AlertCircle size={40} className="text-amber-500" />
+                <h3 className="font-serif text-lg font-semibold text-green-950">Payment Form Unavailable</h3>
+                <p className="font-sans text-sm text-gray-500 max-w-xs leading-relaxed">
+                  The payment session may have expired or failed to load. Click below to get a fresh payment link.
+                </p>
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="flex items-center gap-2 font-sans text-sm font-semibold text-white bg-green-900 hover:bg-[#c9a96e] transition-colors px-6 py-3 rounded-xl disabled:opacity-60"
+                >
+                  {refreshing ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
+                  {refreshing ? 'Getting fresh link…' : 'Refresh Payment Link'}
+                </button>
+                <Link to="/contact" className="font-sans text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                  Need help? Contact us
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Pesapal iframe */}
           {data?.redirect_url && !paymentStatus && (
@@ -209,11 +264,27 @@ export default function PaymentResume() {
               src={data.redirect_url}
               title="Secure Payment"
               className="w-full h-full border-0"
-              style={{ minHeight: 'calc(100vh - 60px)' }}
-              onLoad={() => setIframeReady(true)}
+              style={{ minHeight: 'calc(100vh - 60px)', display: iframeError ? 'none' : 'block' }}
+              onLoad={() => { setIframeReady(true); clearTimeout(iframeTimeout.current) }}
+              onError={() => setIframeError(true)}
               allow="payment"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"
             />
+          )}
+
+          {/* Refresh button always visible once iframe is loaded */}
+          {iframeReady && !paymentStatus && !iframeError && (
+            <div className="absolute bottom-3 right-3 z-10">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center gap-1.5 font-sans text-xs text-gray-400 hover:text-gray-600 bg-white/80 border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm transition-colors disabled:opacity-50"
+                title="Refresh payment link if expired"
+              >
+                <RefreshCw size={11} />
+                Refresh link
+              </button>
+            </div>
           )}
         </main>
       </div>

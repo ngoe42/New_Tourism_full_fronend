@@ -24,4 +24,7 @@ export const bookingsApi = {
 
   getPaymentLink: (bookingId) =>
     apiClient.get(`/payments/link/${bookingId}`).then((r) => r.data),
+
+  refreshPaymentLink: (bookingId) =>
+    apiClient.post(`/payments/initiate/${bookingId}`).then((r) => r.data),
 }

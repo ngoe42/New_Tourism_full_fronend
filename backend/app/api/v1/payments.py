@@ -82,19 +82,53 @@ async def get_payment_link(
     booking_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    """Return the stored Pesapal redirect URL for a booking (used by the email resume link)."""
+    """Return a FRESH Pesapal redirect URL for the resume page.
+    Always generates a new order so the link is never expired.
+    Falls back to stored URL if Pesapal gateway is unavailable.
+    """
     from app.repositories.booking import BookingRepository
     repo = BookingRepository(db)
     booking = await repo.get(booking_id)
-    if not booking or not booking.payment_redirect_url:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment link not found")
-    return {
-        "booking_id": booking.id,
-        "redirect_url": booking.payment_redirect_url,
-        "tour_title": booking.tour.title if booking.tour else "",
-        "total_price": booking.total_price,
-        "payment_status": booking.payment_status,
-    }
+    if not booking:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+
+    tour_title = booking.tour.title if booking.tour else f"Booking #{booking.id}"
+
+    # Already paid — no link needed
+    if booking.payment_status == "COMPLETED":
+        return {
+            "booking_id": booking.id,
+            "redirect_url": None,
+            "tour_title": tour_title,
+            "total_price": booking.total_price,
+            "payment_status": "COMPLETED",
+        }
+
+    # Try to generate a fresh Pesapal URL
+    service = PaymentService(db)
+    try:
+        result = await service.initiate_payment(booking_id, user=None)
+        return {
+            "booking_id": booking.id,
+            "redirect_url": result["redirect_url"],
+            "tour_title": tour_title,
+            "total_price": booking.total_price,
+            "payment_status": "PENDING",
+        }
+    except HTTPException as exc:
+        # Gateway not configured or other 5xx — fall back to stored URL
+        if booking.payment_redirect_url:
+            return {
+                "booking_id": booking.id,
+                "redirect_url": booking.payment_redirect_url,
+                "tour_title": tour_title,
+                "total_price": booking.total_price,
+                "payment_status": booking.payment_status or "PENDING",
+            }
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Payment gateway unavailable: {exc.detail}",
+        )
 
 
 @router.post("/resend-link")

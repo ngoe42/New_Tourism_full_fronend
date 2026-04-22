@@ -94,6 +94,7 @@ class PaymentService:
 
         if not email_already_sent:
             tour = booking.tour
+            resume_link = f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
             await send_booking_confirmation_email(
                 booking=booking,
                 tour_title=tour.title if tour else f"Booking #{booking.id}",
@@ -102,7 +103,7 @@ class PaymentService:
                 travel_date=booking.travel_date,
                 guests=booking.guests,
                 total_price=booking.total_price,
-                payment_link=result["redirect_url"],
+                payment_link=resume_link,
                 tour_location=tour.location if tour else "",
                 tour_duration=tour.duration if tour else "",
                 tour_included=tour.included if tour else [],
@@ -197,35 +198,33 @@ class PaymentService:
         tour = booking.tour
         tour_title = tour.title if tour else f"Booking #{booking.id}"
 
-        # Reuse stored link if still valid, otherwise generate a fresh one
-        payment_link = booking.payment_redirect_url
-        if not payment_link:
-            try:
-                ipn_id = await self._get_or_register_ipn_id()
-                merchant_ref = f"NTS-{booking.id}-{uuid.uuid4().hex[:8].upper()}"
-                name_parts = booking.contact_name.split(" ", 1)
-                result = await self.pesapal.submit_order(
-                    merchant_reference=merchant_ref,
-                    amount=booking.total_price,
-                    currency="USD",
-                    description=f"Safari booking #{booking.id} — {tour_title}",
-                    callback_url=f"{settings.FRONTEND_URL}/payment/callback",
-                    ipn_id=ipn_id,
-                    email=booking.contact_email,
-                    phone=booking.contact_phone,
-                    first_name=name_parts[0],
-                    last_name=name_parts[1] if len(name_parts) > 1 else ".",
-                )
-                payment_link = result["redirect_url"]
-                await self.booking_repo.update(booking, {
-                    "pesapal_order_tracking_id": result["order_tracking_id"],
-                    "pesapal_merchant_reference": merchant_ref,
-                    "payment_status": "PENDING",
-                    "payment_redirect_url": payment_link,
-                })
-            except Exception as exc:
-                logger.error(f"resend-link: Pesapal order failed for booking #{booking.id}: {exc}")
-                return
+        # Always generate a fresh Pesapal order — stored links expire after ~1 hour
+        try:
+            ipn_id = await self._get_or_register_ipn_id()
+            merchant_ref = f"NTS-{booking.id}-{uuid.uuid4().hex[:8].upper()}"
+            name_parts = booking.contact_name.split(" ", 1)
+            result = await self.pesapal.submit_order(
+                merchant_reference=merchant_ref,
+                amount=booking.total_price,
+                currency="USD",
+                description=f"Safari booking #{booking.id} — {tour_title}",
+                callback_url=f"{settings.FRONTEND_URL}/payment/callback",
+                ipn_id=ipn_id,
+                email=booking.contact_email,
+                phone=booking.contact_phone,
+                first_name=name_parts[0],
+                last_name=name_parts[1] if len(name_parts) > 1 else ".",
+            )
+            payment_link = result["redirect_url"]
+            await self.booking_repo.update(booking, {
+                "pesapal_order_tracking_id": result["order_tracking_id"],
+                "pesapal_merchant_reference": merchant_ref,
+                "payment_status": "PENDING",
+                "payment_redirect_url": payment_link,
+            })
+        except Exception as exc:
+            logger.error(f"resend-link: Pesapal order failed for booking #{booking.id}: {exc}")
+            return
 
         from app.services.email_service import send_email
         first = booking.contact_name.split()[0]
@@ -265,6 +264,7 @@ class PaymentService:
                 "booking_id": booking.id,
             }
 
+        payment_status = booking.payment_status or "UNKNOWN"
         try:
             status_data = await self.pesapal.get_transaction_status(
                 booking.pesapal_order_tracking_id
@@ -292,7 +292,7 @@ class PaymentService:
                     logger.error(f"Payment success email failed for booking #{booking.id}: {exc}")
         except Exception as exc:
             logger.error(f"Status poll failed for booking {booking_id}: {exc}")
-            payment_status = booking.payment_status or "UNKNOWN"
+            # payment_status already initialised from DB above — keep it
 
         return {
             "payment_status": payment_status,
