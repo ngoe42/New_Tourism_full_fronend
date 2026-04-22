@@ -169,6 +169,17 @@ export default function PaymentCallback() {
     }
   }
 
+  // If this page is loaded inside the Pesapal iframe on PaymentResume,
+  // notify the parent window immediately so it can update without polling.
+  useEffect(() => {
+    if (paymentStatus !== 'PENDING' && window.parent !== window) {
+      window.parent.postMessage(
+        { type: 'pesapal_payment_status', status: paymentStatus },
+        window.location.origin,
+      )
+    }
+  }, [paymentStatus])
+
   const config = STATUS_MAP[paymentStatus]
   const isPending = !config
   const gaveUp = isPending && pollCount >= MAX_POLLS

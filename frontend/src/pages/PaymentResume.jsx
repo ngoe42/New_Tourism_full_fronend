@@ -4,8 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, AlertCircle, CheckCircle, XCircle, Shield, ArrowLeft, RefreshCw } from 'lucide-react'
 import { bookingsApi } from '../api/bookings'
 
-const MAX_POLLS = 24
-const POLL_INTERVAL_MS = 5000
+const MAX_POLLS = 36          // 36 × 10s = 6 minutes total polling window
+const POLL_INTERVAL_MS = 10000  // poll every 10s (not 5s)
+const POLL_START_DELAY = 180000 // wait 3 min before first poll (give user time to pay)
+// Pesapal returns 'INVALID' for brand-new orders that haven't been attempted yet.
+// Never treat INVALID as a failure during an active payment session.
+const TERMINAL_FAILURES = ['FAILED', 'REVERSED']
 
 export default function PaymentResume() {
   const [searchParams] = useSearchParams()
@@ -20,6 +24,7 @@ export default function PaymentResume() {
   const [paymentStatus, setPaymentStatus] = useState(null)
   const pollTimer = useRef(null)
   const iframeTimeout = useRef(null)
+  const failCount = useRef(0)  // consecutive FAILED polls — only finalize after 2
 
   const startPolling = (count = 0) => {
     if (count >= MAX_POLLS) return
@@ -27,9 +32,20 @@ export default function PaymentResume() {
       try {
         const res = await bookingsApi.pollPaymentStatus(bookingId)
         const s = res.payment_status?.toUpperCase()
-        if (s && s !== 'PENDING') {
-          setPaymentStatus(s)
+        if (s === 'COMPLETED') {
+          setPaymentStatus('COMPLETED')
+        } else if (TERMINAL_FAILURES.includes(s)) {
+          // Require 2 consecutive FAILED polls before showing failure
+          // (avoids false positives from transient Pesapal errors)
+          failCount.current += 1
+          if (failCount.current >= 2) {
+            setPaymentStatus(s)
+          } else {
+            startPolling(count + 1)
+          }
         } else {
+          // PENDING, INVALID, UNKNOWN, NOT_INITIATED — all mean "not done yet"
+          failCount.current = 0
           startPolling(count + 1)
         }
       } catch {
@@ -60,6 +76,20 @@ export default function PaymentResume() {
     }
   }
 
+  // Listen for postMessage from PaymentCallback page loaded inside the iframe.
+  // When Pesapal finishes, it redirects the iframe to our callback URL which
+  // sends window.parent.postMessage — this gives us instant status without polling.
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data?.type === 'pesapal_payment_status') {
+        const s = event.data.status?.toUpperCase()
+        if (s) setPaymentStatus(s)
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
   useEffect(() => {
     if (!bookingId) {
       setError('No booking ID provided.')
@@ -73,7 +103,9 @@ export default function PaymentResume() {
         if (res.payment_status?.toUpperCase() === 'COMPLETED') {
           setPaymentStatus('COMPLETED')
         } else {
-          setTimeout(() => startPolling(0), 8000)
+          // Give user at least 3 minutes to complete payment before first poll.
+          // postMessage from the iframe callback will handle fast completions.
+          setTimeout(() => startPolling(0), POLL_START_DELAY)
           armIframeTimeout()
         }
       })
