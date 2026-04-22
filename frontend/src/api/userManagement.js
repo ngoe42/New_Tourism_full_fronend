@@ -36,4 +36,7 @@ export const userManagementApi = {
 
   deleteUser: (id) =>
     apiClient.delete(`/manage/users/${id}`).then((r) => r.data),
+
+  eraseCustomerData: (id) =>
+    apiClient.post(`/manage/users/${id}/erase`).then((r) => r.data),
 }

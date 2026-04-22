@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.core.security import get_password_hash
 from app.models.role import Role, Permission, ALL_PERMISSIONS
@@ -190,6 +191,74 @@ class UserManagementService:
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         await self.user_repo.update(user, {"is_active": False})
+
+    async def erase_customer_data(self, user_id: int, current_user_id: int) -> dict:
+        """Full GDPR erasure:
+        1. Collect original email for SendGrid suppression.
+        2. Anonymise the user record (replace PII with placeholders).
+        3. Hard-delete all bookings and inquiries tied to this user/email.
+        4. Add email to SendGrid global suppression list.
+        Returns a summary of what was erased.
+        """
+        from sqlalchemy import delete as sql_delete, select
+        from app.models.booking import Booking
+        from app.models.inquiry import Inquiry
+        from app.services.email_service import suppress_sendgrid_email
+
+        if user_id == current_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You cannot erase your own account",
+            )
+        user = await self.user_repo.get(user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        original_email = user.email
+        logger.info(f"[erase] Starting data erasure for user #{user_id} ({original_email})")
+
+        # 1 — Count bookings before deletion
+        bookings_result = await self.db.execute(
+            select(Booking).where(Booking.user_id == user_id)
+        )
+        user_bookings = bookings_result.scalars().all()
+        bookings_count = len(user_bookings)
+
+        # 2 — Delete all bookings for this user
+        await self.db.execute(sql_delete(Booking).where(Booking.user_id == user_id))
+
+        # 3 — Delete all inquiries matching this email
+        inquiries_result = await self.db.execute(
+            select(Inquiry).where(Inquiry.email == original_email)
+        )
+        inquiries_count = len(inquiries_result.scalars().all())
+        await self.db.execute(sql_delete(Inquiry).where(Inquiry.email == original_email))
+
+        # 4 — Anonymise user record (keep row for referential integrity but strip PII)
+        from app.core.security import get_password_hash
+        anonymised_email = f"erased_{user_id}@erased.invalid"
+        await self.user_repo.update(user, {
+            "email": anonymised_email,
+            "name": "Deleted User",
+            "hashed_password": get_password_hash(f"ERASED-{user_id}-{original_email}"),
+            "is_active": False,
+        })
+        await self.db.commit()
+
+        # 5 — Suppress in SendGrid (non-blocking; failure logged but does not abort)
+        suppressed = await suppress_sendgrid_email(original_email)
+
+        logger.info(
+            f"[erase] Done: user #{user_id} anonymised, "
+            f"{bookings_count} bookings deleted, {inquiries_count} inquiries deleted, "
+            f"SendGrid suppression={'ok' if suppressed else 'failed/skipped'}"
+        )
+        return {
+            "user_id": user_id,
+            "bookings_deleted": bookings_count,
+            "inquiries_deleted": inquiries_count,
+            "sendgrid_suppressed": suppressed,
+        }
 
     # ── Seeding ───────────────────────────────────────────────────────────────
 

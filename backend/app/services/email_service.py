@@ -8,6 +8,27 @@ from loguru import logger
 from app.core.config import settings
 
 
+async def suppress_sendgrid_email(email: str) -> bool:
+    """Add an email address to SendGrid's global suppression list.
+    Once suppressed, SendGrid will never deliver email to that address again.
+    Returns True on success, False if not configured or on error.
+    """
+    if not settings.SENDGRID_API_KEY:
+        logger.warning("[erase] SENDGRID_API_KEY not set — skipping suppression")
+        return False
+    try:
+        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+        response = await asyncio.to_thread(
+            sg.client.asm.suppressions.global_.post,
+            request_body={"recipient_emails": [email]},
+        )
+        logger.info(f"[erase] Suppressed {email} in SendGrid — HTTP {response.status_code}")
+        return True
+    except Exception as exc:
+        logger.error(f"[erase] SendGrid suppression FAILED for {email}: {exc}")
+        return False
+
+
 def _payment_block(
     item_name: Optional[str],
     price: Optional[float],

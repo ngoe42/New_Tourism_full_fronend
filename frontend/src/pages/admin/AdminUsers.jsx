@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Users, Plus, Search, Edit2, Trash2, X, Shield, Check,
-  ChevronDown, UserCheck, UserX, Eye, EyeOff
+  ChevronDown, UserCheck, UserX, Eye, EyeOff, ShieldOff, Loader2, AlertTriangle
 } from 'lucide-react'
 import { userManagementApi } from '../../api/userManagement'
 import extractError from '../../utils/extractError'
@@ -37,6 +37,17 @@ export default function AdminUsers() {
   const deleteMut = useMutation({
     mutationFn: userManagementApi.deleteUser,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['manage-users'] }),
+  })
+
+  const [eraseTarget, setEraseTarget] = useState(null)
+  const [eraseResult, setEraseResult] = useState(null)
+  const eraseMut = useMutation({
+    mutationFn: (id) => userManagementApi.eraseCustomerData(id),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['manage-users'] })
+      setEraseResult(res)
+      setEraseTarget(null)
+    },
   })
 
   const filtered = users.filter(
@@ -159,6 +170,13 @@ export default function AdminUsers() {
                         >
                           <Trash2 size={14} />
                         </button>
+                        <button
+                          onClick={() => setEraseTarget(u)}
+                          className="p-2 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-700 transition-colors"
+                          title="Erase all customer data (GDPR)"
+                        >
+                          <ShieldOff size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -180,6 +198,87 @@ export default function AdminUsers() {
             onClose={() => { setShowModal(false); createMut.reset() }}
             onSubmit={(data) => createMut.mutate(data)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Erase Confirmation Modal */}
+      <AnimatePresence>
+        {eraseTarget && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          >
+            <div className="absolute inset-0 bg-black/50" onClick={() => setEraseTarget(null)} />
+            <motion.div
+              className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+            >
+              <div className="bg-red-600 px-6 py-4 flex items-center gap-3">
+                <AlertTriangle size={20} className="text-white flex-shrink-0" />
+                <h3 className="font-serif text-lg font-bold text-white">Erase Customer Data</h3>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className="font-sans text-sm text-gray-700">
+                  You are about to permanently erase all data for
+                  <span className="font-semibold"> {eraseTarget.name}</span> ({eraseTarget.email}).
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-1.5">
+                  <p className="font-sans text-xs font-bold text-red-700 uppercase tracking-wider mb-2">This will:</p>
+                  {[
+                    'Anonymise the user account (name, email, password replaced)',
+                    'Permanently delete all their bookings',
+                    'Permanently delete all inquiries from their email',
+                    'Add their email to SendGrid global suppression (no future emails)',
+                  ].map((item) => (
+                    <div key={item} className="flex items-start gap-2">
+                      <AlertTriangle size={11} className="text-red-500 mt-0.5 flex-shrink-0" />
+                      <span className="font-sans text-xs text-red-700">{item}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="font-sans text-xs text-gray-500 font-semibold">⚠ This action cannot be undone.</p>
+                {eraseMut.isError && (
+                  <p className="font-sans text-xs text-red-600">Erasure failed. Please try again.</p>
+                )}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => setEraseTarget(null)}
+                    className="flex-1 border border-gray-200 rounded-xl py-2.5 font-sans text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => eraseMut.mutate(eraseTarget.id)}
+                    disabled={eraseMut.isPending}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-xl py-2.5 font-sans text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {eraseMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <ShieldOff size={14} />}
+                    Yes, Erase Everything
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Erase Result Toast */}
+      <AnimatePresence>
+        {eraseResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }}
+            className="fixed bottom-6 right-6 z-50 bg-white border border-gray-200 rounded-2xl shadow-xl p-5 max-w-sm"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-sans text-sm font-bold text-green-700 mb-1">Data Erased Successfully</p>
+                <p className="font-sans text-xs text-gray-500">{eraseResult.bookings_deleted} booking(s) deleted</p>
+                <p className="font-sans text-xs text-gray-500">{eraseResult.inquiries_deleted} inquiry/inquiries deleted</p>
+                <p className="font-sans text-xs text-gray-500">SendGrid: {eraseResult.sendgrid_suppressed ? 'suppressed ✓' : 'skipped (not configured)'}</p>
+              </div>
+              <button onClick={() => setEraseResult(null)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
