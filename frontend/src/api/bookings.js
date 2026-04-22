@@ -21,4 +21,7 @@ export const bookingsApi = {
 
   pollPaymentStatus: (bookingId) =>
     apiClient.get(`/payments/status/${bookingId}`).then((r) => r.data),
+
+  getPaymentLink: (bookingId) =>
+    apiClient.get(`/payments/link/${bookingId}`).then((r) => r.data),
 }

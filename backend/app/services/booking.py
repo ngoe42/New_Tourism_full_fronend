@@ -166,6 +166,10 @@ class BookingService:
         # If Pesapal succeeded, payment_link contains the redirect URL.
         # If Pesapal failed or is not configured, payment_link is None and
         # send_booking_confirmation_email will fall back to a contact link.
+        email_payment_link = (
+            f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
+            if payment_link else None
+        )
         logger.info(f"Booking #{booking.id} created — sending confirmation to {data.contact_email} (payment_link={'set' if payment_link else 'none'})")
         await send_booking_confirmation_email(
             booking=booking,
@@ -175,7 +179,7 @@ class BookingService:
             travel_date=data.travel_date,
             guests=data.guests,
             total_price=total_price,
-            payment_link=payment_link,
+            payment_link=email_payment_link,
             tour_location=tour.location or "",
             tour_duration=tour.duration or "",
             tour_included=tour.included or [],

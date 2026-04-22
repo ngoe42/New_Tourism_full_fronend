@@ -77,6 +77,26 @@ async def payment_status(
     return await service.get_payment_status(booking_id, current_user)
 
 
+@router.get("/link/{booking_id}")
+async def get_payment_link(
+    booking_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return the stored Pesapal redirect URL for a booking (used by the email resume link)."""
+    from app.repositories.booking import BookingRepository
+    repo = BookingRepository(db)
+    booking = await repo.get(booking_id)
+    if not booking or not booking.payment_redirect_url:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment link not found")
+    return {
+        "booking_id": booking.id,
+        "redirect_url": booking.payment_redirect_url,
+        "tour_title": booking.tour.title if booking.tour else "",
+        "total_price": booking.total_price,
+        "payment_status": booking.payment_status,
+    }
+
+
 @router.post("/resend-link")
 async def resend_payment_link(
     data: ResendLinkRequest,
