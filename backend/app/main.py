@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.responses import Response
 from loguru import logger
 
@@ -39,6 +40,10 @@ async def lifespan(app: FastAPI):
         logger.warning("[payment] PESAPAL_CONSUMER_KEY/SECRET not set — payment initiation will fail!")
     app.state.admin_seed_task = asyncio.create_task(_seed_admin_background())
     await init_redis()
+    from app.core.cache import cache_delete_pattern
+    for pattern in ("tours:*", "tour:*", "routes:*", "route:*", "experiences:*", "experience:*", "settings:*"):
+        await cache_delete_pattern(pattern)
+    logger.info("[cache] Content caches flushed on startup")
     yield
     seed_task = getattr(app.state, "admin_seed_task", None)
     if seed_task and not seed_task.done():
@@ -95,6 +100,7 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # Global exception handler to ensure CORS headers on all errors
 @app.exception_handler(Exception)
