@@ -10,7 +10,7 @@ from app.models.booking import Booking, BookingStatus
 from app.models.user import User
 from app.repositories.booking import BookingRepository
 from app.repositories.tour import TourRepository
-from app.schemas.booking import BookingCreate, BookingStatusUpdate, PaginatedBookings
+from app.schemas.booking import BookingCreate, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
 from app.services.email_service import send_email, send_booking_admin_notification
 from app.services.pesapal import PesapalService
 
@@ -241,3 +241,16 @@ class BookingService:
         if data.notes:
             update_data["notes"] = data.notes
         return await self.booking_repo.update(booking, update_data)
+
+    async def admin_update(self, booking_id: int, data: BookingAdminUpdate) -> Booking:
+        booking = await self.booking_repo.get(booking_id)
+        if not booking:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+        update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        return await self.booking_repo.update(booking, update_data)
+
+    async def delete_booking(self, booking_id: int) -> None:
+        booking = await self.booking_repo.get(booking_id)
+        if not booking:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+        await self.booking_repo.delete(booking_id)

@@ -19,6 +19,14 @@ class BookingStatusUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+class BookingAdminUpdate(BaseModel):
+    travel_date: Optional[date] = None
+    guests: Optional[int] = Field(None, ge=1, le=50)
+    total_price: Optional[float] = Field(None, gt=0)
+    notes: Optional[str] = None
+    special_requests: Optional[str] = None
+
+
 class BookingTourInfo(BaseModel):
     id: int
     title: str

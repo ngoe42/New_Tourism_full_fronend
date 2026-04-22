@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Mail, Phone, Calendar, ChevronDown, ChevronUp, Search, X } from 'lucide-react'
+import { Mail, Phone, Calendar, ChevronDown, ChevronUp, Search, X, Trash2, Loader2 } from 'lucide-react'
 import { inquiriesApi } from '../../api/inquiries'
 import EmailReplyModal from '../../components/EmailReplyModal'
 
@@ -10,12 +10,18 @@ const STATUS_TABS = [
   { key: 'replied', label: 'Replied' },
 ]
 
-function InquiryRow({ inquiry, onReply }) {
+function InquiryRow({ inquiry, onReply, onDelete }) {
   const [expanded, setExpanded] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const queryClient = useQueryClient()
 
   const markRead = useMutation({
     mutationFn: () => inquiriesApi.update(inquiry.id, { is_read: true }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-inquiries'] }),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => inquiriesApi.delete(inquiry.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-inquiries'] }),
   })
 
@@ -80,13 +86,39 @@ function InquiryRow({ inquiry, onReply }) {
               <p className="font-sans text-sm text-gray-600 leading-relaxed">{inquiry.message}</p>
             </div>
           )}
-          <div className="mt-4">
+          <div className="mt-4 flex items-center gap-2">
             <button
               onClick={() => onReply(inquiry)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-sans text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors"
             >
               <Mail size={13} /> Reply via Email
             </button>
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-500 font-sans text-xs font-semibold rounded-lg hover:bg-red-100 transition-colors"
+              >
+                <Trash2 size={13} /> Delete
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="font-sans text-xs text-gray-500">Sure?</span>
+                <button
+                  onClick={() => deleteMutation.mutate()}
+                  disabled={deleteMutation.isPending}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white font-sans text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60"
+                >
+                  {deleteMutation.isPending ? <Loader2 size={11} className="animate-spin" /> : null}
+                  Yes, delete
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-3 py-1.5 border border-gray-200 font-sans text-xs text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -163,7 +195,7 @@ export default function AdminInquiries() {
         </div>
       ) : (
         <div className="space-y-3">
-          {inquiries.map((inq) => <InquiryRow key={inq.id} inquiry={inq} onReply={setReplyTarget} />)}
+          {inquiries.map((inq) => <InquiryRow key={inq.id} inquiry={inq} onReply={setReplyTarget} onDelete={() => {}} />)}
         </div>
       )}
 

@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.limiter import limiter
 from app.dependencies.auth import get_current_user, get_current_user_optional, require_admin
 from app.models.user import User
-from app.schemas.booking import BookingCreate, BookingResponse, BookingStatusUpdate, PaginatedBookings
+from app.schemas.booking import BookingCreate, BookingResponse, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
 from app.services.booking import BookingService
 
 router = APIRouter(tags=["Bookings"])
@@ -62,3 +62,22 @@ async def update_booking_status(
 ):
     service = BookingService(db)
     return await service.update_status(booking_id, data)
+
+
+@router.put("/{booking_id}", response_model=BookingResponse, dependencies=[Depends(require_admin)])
+async def admin_update_booking(
+    booking_id: int,
+    data: BookingAdminUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    service = BookingService(db)
+    return await service.admin_update(booking_id, data)
+
+
+@router.delete("/{booking_id}", status_code=204, dependencies=[Depends(require_admin)])
+async def delete_booking(
+    booking_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    service = BookingService(db)
+    await service.delete_booking(booking_id)

@@ -27,4 +27,10 @@ export const bookingsApi = {
 
   refreshPaymentLink: (bookingId) =>
     apiClient.post(`/payments/initiate/${bookingId}`).then((r) => r.data),
+
+  update: (id, data) =>
+    apiClient.put(`/bookings/${id}`, data).then((r) => r.data),
+
+  delete: (id) =>
+    apiClient.delete(`/bookings/${id}`),
 }
