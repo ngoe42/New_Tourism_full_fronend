@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, AlertCircle, CheckCircle, XCircle, Shield, ArrowLeft, RefreshCw } from 'lucide-react'
 import { bookingsApi } from '../api/bookings'
 
-const MAX_POLLS = 36          // 36 × 10s = 6 minutes total polling window
-const POLL_INTERVAL_MS = 10000  // poll every 10s (not 5s)
-const POLL_START_DELAY = 180000 // wait 3 min before first poll (give user time to pay)
+const MAX_POLLS = 30          // 30 × 60s = 30 minutes total polling window
+const POLL_INTERVAL_MS = 60000  // poll every 60s
+const POLL_START_DELAY = 300000 // wait 5 min before first poll (give user time to pay)
 // Pesapal returns 'INVALID' for brand-new orders that haven't been attempted yet.
 // Never treat INVALID as a failure during an active payment session.
 const TERMINAL_FAILURES = ['FAILED', 'REVERSED']
