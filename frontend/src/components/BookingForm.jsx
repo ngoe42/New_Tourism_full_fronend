@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, Users, Mail, Phone, MessageSquare, CheckCircle, Loader2, AlertCircle, CreditCard } from 'lucide-react'
+import { Calendar, Users, Mail, Phone, MessageSquare, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { bookingsApi } from '../api/bookings'
 import { inquiriesApi } from '../api/inquiries'
 import { useAuth } from '../context/AuthContext'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import PaymentModal from './PaymentModal'
 
 export default function BookingForm({ tourId = null, routeId = null, tourTitle = '', tourPrice = 0, compact = false }) {
   const { user } = useAuth()
@@ -21,6 +22,8 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
   const [errorMsg, setErrorMsg] = useState('')
   const [paymentUrl, setPaymentUrl] = useState(null)
   const [bookingRef, setBookingRef] = useState(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [confirmedGuests, setConfirmedGuests] = useState(2)
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -43,17 +46,17 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
         })
 
         setBookingRef(booking.id)
+        setConfirmedGuests(parseInt(form.guests))
         sessionStorage.setItem('lastBookingId', booking.id)
         sessionStorage.setItem('lastBookingEmail', form.email)
-        if (booking.payment_redirect_url) {
-          setPaymentUrl(booking.payment_redirect_url)
-        } else {
+        let url = booking.payment_redirect_url
+        if (!url) {
           try {
             const payment = await bookingsApi.initiatePayment(booking.id)
-            if (payment.redirect_url) setPaymentUrl(payment.redirect_url)
-          } catch {
-          }
+            if (payment.redirect_url) url = payment.redirect_url
+          } catch {}
         }
+        setPaymentUrl(url || null)
         setStatus('success')
       } else {
         const inquiryPayload = {
@@ -103,16 +106,25 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
           <p className="font-sans text-xs text-gray-400 mb-5">Booking Reference: #{bookingRef}</p>
         )}
         {paymentUrl && (
-          <a
-            href={paymentUrl}
-            className="mt-3 mb-2 flex items-center gap-2 px-6 py-3 bg-[#c9a96e] text-white font-sans text-sm font-semibold rounded-xl hover:bg-amber-700 transition-colors"
+          <button
+            onClick={() => setShowPaymentModal(true)}
+            className="mt-3 mb-2 w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gold text-white font-sans text-sm font-semibold rounded-xl hover:bg-amber-700 transition-colors shadow-md"
           >
-            <CreditCard size={16} /> Complete Payment Now
-          </a>
+            Complete Payment Now
+          </button>
         )}
         {paymentUrl && (
-          <p className="font-sans text-[11px] text-gray-400 mb-4">Visa · Mastercard · M-Pesa · Airtel Money</p>
+          <p className="font-sans text-[11px] text-gray-400 mb-4">Visa · Mastercard · M-Pesa · Airtel Money · Secured by Pesapal</p>
         )}
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          redirectUrl={paymentUrl}
+          bookingId={bookingRef}
+          tourTitle={tourTitle}
+          amount={tourPrice > 0 ? tourPrice * confirmedGuests : 0}
+          currency="USD"
+        />
         <button
           onClick={() => { setStatus('idle'); setPaymentUrl(null); setBookingRef(null) }}
           className="mt-4 text-sm font-sans text-[#c9a96e] hover:underline transition-colors"
