@@ -18,7 +18,7 @@ export default function CTASection() {
           className="w-full h-full object-cover"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0f3d2e]/80 via-[#0f3d2e]/70 to-[#0f3d2e]/85" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1a5c43]/60 via-[#1a5c43]/50 to-[#1a5c43]/65" />
       </div>
 
       {/* Decorative circles */}

@@ -8,7 +8,7 @@ export default function ParallaxBreak({
   subtitle,
   cta,
   ctaHref = '/tours',
-  overlay = 'from-black/50 to-[#0f3d2e]/70',
+  overlay = 'from-black/30 to-[#1a5c43]/50',
   height = 'h-[60vh]',
 }) {
   const imgRef = useRef(null)

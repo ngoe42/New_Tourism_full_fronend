@@ -33,6 +33,10 @@ async def lifespan(app: FastAPI):
         logger.info(f"[email] SendGrid configured ✓ — sending from {settings.EMAIL_FROM}")
     else:
         logger.warning("[email] SENDGRID_API_KEY is NOT set — all emails will be silently skipped!")
+    if settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET:
+        logger.info(f"[payment] Pesapal configured ✓ — environment={settings.PESAPAL_ENVIRONMENT}, IPN ID={'set' if settings.PESAPAL_IPN_ID else 'NOT SET (will auto-register)'}")
+    else:
+        logger.warning("[payment] PESAPAL_CONSUMER_KEY/SECRET not set — payment initiation will fail!")
     app.state.admin_seed_task = asyncio.create_task(_seed_admin_background())
     await init_redis()
     yield

@@ -86,8 +86,8 @@ export default function Hero() {
           />
         )}
         {/* Multi-layer gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-[#0f3d2e]/80 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-[#1a5c43]/55 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent pointer-events-none" />
       </div>
 
       {/* Content */}

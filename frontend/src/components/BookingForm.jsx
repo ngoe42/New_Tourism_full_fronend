@@ -43,6 +43,8 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
         })
 
         setBookingRef(booking.id)
+        sessionStorage.setItem('lastBookingId', booking.id)
+        sessionStorage.setItem('lastBookingEmail', form.email)
         if (booking.payment_redirect_url) {
           setPaymentUrl(booking.payment_redirect_url)
         } else {

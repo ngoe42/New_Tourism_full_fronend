@@ -11,6 +11,7 @@ from app.models.user import User
 from app.repositories.booking import BookingRepository
 from app.repositories.tour import TourRepository
 from app.services.booking import send_booking_confirmation_email
+from app.services.email_service import send_payment_success_email
 from app.services.pesapal import PesapalService
 
 
@@ -135,6 +136,7 @@ class PaymentService:
 
         payment_status = status_data.get("payment_status_description", "").upper()
         updates: dict = {"payment_status": payment_status}
+        already_confirmed = booking.status == BookingStatus.confirmed
 
         if payment_status == "COMPLETED":
             updates["status"] = BookingStatus.confirmed
@@ -144,12 +146,106 @@ class PaymentService:
 
         await self.booking_repo.update(booking, updates)
 
+        if payment_status == "COMPLETED" and not already_confirmed:
+            tour = booking.tour
+            try:
+                await send_payment_success_email(
+                    booking_id=booking.id,
+                    tour_title=tour.title if tour else f"Booking #{booking.id}",
+                    contact_name=booking.contact_name,
+                    contact_email=booking.contact_email,
+                    travel_date=booking.travel_date,
+                    guests=booking.guests,
+                    total_price=booking.total_price,
+                    transaction_id=order_tracking_id,
+                )
+            except Exception as exc:
+                logger.error(f"Payment success email failed for booking #{booking.id}: {exc}")
+
         return {
             "orderNotificationType": "IPNCHANGE",
             "orderTrackingId": order_tracking_id,
             "orderMerchantReference": merchant_reference or booking.pesapal_merchant_reference,
             "status": "200",
         }
+
+    # ── Resend Payment Link ───────────────────────────────────────────
+
+    async def resend_payment_link(self, email: str, booking_ref: str) -> None:
+        """Find a booking by email + ref, generate a fresh payment link if needed, and email it."""
+        import re
+        booking = None
+
+        # Try NTS-{id}-XXXX format first
+        match = re.match(r"^NTS-(\d+)-", booking_ref.strip().upper())
+        if match:
+            booking = await self.booking_repo.get(int(match.group(1)))
+        else:
+            # Try plain numeric ID
+            if booking_ref.strip().isdigit():
+                booking = await self.booking_repo.get(int(booking_ref.strip()))
+
+        # Security: silently ignore if not found or email doesn't match
+        if not booking or booking.contact_email.lower() != email.lower():
+            logger.warning(f"resend-link: no match for email={email} ref={booking_ref}")
+            return
+
+        if booking.payment_status == "COMPLETED":
+            logger.info(f"resend-link: booking #{booking.id} already paid — skipping")
+            return
+
+        tour = booking.tour
+        tour_title = tour.title if tour else f"Booking #{booking.id}"
+
+        # Reuse stored link if still valid, otherwise generate a fresh one
+        payment_link = booking.payment_redirect_url
+        if not payment_link:
+            try:
+                ipn_id = await self._get_or_register_ipn_id()
+                merchant_ref = f"NTS-{booking.id}-{uuid.uuid4().hex[:8].upper()}"
+                name_parts = booking.contact_name.split(" ", 1)
+                result = await self.pesapal.submit_order(
+                    merchant_reference=merchant_ref,
+                    amount=booking.total_price,
+                    currency="USD",
+                    description=f"Safari booking #{booking.id} — {tour_title}",
+                    callback_url=f"{settings.FRONTEND_URL}/payment/callback",
+                    ipn_id=ipn_id,
+                    email=booking.contact_email,
+                    phone=booking.contact_phone,
+                    first_name=name_parts[0],
+                    last_name=name_parts[1] if len(name_parts) > 1 else ".",
+                )
+                payment_link = result["redirect_url"]
+                await self.booking_repo.update(booking, {
+                    "pesapal_order_tracking_id": result["order_tracking_id"],
+                    "pesapal_merchant_reference": merchant_ref,
+                    "payment_status": "PENDING",
+                    "payment_redirect_url": payment_link,
+                })
+            except Exception as exc:
+                logger.error(f"resend-link: Pesapal order failed for booking #{booking.id}: {exc}")
+                return
+
+        from app.services.email_service import send_email
+        first = booking.contact_name.split()[0]
+        body = (
+            f"Dear {first},\n\n"
+            f"Here is your payment link for booking #{booking.id} — {tour_title}.\n\n"
+            f"Click the button below to complete your secure payment. "
+            f"If the link has expired, please contact us and we will send you a new one.\n\n"
+            f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
+        )
+        await send_email(
+            to=booking.contact_email,
+            subject=f"Your Payment Link — {tour_title} | Nelson Tours & Safari",
+            body=body,
+            item_name=f"{tour_title} · {booking.guests} {'Guest' if booking.guests == 1 else 'Guests'}",
+            price=booking.total_price,
+            payment_link=payment_link,
+            btn_label="Complete Payment",
+        )
+        logger.info(f"resend-link: payment link resent for booking #{booking.id} to {email}")
 
     # ── Poll Status ──────────────────────────────────────────────────
 
@@ -174,9 +270,25 @@ class PaymentService:
             )
             payment_status = status_data.get("payment_status_description", "UNKNOWN").upper()
             updates: dict = {"payment_status": payment_status}
+            already_confirmed = booking.status == BookingStatus.confirmed
             if payment_status == "COMPLETED":
                 updates["status"] = BookingStatus.confirmed
             await self.booking_repo.update(booking, updates)
+            if payment_status == "COMPLETED" and not already_confirmed:
+                tour = booking.tour
+                try:
+                    await send_payment_success_email(
+                        booking_id=booking.id,
+                        tour_title=tour.title if tour else f"Booking #{booking.id}",
+                        contact_name=booking.contact_name,
+                        contact_email=booking.contact_email,
+                        travel_date=booking.travel_date,
+                        guests=booking.guests,
+                        total_price=booking.total_price,
+                        transaction_id=booking.pesapal_order_tracking_id,
+                    )
+                except Exception as exc:
+                    logger.error(f"Payment success email failed for booking #{booking.id}: {exc}")
         except Exception as exc:
             logger.error(f"Status poll failed for booking {booking_id}: {exc}")
             payment_status = booking.payment_status or "UNKNOWN"

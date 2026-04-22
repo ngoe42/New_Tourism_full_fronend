@@ -107,8 +107,8 @@ export default function ExperiencesSlider() {
             transition={{ duration: INTERVAL / 1000 + 1.2, ease: 'linear' }}
           />
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/10" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/5" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent" />
         </motion.div>
       </AnimatePresence>
 

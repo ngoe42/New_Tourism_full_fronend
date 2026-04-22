@@ -135,7 +135,7 @@ export default function TourDetail() {
               </SwiperSlide>
             ))}
           </Swiper>
-          <div className="absolute inset-0 bg-gradient-to-t from-green-950 via-green-950/55 to-green-950/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-green-950/75 via-green-950/35 to-green-950/10" />
         </div>
 
         {/* Content — left aligned, bottom anchored */}

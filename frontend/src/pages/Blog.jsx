@@ -76,7 +76,7 @@ export default function Blog() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative bg-green-950 pt-32 pb-20 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_#1a5c42_0%,_#0f3d2e_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_#2a7a5c_0%,_#1a5c43_60%)]" />
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center">
           <motion.p
             initial={{ opacity: 0, y: 10 }}

@@ -63,10 +63,10 @@ export default function RouteDetail() {
         {coverImg ? (
           <div className="absolute inset-0">
             <img src={resolveImageUrl(coverImg.url)} alt={route.name} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-green-950 via-green-950/60 to-green-950/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-green-950/80 via-green-950/35 to-green-950/10" />
           </div>
         ) : (
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#1a5c42_0%,_#0f3d2e_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#2a7a5c_0%,_#1a5c43_70%)]" />
         )}
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-28 pb-16">

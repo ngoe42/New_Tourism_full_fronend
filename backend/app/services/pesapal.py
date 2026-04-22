@@ -1,7 +1,11 @@
 from typing import Optional
+import time
 import httpx
 from loguru import logger
 from app.core.config import settings
+
+_TOKEN_CACHE: dict = {}   # keyed by base_url → {"token": str, "expires_at": float}
+_TOKEN_TTL = 240          # cache for 4 min (token is valid 5 min per Pesapal docs)
 
 
 class PesapalService:
@@ -20,6 +24,10 @@ class PesapalService:
     # ── Authentication ────────────────────────────────────────────────
 
     async def get_token(self) -> str:
+        cached = _TOKEN_CACHE.get(self.base_url)
+        if cached and time.monotonic() < cached["expires_at"]:
+            return cached["token"]
+
         url = f"{self.base_url}/api/Auth/RequestToken"
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.post(
@@ -34,7 +42,10 @@ class PesapalService:
             data = resp.json()
             if data.get("status") not in ("200", 200):
                 raise RuntimeError(f"Pesapal auth failed: {data}")
-            return data["token"]
+            token = data["token"]
+            _TOKEN_CACHE[self.base_url] = {"token": token, "expires_at": time.monotonic() + _TOKEN_TTL}
+            logger.debug("Pesapal auth token refreshed")
+            return token
 
     async def _headers(self) -> dict:
         token = await self.get_token()

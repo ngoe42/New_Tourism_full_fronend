@@ -8,9 +8,9 @@ export default {
     extend: {
       colors: {
         green: {
-          950: '#0f3d2e',
-          900: '#14532d',
-          800: '#166534',
+          950: '#1a5c43',
+          900: '#1e6b3a',
+          800: '#22783f',
         },
         gold: {
           DEFAULT: '#c9a96e',

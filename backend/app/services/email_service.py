@@ -401,3 +401,73 @@ async def send_booking_admin_notification(
         subject=f"[New Booking #{booking_id}] {contact_name} — {tour_title}",
         body=body,
     )
+
+
+async def send_payment_success_email(
+    booking_id: int,
+    tour_title: str,
+    contact_name: str,
+    contact_email: str,
+    travel_date,
+    guests: int,
+    total_price: float,
+    transaction_id: Optional[str] = None,
+) -> None:
+    """Send payment confirmation email to customer and admin after successful Pesapal payment."""
+    first = contact_name.split()[0]
+    date_str = travel_date.strftime("%B %d, %Y") if travel_date else "To be confirmed"
+    transaction_line = f"Transaction ID   : {transaction_id}\n" if transaction_id else ""
+
+    customer_body = (
+        f"Dear {first},\n\n"
+        f"Great news! Your payment has been received and confirmed.\n\n"
+        f"Your safari booking is now fully confirmed and our team is preparing everything for your adventure.\n\n"
+        f"Payment Confirmation\n"
+        f"{'=' * 40}\n"
+        f"Booking Ref      : #{booking_id}\n"
+        f"Tour             : {tour_title}\n"
+        f"Travel Date      : {date_str}\n"
+        f"Guests           : {guests} {'Guest' if guests == 1 else 'Guests'}\n"
+        f"Amount Paid      : USD {total_price:,.2f}\n"
+        f"Payment Status   : CONFIRMED ✓\n"
+        + transaction_line
+        + f"{'=' * 40}\n\n"
+        f"What Happens Next\n"
+        f"-----------------\n"
+        f"✓  You will receive a detailed itinerary within 24 hours\n"
+        f"✓  Our team will contact you to discuss logistics and packing\n"
+        f"✓  A welcome package with all travel details will be sent closer to your departure\n\n"
+        f"If you have any questions, feel free to reply to this email or call us at +255 750 005 973.\n\n"
+        f"We look forward to welcoming you!\n\n"
+        f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
+    )
+
+    await send_email(
+        to=contact_email,
+        subject=f"Payment Confirmed — {tour_title} | Nelson Tours & Safari",
+        body=customer_body,
+        item_name=f"{tour_title} · {guests} {'Guest' if guests == 1 else 'Guests'}",
+        price=total_price,
+        btn_label="View Booking Details",
+    )
+
+    admin_body = (
+        f"Payment Received\n"
+        f"================\n"
+        f"Booking Ref  : #{booking_id}\n"
+        f"Tour         : {tour_title}\n"
+        f"Travel Date  : {date_str}\n"
+        f"Guests       : {guests}\n"
+        f"Amount       : USD {total_price:,.2f}\n"
+        + transaction_line
+        + f"\nCustomer\n"
+        f"--------\n"
+        f"Name  : {contact_name}\n"
+        f"Email : {contact_email}\n\n"
+        f"Booking status has been automatically set to CONFIRMED."
+    )
+    await send_email(
+        to=settings.EMAIL_FROM,
+        subject=f"[Payment Received #{booking_id}] {contact_name} — {tour_title}",
+        body=admin_body,
+    )
