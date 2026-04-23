@@ -30,6 +30,7 @@ class UserResponse(UserBase):
     role_name: Optional[str] = None
     permissions: list[str] = []
     is_active: bool
+    is_superadmin: bool = False
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -46,6 +47,7 @@ class UserResponse(UserBase):
             role_name=role_obj.name if role_obj else None,
             permissions=[p.codename for p in role_obj.permissions] if role_obj else [],
             is_active=user.is_active,
+            is_superadmin=getattr(user, 'is_superadmin', False),
             created_at=user.created_at,
         )
 

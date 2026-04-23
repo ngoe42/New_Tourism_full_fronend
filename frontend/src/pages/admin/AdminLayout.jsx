@@ -102,7 +102,6 @@ export default function AdminLayout() {
     { to: '/admin/routes',        label: 'Routes',       icon: Mountain,        end: false, badge: 0 },
     { to: '/admin/users',          label: 'Users',        icon: Users,           end: false, badge: 0 },
     { to: '/admin/roles',          label: 'Roles',        icon: Shield,          end: false, badge: 0 },
-    { to: '/admin/settings',       label: 'Settings',     icon: Settings,        end: false, badge: 0 },
   ]
 
   const notifItems = [
