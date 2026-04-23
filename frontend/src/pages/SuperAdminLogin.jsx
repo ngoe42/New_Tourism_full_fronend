@@ -21,7 +21,7 @@ export default function SuperAdminLogin() {
     try {
       const data = await authApi.superLogin(form.username, form.password)
       if (setUser) setUser(data.user)
-      navigate('/superadmin')
+      navigate('/admin')
     } catch (err) {
       setError(extractError(err, 'Invalid credentials'))
     } finally {

@@ -25,11 +25,9 @@ import AdminUsers from './pages/admin/AdminUsers'
 import AdminRoles from './pages/admin/AdminRoles'
 import AdminProfile from './pages/admin/AdminProfile'
 import SuperAdminLogin from './pages/SuperAdminLogin'
+import RequireSuperAdmin from './components/RequireSuperAdmin'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
-import SuperAdminLayout from './pages/superadmin/SuperAdminLayout'
-import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard'
-import RequireSuperAdmin from './components/RequireSuperAdmin'
 import Experiences from './pages/Experiences'
 import Blog from './pages/Blog'
 import About from './pages/About'
@@ -82,14 +80,6 @@ function AppRoutes() {
         <Route path="/login/admin/forgot" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Super Admin routes */}
-        <Route path="/superadmin" element={<RequireSuperAdmin><SuperAdminLayout /></RequireSuperAdmin>}>
-          <Route index element={<SuperAdminDashboard />} />
-          <Route path="settings" element={<AdminSettings />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="roles" element={<AdminRoles />} />
-        </Route>
-
         {/* Admin routes */}
         <Route path="/admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
           <Route index element={<AdminDashboard />} />
@@ -99,7 +89,7 @@ function AppRoutes() {
           <Route path="inquiries" element={<AdminInquiries />} />
           <Route path="experiences" element={<AdminExperiences />} />
           <Route path="routes" element={<AdminRoutes />} />
-          <Route path="settings" element={<AdminSettings />} />
+          <Route path="settings" element={<RequireSuperAdmin><AdminSettings /></RequireSuperAdmin>} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="roles" element={<AdminRoles />} />
           <Route path="profile" element={<AdminProfile />} />
