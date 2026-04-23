@@ -20,6 +20,7 @@ const PAGE_TITLES = {
   '/admin/settings': 'Site Settings',
   '/admin/users': 'User Management',
   '/admin/roles': 'Roles & Permissions',
+  '/admin/profile': 'My Profile',
 }
 
 function NotifBadge({ count }) {
@@ -378,13 +379,13 @@ export default function AdminLayout() {
               </AnimatePresence>
             </div>
 
-            {/* User */}
-            <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
+            {/* User — click to go to profile */}
+            <Link to="/admin/profile" className="flex items-center gap-2 pl-3 border-l border-gray-200 hover:opacity-80 transition-opacity">
               <div className="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center font-sans text-xs font-bold text-white">
                 {user?.name?.[0]?.toUpperCase() ?? 'A'}
               </div>
               <span className="hidden sm:block font-sans text-sm font-medium text-gray-700">{user?.name ?? 'Admin'}</span>
-            </div>
+            </Link>
           </div>
         </header>
 

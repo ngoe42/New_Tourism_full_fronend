@@ -23,6 +23,7 @@ import AdminRoutes from './pages/admin/AdminRoutes'
 import AdminSettings from './pages/admin/AdminSettings'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminRoles from './pages/admin/AdminRoles'
+import AdminProfile from './pages/admin/AdminProfile'
 import Experiences from './pages/Experiences'
 import Blog from './pages/Blog'
 import About from './pages/About'
@@ -84,6 +85,7 @@ function AppRoutes() {
           <Route path="settings" element={<AdminSettings />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="roles" element={<AdminRoles />} />
+          <Route path="profile" element={<AdminProfile />} />
         </Route>
       </Routes>
     </>
