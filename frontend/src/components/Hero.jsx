@@ -86,11 +86,13 @@ export default function Hero() {
           />
         )}
         {/* Multi-layer gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/25 to-[#1a5c43]/60 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-[#1a5c43]/55 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent pointer-events-none" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full flex flex-col items-center text-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full">
+        <div className="max-w-3xl">
           <motion.h1
             custom={0}
             variants={fadeUp}
@@ -120,7 +122,7 @@ export default function Hero() {
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="flex flex-wrap justify-center gap-4"
+            className="flex flex-wrap gap-4"
           >
             <Link to="/tours" className="btn-primary inline-flex items-center gap-2">
               Explore Tours
@@ -131,6 +133,7 @@ export default function Hero() {
               Plan Your Trip
             </Link>
           </motion.div>
+        </div>
       </div>
 
       {/* Scroll indicator */}
