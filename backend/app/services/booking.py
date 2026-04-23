@@ -253,4 +253,4 @@ class BookingService:
         booking = await self.booking_repo.get(booking_id)
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
-        await self.booking_repo.delete(booking_id)
+        await self.booking_repo.delete(booking)
