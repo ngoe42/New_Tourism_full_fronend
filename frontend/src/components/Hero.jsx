@@ -112,7 +112,7 @@ export default function Hero() {
             animate="visible"
             className="font-sans text-sm sm:text-base md:text-lg text-white/85 leading-relaxed mb-8 sm:mb-10 max-w-xl text-shadow-sm"
           >
-            Crafted by local experts for unforgettable safari experiences. From the Serengeti's endless plains to Kilimanjaro's icy summit.
+            Designed by local experts to create unforgettable journeys, from the wild beauty of the Serengeti National Park to the majestic heights of Mount Kilimanjaro.
           </motion.p>
 
           <motion.div
