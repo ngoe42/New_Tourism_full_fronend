@@ -88,7 +88,7 @@ export default function ExperiencesSlider() {
   const slide = slides[current]
 
   return (
-    <section className="relative w-full h-[70vh] sm:h-[80vh] lg:h-[85vh] min-h-[480px] sm:min-h-[560px] overflow-hidden bg-black">
+    <section className="relative w-full h-[70vh] sm:h-[80vh] lg:h-[85vh] min-h-[480px] sm:min-h-[560px] overflow-hidden bg-green-950">
       {/* Ken Burns slides */}
       <AnimatePresence mode="sync">
         <motion.div
@@ -105,6 +105,7 @@ export default function ExperiencesSlider() {
             className="w-full h-full object-cover"
             animate={{ scale: [1.0, 1.06] }}
             transition={{ duration: INTERVAL / 1000 + 1.2, ease: 'linear' }}
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
           />
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/5" />

@@ -18,7 +18,7 @@ from app.schemas.experience import (
     ExperienceReorderItem,
 )
 
-_KEY_ACTIVE = "exp:active"
+_KEY_ACTIVE = "experiences:active"
 
 
 async def _invalidate() -> None:
