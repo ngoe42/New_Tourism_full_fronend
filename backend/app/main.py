@@ -80,7 +80,17 @@ async def _seed_admin():
             await db.commit()
             logger.info(f"Admin user created: {settings.FIRST_ADMIN_EMAIL}")
 
-        if not await repo.email_exists(settings.SUPER_ADMIN_EMAIL):
+        existing_super = await repo.get_superadmin_by_email(settings.SUPER_ADMIN_EMAIL)
+        if existing_super:
+            await repo.update(existing_super, {
+                "hashed_password": get_password_hash(settings.SUPER_ADMIN_PASSWORD),
+                "is_superadmin": True,
+                "role": UserRole.admin,
+                "is_active": True,
+            })
+            await db.commit()
+            logger.info(f"Super admin synced: {settings.SUPER_ADMIN_EMAIL}")
+        else:
             super_admin = User(
                 email=settings.SUPER_ADMIN_EMAIL,
                 name=settings.SUPER_ADMIN_NAME,
