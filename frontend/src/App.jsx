@@ -90,8 +90,8 @@ function AppRoutes() {
           <Route path="experiences" element={<AdminExperiences />} />
           <Route path="routes" element={<AdminRoutes />} />
           <Route path="settings" element={<RequireSuperAdmin><AdminSettings /></RequireSuperAdmin>} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="roles" element={<AdminRoles />} />
+          <Route path="users" element={<RequireSuperAdmin><AdminUsers /></RequireSuperAdmin>} />
+          <Route path="roles" element={<RequireSuperAdmin><AdminRoles /></RequireSuperAdmin>} />
           <Route path="profile" element={<AdminProfile />} />
         </Route>
       </Routes>
