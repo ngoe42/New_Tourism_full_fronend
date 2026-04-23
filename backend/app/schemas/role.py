@@ -60,6 +60,7 @@ class AdminUserUpdate(BaseModel):
     email: Optional[str] = Field(None, min_length=5, max_length=255)
     role_id: Optional[int] = None
     is_active: Optional[bool] = None
+    new_password: Optional[str] = Field(None, min_length=8)
 
 
 class UserWithRoleResponse(BaseModel):

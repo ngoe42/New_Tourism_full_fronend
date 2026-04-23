@@ -177,6 +177,8 @@ class UserManagementService:
                 )
             updates["role_id"] = data.role_id
             updates["role"] = UserRole.admin if role.name.lower() == "admin" else UserRole.customer
+        if data.new_password:
+            updates["hashed_password"] = get_password_hash(data.new_password)
 
         user = await self.user_repo.update(user, updates)
         return self._user_to_response(user)

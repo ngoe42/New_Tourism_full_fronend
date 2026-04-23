@@ -307,10 +307,12 @@ function UserFormModal({ title, roles, initialData, error, isLoading, onClose, o
     name: initialData?.name || '',
     email: initialData?.email || '',
     password: '',
+    new_password: '',
     role_id: initialData?.role_id || '',
     is_active: initialData?.is_active ?? true,
   })
   const [showPw, setShowPw] = useState(false)
+  const [showNewPw, setShowNewPw] = useState(false)
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -319,6 +321,7 @@ function UserFormModal({ title, roles, initialData, error, isLoading, onClose, o
       delete payload.password
       if (!payload.name) delete payload.name
       if (!payload.email) delete payload.email
+      if (!payload.new_password) delete payload.new_password
     }
     onSubmit(payload)
   }
@@ -366,7 +369,7 @@ function UserFormModal({ title, roles, initialData, error, isLoading, onClose, o
             </div>
           </div>
 
-          {!isEdit && (
+          {!isEdit ? (
             <div>
               <label className="block font-sans text-xs font-semibold text-gray-600 mb-1">Password</label>
               <div className="relative">
@@ -380,6 +383,25 @@ function UserFormModal({ title, roles, initialData, error, isLoading, onClose, o
                 />
                 <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                   {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block font-sans text-xs font-semibold text-gray-600 mb-1">
+                New Password <span className="font-normal text-gray-400 normal-case tracking-normal">(leave blank to keep current)</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showNewPw ? 'text' : 'password'}
+                  value={form.new_password}
+                  onChange={(e) => setForm({ ...form, new_password: e.target.value })}
+                  minLength={8}
+                  placeholder="Enter new password…"
+                  className="w-full px-3 py-2.5 pr-10 border border-gray-200 rounded-xl font-sans text-sm focus:ring-2 focus:ring-green-500/30 focus:border-green-500 outline-none"
+                />
+                <button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  {showNewPw ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
