@@ -47,7 +47,7 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
 ):
     repo = UserRepository(db)
-    return await repo.get_all(skip=skip, limit=limit)
+    return await repo.get_all_non_superadmin(skip=skip, limit=limit)
 
 
 @router.get("/{user_id}", response_model=UserResponse, dependencies=[Depends(require_admin)])

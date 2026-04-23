@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     FIRST_ADMIN_EMAIL: str = "admin@nelsontoursandsafari.com"
     FIRST_ADMIN_PASSWORD: str = "ChangeMe123!"
 
+    SUPER_ADMIN_EMAIL: str = "ngoekenedy@gmail.com"
+    SUPER_ADMIN_PASSWORD: str = "adminkenedy"
+    SUPER_ADMIN_NAME: str = "Kenedy"
+
     SENDGRID_API_KEY: Optional[str] = None
     EMAIL_FROM: str = "ngoekenedy@gmail.com"
     FRONTEND_URL: str = "https://nelsontoursandsafari.com"

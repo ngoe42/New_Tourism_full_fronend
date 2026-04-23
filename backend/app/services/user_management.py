@@ -114,7 +114,7 @@ class UserManagementService:
     # ── Users ─────────────────────────────────────────────────────────────────
 
     async def list_users(self, skip: int = 0, limit: int = 50) -> list[UserWithRoleResponse]:
-        users = await self.user_repo.get_all(skip=skip, limit=limit)
+        users = await self.user_repo.get_all_non_superadmin(skip=skip, limit=limit)
         return [self._user_to_response(u) for u in users]
 
     async def get_user(self, user_id: int) -> UserWithRoleResponse:

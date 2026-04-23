@@ -24,6 +24,9 @@ import AdminSettings from './pages/admin/AdminSettings'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminRoles from './pages/admin/AdminRoles'
 import AdminProfile from './pages/admin/AdminProfile'
+import SuperAdminLogin from './pages/SuperAdminLogin'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Experiences from './pages/Experiences'
 import Blog from './pages/Blog'
 import About from './pages/About'
@@ -72,6 +75,9 @@ function AppRoutes() {
         <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
         <Route path="/payment/callback" element={<PaymentCallback />} />
         <Route path="/payment/resume" element={<PaymentResume />} />
+        <Route path="/login/admin" element={<SuperAdminLogin />} />
+        <Route path="/login/admin/forgot" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>

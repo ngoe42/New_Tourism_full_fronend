@@ -80,6 +80,18 @@ async def _seed_admin():
             await db.commit()
             logger.info(f"Admin user created: {settings.FIRST_ADMIN_EMAIL}")
 
+        if not await repo.email_exists(settings.SUPER_ADMIN_EMAIL):
+            super_admin = User(
+                email=settings.SUPER_ADMIN_EMAIL,
+                name=settings.SUPER_ADMIN_NAME,
+                hashed_password=get_password_hash(settings.SUPER_ADMIN_PASSWORD),
+                role=UserRole.admin,
+                is_superadmin=True,
+            )
+            await repo.create(super_admin)
+            await db.commit()
+            logger.info(f"Super admin created: {settings.SUPER_ADMIN_EMAIL}")
+
 
 async def _seed_admin_background():
     try:
