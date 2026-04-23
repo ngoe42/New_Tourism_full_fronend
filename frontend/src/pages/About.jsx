@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { CheckCircle, ArrowRight, Users, Star, MapPin, Shield, Heart, Compass, Leaf, Trophy, Camera, Phone, Mail } from 'lucide-react'
 import WhyChooseUs from '../components/WhyChooseUs'
 import CTASection from '../components/CTASection'
+import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 const stats = [
   { value: '15+', label: 'Years of Experience' },
@@ -40,6 +42,20 @@ const values = [
 ]
 
 export default function About() {
+  const {
+    aboutHeroImage, storyImage1, storyImage2,
+    aboutTeam1Image, aboutTeam2Image, aboutTeam3Image,
+  } = useSiteSettings()
+
+  const heroImg   = resolveImageUrl(aboutHeroImage) || '/images/sections/story-guides.jpg'
+  const block1Img = resolveImageUrl(storyImage1)    || '/images/sections/story-guides.jpg'
+  const block2Img = resolveImageUrl(storyImage2)    || '/images/sections/story-luxury.jpg'
+  const teamImgs  = [
+    resolveImageUrl(aboutTeam1Image) || '/images/team/nelson.jpg',
+    resolveImageUrl(aboutTeam2Image) || '/images/team/amina.jpg',
+    resolveImageUrl(aboutTeam3Image) || '/images/team/david.jpg',
+  ]
+
   return (
     <main className="bg-beige">
 
@@ -47,7 +63,7 @@ export default function About() {
       <section className="relative min-h-[55vh] flex flex-col justify-end bg-green-950 overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src="/images/sections/story-guides.jpg"
+            src={heroImg}
             alt="Safari guides in Tanzania"
             className="w-full h-full object-cover"
           />
@@ -97,7 +113,7 @@ export default function About() {
             >
               <div className="relative">
                 <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl">
-                  <img src="/images/sections/story-guides.jpg" alt="Safari guide with guests at sunset" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" loading="lazy" />
+                  <img src={block1Img} alt="Safari guide with guests at sunset" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" loading="lazy" />
                 </div>
                 <div className="absolute -bottom-6 -left-6 w-48 h-48 rounded-3xl bg-gold/10 -z-10 hidden sm:block" />
                 <div className="absolute -top-4 -right-4 w-24 h-24 rounded-2xl bg-green-950/10 -z-10 hidden sm:block" />
@@ -139,7 +155,7 @@ export default function About() {
             >
               <div className="relative">
                 <div className="rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl">
-                  <img src="/images/sections/story-luxury.jpg" alt="Luxury tented safari camp at sunset" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" loading="lazy" />
+                  <img src={block2Img} alt="Luxury tented safari camp at sunset" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" loading="lazy" />
                 </div>
                 <div className="absolute -bottom-6 -right-6 w-48 h-48 rounded-3xl bg-gold/10 -z-10 hidden sm:block" />
                 <div className="absolute -top-4 -left-4 w-24 h-24 rounded-2xl bg-green-950/10 -z-10 hidden sm:block" />

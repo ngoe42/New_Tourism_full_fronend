@@ -17,6 +17,10 @@ class SiteSettings(Base):
     hero_mode: Mapped[str] = mapped_column(String(20), default="video", nullable=False)
     hero_images: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     show_blog: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    about_hero_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    about_team_1_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    about_team_2_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    about_team_3_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

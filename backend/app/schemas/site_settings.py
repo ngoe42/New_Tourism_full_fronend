@@ -13,6 +13,10 @@ class SiteSettingsResponse(BaseModel):
     story_image_1: Optional[str] = None
     story_image_2: Optional[str] = None
     cta_bg_image: Optional[str] = None
+    about_hero_image: Optional[str] = None
+    about_team_1_image: Optional[str] = None
+    about_team_2_image: Optional[str] = None
+    about_team_3_image: Optional[str] = None
     updated_at: datetime
 
     model_config = {"from_attributes": True}
@@ -31,6 +35,10 @@ class SiteSettingsUpdate(BaseModel):
     story_image_1: Optional[str] = None
     story_image_2: Optional[str] = None
     cta_bg_image: Optional[str] = None
+    about_hero_image: Optional[str] = None
+    about_team_1_image: Optional[str] = None
+    about_team_2_image: Optional[str] = None
+    about_team_3_image: Optional[str] = None
 
 
 class HeroImageAdd(BaseModel):

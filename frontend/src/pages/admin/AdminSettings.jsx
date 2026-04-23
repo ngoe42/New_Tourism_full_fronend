@@ -477,13 +477,14 @@ export default function AdminSettings() {
       {/* ── Our Story Section ────────────────────────────────────────────── */}
       <section>
         <h2 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Our Story Section</h2>
+        <p className="font-sans text-xs text-gray-400 mb-3">Used on the Home page story blocks and the About page story blocks.</p>
         <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
           <ImageCard
             icon={ImageIcon}
             iconBg="bg-blue-50"
             iconColor="text-blue-500"
             title="Story Image — Our Story"
-            description='Left image in the "Born from a Deep Love of the African Wild" block. Recommended: 800×600 px.'
+            description='Left image in the "Born from a Deep Love of the African Wild" block (Home & About). Recommended: 800×600 px.'
             field="story_image_1"
             currentUrl={settings?.story_image_1 ?? null}
             onSaved={invalidate}
@@ -493,9 +494,56 @@ export default function AdminSettings() {
             iconBg="bg-purple-50"
             iconColor="text-purple-500"
             title="Story Image — The Experience"
-            description='Right image in the "Where Luxury Meets the Untamed Wild" block. Recommended: 800×600 px.'
+            description='Right image in the "Where Luxury Meets the Untamed Wild" block (Home & About). Recommended: 800×600 px.'
             field="story_image_2"
             currentUrl={settings?.story_image_2 ?? null}
+            onSaved={invalidate}
+          />
+        </div>
+      </section>
+
+      {/* ── About Page ───────────────────────────────────────────────────── */}
+      <section>
+        <h2 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">About Page</h2>
+        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
+          <ImageCard
+            icon={ImageIcon}
+            iconBg="bg-green-50"
+            iconColor="text-green-600"
+            title="About Page — Hero Image"
+            description="Background image for the About page hero banner. Recommended: 1920×1080 px, landscape."
+            field="about_hero_image"
+            currentUrl={settings?.about_hero_image ?? null}
+            onSaved={invalidate}
+          />
+          <ImageCard
+            icon={ImageIcon}
+            iconBg="bg-amber-50"
+            iconColor="text-amber-600"
+            title="Team Photo — Nelson Mwangi (Founder)"
+            description="Photo for Nelson Mwangi, Founder & Head Guide. Recommended: 400×400 px, square or portrait."
+            field="about_team_1_image"
+            currentUrl={settings?.about_team_1_image ?? null}
+            onSaved={invalidate}
+          />
+          <ImageCard
+            icon={ImageIcon}
+            iconBg="bg-amber-50"
+            iconColor="text-amber-600"
+            title="Team Photo — Amina Rashid (Operations)"
+            description="Photo for Amina Rashid, Safari Operations Manager. Recommended: 400×400 px, square or portrait."
+            field="about_team_2_image"
+            currentUrl={settings?.about_team_2_image ?? null}
+            onSaved={invalidate}
+          />
+          <ImageCard
+            icon={ImageIcon}
+            iconBg="bg-amber-50"
+            iconColor="text-amber-600"
+            title="Team Photo — David Kimaro (Senior Guide)"
+            description="Photo for David Kimaro, Senior Mountain Guide. Recommended: 400×400 px, square or portrait."
+            field="about_team_3_image"
+            currentUrl={settings?.about_team_3_image ?? null}
             onSaved={invalidate}
           />
         </div>
