@@ -54,6 +54,20 @@ async def refresh(data: RefreshRequest, db: AsyncSession = Depends(get_db)):
     return await service.refresh_access_token(data.refresh_token)
 
 
+class LogoutRequest(BaseModel):
+    refresh_token: str
+
+
+@router.post("/logout", status_code=200)
+async def logout(data: LogoutRequest):
+    from app.core.token_blacklist import blacklist_token
+    from app.core.security import decode_token
+    payload = decode_token(data.refresh_token)
+    if payload and payload.get("type") == "refresh":
+        blacklist_token(payload)
+    return {"message": "Logged out successfully"}
+
+
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
     return UserResponse.from_user(current_user)

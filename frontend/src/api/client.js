@@ -35,7 +35,7 @@ apiClient.interceptors.response.use(
         } catch {
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
-          window.location.href = '/login'
+          window.dispatchEvent(new CustomEvent('auth:expired'))
         }
       }
     }

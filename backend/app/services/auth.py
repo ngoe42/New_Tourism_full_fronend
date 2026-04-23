@@ -59,11 +59,17 @@ class AuthService:
         )
 
     async def refresh_access_token(self, refresh_token: str) -> AccessTokenResponse:
+        from app.core.token_blacklist import is_blacklisted
         payload = decode_token(refresh_token)
         if not payload or payload.get("type") != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token",
+            )
+        if is_blacklisted(payload):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has been revoked",
             )
         user = await self.user_repo.get(int(payload["sub"]))
         if not user or not user.is_active:

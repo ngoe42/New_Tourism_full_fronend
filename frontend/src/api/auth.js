@@ -10,7 +10,11 @@ export const authApi = {
       return r.data
     }),
 
-  logout: () => {
+  logout: async () => {
+    const refresh_token = localStorage.getItem('refresh_token')
+    if (refresh_token) {
+      try { await apiClient.post('/auth/logout', { refresh_token }) } catch { /* ignore */ }
+    }
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
   },

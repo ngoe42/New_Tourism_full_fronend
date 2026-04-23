@@ -37,7 +37,12 @@ import PaymentResume from './pages/PaymentResume'
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 1000 * 60 * 5, retry: 1 },
+    queries: {
+      staleTime: 1000 * 60 * 5,   // data considered fresh for 5 min
+      gcTime:    1000 * 60 * 15,  // unused cache cleared after 15 min
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
   },
 })
 
@@ -102,11 +107,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AuthProvider>
           <AppRoutes />
-        </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </Router>
     </QueryClientProvider>
   )
 }
