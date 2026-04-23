@@ -86,28 +86,13 @@ export default function Hero() {
           />
         )}
         {/* Multi-layer gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-[#1a5c43]/55 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/25 to-[#1a5c43]/60 pointer-events-none" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full">
-        <div className="max-w-3xl">
-          <motion.div
-            custom={0}
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="flex items-center gap-3 mb-6"
-          >
-            <div className="h-px w-12 bg-gold" />
-            <span className="font-sans text-gold text-sm font-medium tracking-[0.25em] uppercase">
-              New · Arusha, Tanzania
-            </span>
-          </motion.div>
-
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full flex flex-col items-center text-center">
           <motion.h1
-            custom={1}
+            custom={0}
             variants={fadeUp}
             initial="hidden"
             animate="visible"
@@ -121,7 +106,7 @@ export default function Hero() {
           </motion.h1>
 
           <motion.p
-            custom={2}
+            custom={1}
             variants={fadeUp}
             initial="hidden"
             animate="visible"
@@ -131,11 +116,11 @@ export default function Hero() {
           </motion.p>
 
           <motion.div
-            custom={3}
+            custom={2}
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="flex flex-wrap gap-4"
+            className="flex flex-wrap justify-center gap-4"
           >
             <Link to="/tours" className="btn-primary inline-flex items-center gap-2">
               Explore Tours
@@ -146,7 +131,6 @@ export default function Hero() {
               Plan Your Trip
             </Link>
           </motion.div>
-        </div>
       </div>
 
       {/* Scroll indicator */}
