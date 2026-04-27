@@ -127,11 +127,11 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-14">
 
           {/* Logo */}
-          <Link to="/" className="flex-shrink-0 flex items-center relative w-[112px] sm:w-[140px] h-full" aria-label="Nelson Tours and Safari — Home">
+          <Link to="/" className="flex-shrink-0 flex items-center relative w-[168px] sm:w-[210px] h-full" aria-label="Nelson Tours and Safari — Home">
             <img
               src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
               alt="Nelson Tours & Safari"
-              className={`h-11 sm:h-16 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
+              className={`h-[66px] sm:h-24 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
                 isTransparent ? 'scale-[1.2] sm:scale-[1.47] translate-y-1 sm:translate-y-2 -translate-x-1 sm:-translate-x-2' : 'scale-100 translate-y-0 translate-x-0'
               }`}
             />
@@ -620,7 +620,7 @@ export default function Navbar() {
                   <img
                     src="/images/logo/logo.png"
                     alt="Nelson Tours & Safari"
-                    className="h-12 w-auto object-contain"
+                    className="h-[72px] w-auto object-contain"
                   />
                 </Link>
                 <button

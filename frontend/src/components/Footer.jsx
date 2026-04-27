@@ -43,7 +43,7 @@ export default function Footer() {
         {/* Brand */}
         <div>
           <Link to="/" aria-label="Home">
-            <img src="/images/logo/logo.png" alt="Nelson Tours & Safari" className="h-16 w-auto object-contain drop-shadow mb-3" />
+            <img src="/images/logo/logo.png" alt="Nelson Tours & Safari" className="h-24 w-auto object-contain drop-shadow mb-3" />
           </Link>
           <p className="font-sans text-white/50 text-xs leading-relaxed mb-4 max-w-[220px]">
             Crafting world-class safari experiences in Tanzania. Born local, built for the world.
