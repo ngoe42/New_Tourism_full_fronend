@@ -4,9 +4,10 @@ import { Link } from 'react-router-dom'
 import { Mountain, Clock, ChevronRight } from 'lucide-react'
 import { routesApi } from '../api/routes'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 export default function RoutesList() {
-  const { showPrices } = useSiteSettings()
+  const { showPrices, routesHeroTitle, routesHeroDescription, routesHeroImage } = useSiteSettings()
   const { data: rawRoutes, isLoading, error } = useQuery({
     queryKey: ['routes'],
     queryFn: () => routesApi.list(),
@@ -17,7 +18,13 @@ export default function RoutesList() {
     <div className="bg-beige min-h-screen">
       {/* Header */}
       <section className="pt-32 pb-16 lg:pt-40 lg:pb-20 bg-green-950 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center mix-blend-overlay"></div>
+        <div className="absolute inset-0 opacity-20">
+          <img
+            src={routesHeroImage ? resolveImageUrl(routesHeroImage) : '/images/hero-bg.jpg'}
+            alt=""
+            className="w-full h-full object-cover mix-blend-overlay"
+          />
+        </div>
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -25,10 +32,10 @@ export default function RoutesList() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="font-serif text-4xl md:text-5xl font-bold text-white mb-4">
-              Mount Kilimanjaro Routes
+              {routesHeroTitle || 'Mount Kilimanjaro Routes'}
             </h1>
             <p className="font-sans text-lg text-white/80 max-w-2xl mx-auto">
-              Compare and choose the perfect path to the roof of Africa. Each route offers a unique experience, scenery, and acclimatization profile.
+              {routesHeroDescription || 'Compare and choose the perfect path to the roof of Africa. Each route offers a unique experience, scenery, and acclimatization profile.'}
             </p>
           </motion.div>
         </div>

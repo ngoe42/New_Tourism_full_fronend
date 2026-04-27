@@ -7,9 +7,10 @@ import TourCard from '../components/TourCard'
 import { toursApi } from '../api/tours'
 import { categories } from '../data/tours'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 export default function Tours() {
-  const { showPrices } = useSiteSettings()
+  const { showPrices, toursHeroLabel, toursHeroTitle, toursHeroDescription, toursHeroImage } = useSiteSettings()
   const [searchParams, setSearchParams] = useSearchParams()
   const urlCategory = searchParams.get('category')
   const [activeCategory, setActiveCategory] = useState(
@@ -65,7 +66,7 @@ export default function Tours() {
       <section className="relative pt-28 sm:pt-36 pb-14 sm:pb-20 bg-green-950 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <img
-            src="/images/hero-bg.jpg"
+            src={toursHeroImage ? resolveImageUrl(toursHeroImage) : '/images/hero-bg.jpg'}
             alt=""
             className="w-full h-full object-cover"
           />
@@ -79,7 +80,7 @@ export default function Tours() {
             transition={{ duration: 0.6 }}
             className="text-gold font-sans text-sm font-medium tracking-[0.2em] uppercase block mb-3"
           >
-            All Experiences
+            {toursHeroLabel || 'All Experiences'}
           </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
@@ -87,7 +88,7 @@ export default function Tours() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="font-serif text-3xl sm:text-5xl md:text-6xl text-white font-semibold leading-tight mb-4"
           >
-            Safari Tours & Expeditions
+            {toursHeroTitle || 'Safari Tours & Expeditions'}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -95,7 +96,7 @@ export default function Tours() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="font-sans text-white/60 text-lg max-w-xl mx-auto"
           >
-            {data?.total ?? '…'} carefully curated journeys across Tanzania's most iconic landscapes.
+            {toursHeroDescription || `${data?.total ?? '…'} carefully curated journeys across Tanzania's most iconic landscapes.`}
           </motion.p>
         </div>
       </section>

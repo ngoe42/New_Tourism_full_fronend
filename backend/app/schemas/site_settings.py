@@ -14,6 +14,13 @@ class SiteSettingsResponse(BaseModel):
     story_image_2: Optional[str] = None
     cta_bg_image: Optional[str] = None
     logo_url: Optional[str] = None
+    tours_hero_label: Optional[str] = None
+    tours_hero_title: Optional[str] = None
+    tours_hero_description: Optional[str] = None
+    tours_hero_image: Optional[str] = None
+    routes_hero_title: Optional[str] = None
+    routes_hero_description: Optional[str] = None
+    routes_hero_image: Optional[str] = None
     about_hero_image: Optional[str] = None
     about_team_1_image: Optional[str] = None
     about_team_2_image: Optional[str] = None
@@ -37,6 +44,13 @@ class SiteSettingsUpdate(BaseModel):
     story_image_2: Optional[str] = None
     cta_bg_image: Optional[str] = None
     logo_url: Optional[str] = None
+    tours_hero_label: Optional[str] = None
+    tours_hero_title: Optional[str] = None
+    tours_hero_description: Optional[str] = None
+    tours_hero_image: Optional[str] = None
+    routes_hero_title: Optional[str] = None
+    routes_hero_description: Optional[str] = None
+    routes_hero_image: Optional[str] = None
     about_hero_image: Optional[str] = None
     about_team_1_image: Optional[str] = None
     about_team_2_image: Optional[str] = None

@@ -127,6 +127,79 @@ function ImageCard({ icon: Icon, iconBg, iconColor, title, description, field, c
   )
 }
 
+/* ── Reusable inline text-edit card ─────────────────────────────────────── */
+function TextCard({ icon: Icon, iconBg, iconColor, title, description, field, currentValue, onSaved }) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(currentValue ?? '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      await settingsApi.update({ [field]: value || null })
+      onSaved()
+      setEditing(false)
+    } catch {
+      setError('Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setValue(currentValue ?? '')
+    setEditing(false)
+    setError(null)
+  }
+
+  return (
+    <div className="flex items-start gap-4 p-6">
+      <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0`}>
+        <Icon size={18} className={iconColor} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-sans text-sm font-semibold text-gray-900">{title}</h3>
+        <p className="font-sans text-xs text-gray-400 mt-0.5 leading-relaxed">{description}</p>
+        {editing ? (
+          <div className="mt-3 space-y-2">
+            <textarea
+              rows={2}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 font-sans text-sm text-gray-700 focus:outline-none focus:border-green-700 resize-none"
+            />
+            {error && <p className="font-sans text-xs text-red-500">{error}</p>}
+            <div className="flex gap-2">
+              <button onClick={handleSave} disabled={saving} className="px-4 py-1.5 bg-green-950 hover:bg-green-800 disabled:opacity-60 text-white font-sans text-xs font-semibold rounded-lg transition-colors">
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+              <button onClick={handleCancel} className="px-4 py-1.5 border border-gray-200 text-gray-600 font-sans text-xs rounded-lg hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-2 flex items-center gap-3">
+            <span className="font-sans text-xs text-gray-500 italic truncate max-w-xs">
+              {currentValue || <span className="text-gray-300">Using default</span>}
+            </span>
+            <button onClick={() => { setValue(currentValue ?? ''); setEditing(true) }} className="flex-shrink-0 font-sans text-xs text-green-700 hover:underline font-medium">
+              Edit
+            </button>
+            {currentValue && (
+              <button onClick={async () => { await settingsApi.update({ [field]: null }); onSaved() }} className="flex-shrink-0 font-sans text-xs text-red-400 hover:underline">
+                Reset
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /* ── Hero Images gallery card ───────────────────────────────────────────── */
 function HeroImagesCard({ images, onSaved }) {
   const fileRef = useRef(null)
@@ -561,6 +634,92 @@ export default function AdminSettings() {
             description="Photo for David Kimaro, Senior Mountain Guide. Recommended: 400×400 px, square or portrait."
             field="about_team_3_image"
             currentUrl={settings?.about_team_3_image ?? null}
+            onSaved={invalidate}
+          />
+        </div>
+      </section>
+
+      {/* ── Tours Page Hero ──────────────────────────────────────────────── */}
+      <section>
+        <h2 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Tours Page Hero</h2>
+        <p className="font-sans text-xs text-gray-400 mb-3">Controls the header banner on the <strong>/tours</strong> page.</p>
+        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
+          <TextCard
+            icon={Settings}
+            iconBg="bg-gold/10"
+            iconColor="text-gold"
+            title="Label (eyebrow text)"
+            description='Small uppercase text above the title. Default: "All Experiences".'
+            field="tours_hero_label"
+            currentValue={settings?.tours_hero_label ?? null}
+            onSaved={invalidate}
+          />
+          <TextCard
+            icon={Settings}
+            iconBg="bg-green-50"
+            iconColor="text-green-700"
+            title="Page Title"
+            description='Main heading. Default: "Safari Tours & Expeditions".'
+            field="tours_hero_title"
+            currentValue={settings?.tours_hero_title ?? null}
+            onSaved={invalidate}
+          />
+          <TextCard
+            icon={Settings}
+            iconBg="bg-blue-50"
+            iconColor="text-blue-500"
+            title="Description"
+            description="Short subtitle below the title. Leave blank to show the live tour count."
+            field="tours_hero_description"
+            currentValue={settings?.tours_hero_description ?? null}
+            onSaved={invalidate}
+          />
+          <ImageCard
+            icon={ImageIcon}
+            iconBg="bg-purple-50"
+            iconColor="text-purple-500"
+            title="Background Image"
+            description="Subtle overlay behind the green hero. Recommended: 1920×600 px."
+            field="tours_hero_image"
+            currentUrl={settings?.tours_hero_image ?? null}
+            onSaved={invalidate}
+          />
+        </div>
+      </section>
+
+      {/* ── Routes Page Hero ─────────────────────────────────────────────── */}
+      <section>
+        <h2 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Kilimanjaro Routes Page Hero</h2>
+        <p className="font-sans text-xs text-gray-400 mb-3">Controls the header banner on the <strong>/routes</strong> page.</p>
+        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
+          <TextCard
+            icon={Settings}
+            iconBg="bg-green-50"
+            iconColor="text-green-700"
+            title="Page Title"
+            description='Main heading. Default: "Mount Kilimanjaro Routes".'
+            field="routes_hero_title"
+            currentValue={settings?.routes_hero_title ?? null}
+            onSaved={invalidate}
+          />
+          <TextCard
+            icon={Settings}
+            iconBg="bg-blue-50"
+            iconColor="text-blue-500"
+            title="Description"
+            description='Subtitle below the title. Default: "Compare and choose the perfect path to the roof of Africa…".'
+            field="routes_hero_description"
+            currentValue={settings?.routes_hero_description ?? null}
+            onSaved={invalidate}
+          />
+          <ImageCard
+            icon={ImageIcon}
+            iconBg="bg-purple-50"
+            iconColor="text-purple-500"
+            title="Background Image"
+            description="Subtle overlay behind the green hero. Recommended: 1920×600 px."
+            field="routes_hero_image"
+            currentUrl={settings?.routes_hero_image ?? null}
             onSaved={invalidate}
           />
         </div>
