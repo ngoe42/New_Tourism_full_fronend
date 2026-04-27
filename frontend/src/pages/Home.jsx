@@ -1,4 +1,5 @@
 import Hero from '../components/Hero'
+import WondersSection from '../components/WondersSection'
 import TrustStrip from '../components/TrustStrip'
 import FeaturedTours from '../components/FeaturedTours'
 import StorySection from '../components/StorySection'
@@ -10,6 +11,7 @@ export default function Home() {
   return (
     <main>
       <Hero />
+      <WondersSection />
       <TrustStrip />
       <FeaturedTours />
       <StorySection />
