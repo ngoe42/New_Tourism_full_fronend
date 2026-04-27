@@ -103,9 +103,12 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center h-16">
 
-          {/* Logo + Desktop Nav grouped on the left */}
+          {/* Left spacer — balances the right CTA so center group is truly centered */}
+          <div className="flex-1" />
+
+          {/* Center: Logo + Desktop Nav */}
           <div className="flex items-center gap-8">
           <Link to="/" className="flex-shrink-0 flex items-center justify-start relative w-[120px] sm:w-[170px] h-full" aria-label="Nelson Tours and Safari — Home">
             <img
@@ -506,8 +509,8 @@ export default function Navbar() {
           </div>
           </div>{/* end logo+nav group */}
 
-          {/* CTA + Mobile Toggle */}
-          <div className="flex items-center gap-3">
+          {/* Right: CTA + Avatar + Mobile Toggle */}
+          <div className="flex-1 flex items-center justify-end gap-3">
             {user ? (
               <div ref={avatarRef} className="relative hidden lg:block">
                 <button
