@@ -103,25 +103,22 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center h-16">
+        <div className="flex items-center justify-between h-20">
 
-          {/* Left spacer — balances the right CTA so center group is truly centered */}
-          <div className="flex-1" />
-
-          {/* Center: Logo + Desktop Nav */}
-          <div className="flex items-center gap-8">
-          <Link to="/" className="flex-shrink-0 flex items-center justify-start relative w-[120px] sm:w-[170px] h-full" aria-label="Nelson Tours and Safari — Home">
+          {/* Logo + Desktop Nav grouped on the left */}
+          <div className="flex items-center gap-10">
+          <Link to="/" className="flex-shrink-0 flex items-center justify-start relative w-[140px] sm:w-[200px] h-full" aria-label="Nelson Tours and Safari — Home">
             <img
               src="/images/logo/logo.png"
               alt="Nelson Tours & Safari"
-              className={`h-12 sm:h-20 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
-                isTransparent ? 'scale-[1.2] sm:scale-[1.4] translate-y-1 sm:translate-y-1.5 -translate-x-1 sm:-translate-x-1.5' : 'scale-100 translate-y-0 translate-x-0'
+              className={`h-16 sm:h-24 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
+                isTransparent ? 'scale-[1.2] sm:scale-[1.47] translate-y-1 sm:translate-y-2 -translate-x-1 sm:-translate-x-2' : 'scale-100 translate-y-0 translate-x-0'
               }`}
             />
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-5">
+          <div className="hidden lg:flex items-center gap-7">
             {visibleLinks.map((link) => (
               <div
                 key={link.label}
@@ -509,8 +506,8 @@ export default function Navbar() {
           </div>
           </div>{/* end logo+nav group */}
 
-          {/* Right: CTA + Avatar + Mobile Toggle */}
-          <div className="flex-1 flex items-center justify-end gap-3">
+          {/* CTA + Mobile Toggle */}
+          <div className="flex items-center gap-3">
             {user ? (
               <div ref={avatarRef} className="relative hidden lg:block">
                 <button
