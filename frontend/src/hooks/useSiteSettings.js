@@ -16,6 +16,7 @@ export function useSiteSettings() {
     storyImage1:      data?.story_image_1      ?? null,
     storyImage2:      data?.story_image_2      ?? null,
     ctaBgImage:       data?.cta_bg_image       ?? null,
+    logoUrl:          data?.logo_url           ?? null,
     aboutHeroImage:   data?.about_hero_image   ?? null,
     aboutTeam1Image:  data?.about_team_1_image ?? null,
     aboutTeam2Image:  data?.about_team_2_image ?? null,

@@ -298,6 +298,23 @@ export default function AdminSettings() {
         <p className="font-sans text-sm text-gray-400 mt-1">Control every image and global setting on the public website</p>
       </div>
 
+      {/* ── Branding ─────────────────────────────────────────────────────── */}
+      <section>
+        <h2 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Branding</h2>
+        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
+          <ImageCard
+            icon={ImageIcon}
+            iconBg="bg-green-50"
+            iconColor="text-green-600"
+            title="Site Logo"
+            description="Appears in the navbar and footer. PNG or WebP with transparent background recommended. Replaces the default static logo."
+            field="logo_url"
+            currentUrl={settings?.logo_url ?? null}
+            onSaved={invalidate}
+          />
+        </div>
+      </section>
+
       {/* ── General ──────────────────────────────────────────────────────── */}
       <section>
         <h2 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">General</h2>

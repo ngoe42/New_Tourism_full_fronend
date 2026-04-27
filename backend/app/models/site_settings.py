@@ -17,6 +17,7 @@ class SiteSettings(Base):
     hero_mode: Mapped[str] = mapped_column(String(20), default="video", nullable=False)
     hero_images: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     show_blog: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    logo_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     about_hero_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     about_team_1_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     about_team_2_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
