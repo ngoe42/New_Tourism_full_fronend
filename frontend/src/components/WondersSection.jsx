@@ -1,23 +1,30 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
-
-const cards = [
-  {
-    title: 'Climb Kilimanjaro',
-    subtitle: 'Highest Mountain in Africa',
-    image: '/images/sections/parallax-kilimanjaro.jpg',
-    link: '/kilimanjaro',
-  },
-  {
-    title: 'Tanzania Safari',
-    subtitle: "Experience Africa's Wildlife",
-    image: '/images/sections/parallax-serengeti.jpg',
-    link: '/tours',
-  },
-]
+import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 export default function WondersSection() {
+  const { wondersKilimanjaroImage, wondersSafariImage } = useSiteSettings()
+
+  const cards = [
+    {
+      title: 'Climb Kilimanjaro',
+      subtitle: 'Highest Mountain in Africa',
+      image: wondersKilimanjaroImage
+        ? resolveImageUrl(wondersKilimanjaroImage)
+        : '/images/sections/parallax-kilimanjaro.jpg',
+      link: '/kilimanjaro',
+    },
+    {
+      title: 'Tanzania Safari',
+      subtitle: "Experience Africa's Wildlife",
+      image: wondersSafariImage
+        ? resolveImageUrl(wondersSafariImage)
+        : '/images/sections/parallax-serengeti.jpg',
+      link: '/tours',
+    },
+  ]
   return (
     <section className="py-16 sm:py-20 bg-white">
       <div className="max-w-5xl mx-auto px-6 lg:px-8">
@@ -31,11 +38,11 @@ export default function WondersSection() {
           className="text-center mb-10"
         >
           <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-green-950 leading-tight">
-            Let us be your guide to the wonders of Tanzania
+            Discover the magic of Tanzania with us as your trusted guide
           </h2>
           <div className="mx-auto mt-3 mb-5 w-14 h-[3px] rounded-full bg-gold" />
           <p className="font-sans text-gray-500 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-            Nelson Tours and Safaris is a Tanzania-based tour operator dedicated to creating exceptional Kilimanjaro climbs, unforgettable wildlife safaris, and tailor-made travel experiences built on local expertise, safety, and genuine hospitality.
+            Nelson Tours and Safaris is a Tanzania-based tour company specializing in exceptional Mount Kilimanjaro expeditions, immersive wildlife safaris, and tailor-made journeys, all delivered with expert local knowledge, uncompromising safety, and authentic hospitality.
           </p>
         </motion.div>
 

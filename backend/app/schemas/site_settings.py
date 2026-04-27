@@ -25,6 +25,8 @@ class SiteSettingsResponse(BaseModel):
     about_team_1_image: Optional[str] = None
     about_team_2_image: Optional[str] = None
     about_team_3_image: Optional[str] = None
+    wonders_kilimanjaro_image: Optional[str] = None
+    wonders_safari_image: Optional[str] = None
     updated_at: datetime
 
     model_config = {"from_attributes": True}
@@ -55,6 +57,8 @@ class SiteSettingsUpdate(BaseModel):
     about_team_1_image: Optional[str] = None
     about_team_2_image: Optional[str] = None
     about_team_3_image: Optional[str] = None
+    wonders_kilimanjaro_image: Optional[str] = None
+    wonders_safari_image: Optional[str] = None
 
 
 class HeroImageAdd(BaseModel):

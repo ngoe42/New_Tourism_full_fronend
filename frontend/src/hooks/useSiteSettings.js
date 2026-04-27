@@ -28,6 +28,8 @@ export function useSiteSettings() {
     aboutTeam1Image:  data?.about_team_1_image ?? null,
     aboutTeam2Image:  data?.about_team_2_image ?? null,
     aboutTeam3Image:  data?.about_team_3_image ?? null,
+    wondersKilimanjaroImage: data?.wonders_kilimanjaro_image ?? null,
+    wondersSafariImage:      data?.wonders_safari_image      ?? null,
     settings: data,
   }
 }

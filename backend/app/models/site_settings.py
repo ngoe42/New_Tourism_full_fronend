@@ -29,6 +29,8 @@ class SiteSettings(Base):
     about_team_1_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     about_team_2_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     about_team_3_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    wonders_kilimanjaro_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    wonders_safari_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

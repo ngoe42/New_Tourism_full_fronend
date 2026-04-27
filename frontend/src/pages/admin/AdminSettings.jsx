@@ -725,6 +725,34 @@ export default function AdminSettings() {
         </div>
       </section>
 
+      {/* ── Wonders Section ──────────────────────────────────────────────── */}
+      <section>
+        <h2 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Home — Wonders Section</h2>
+        <p className="font-sans text-xs text-gray-400 mb-3">The two image cards below the hero on the home page ("Climb Kilimanjaro" and "Tanzania Safari").</p>
+        <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
+          <ImageCard
+            icon={ImageIcon}
+            iconBg="bg-green-50"
+            iconColor="text-green-600"
+            title="Kilimanjaro Card Image"
+            description='Background photo for the "Climb Kilimanjaro" card. Recommended: 800×600 px, landscape.'
+            field="wonders_kilimanjaro_image"
+            currentUrl={settings?.wonders_kilimanjaro_image ?? null}
+            onSaved={invalidate}
+          />
+          <ImageCard
+            icon={ImageIcon}
+            iconBg="bg-amber-50"
+            iconColor="text-amber-500"
+            title="Safari Card Image"
+            description='Background photo for the "Tanzania Safari" card. Recommended: 800×600 px, landscape.'
+            field="wonders_safari_image"
+            currentUrl={settings?.wonders_safari_image ?? null}
+            onSaved={invalidate}
+          />
+        </div>
+      </section>
+
       {/* ── CTA Section ──────────────────────────────────────────────────── */}
       <section>
         <h2 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">CTA Section</h2>
