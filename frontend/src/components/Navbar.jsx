@@ -127,20 +127,14 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-12 lg:h-14">
 
           {/* Logo */}
-          <Link to="/" className="flex-shrink-0 flex items-center gap-2 sm:gap-2.5" aria-label="Nelson Tours and Safari — Home">
+          <Link to="/" className="flex-shrink-0 flex items-center relative w-[144px] sm:w-[176px] lg:w-[208px] h-full" aria-label="Nelson Tours and Safari — Home">
             <img
-              src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/safari-icon.png'}
+              src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
               alt="Nelson Tours & Safari"
-              className="h-10 sm:h-11 lg:h-14 w-auto object-contain flex-shrink-0"
+              className={`h-14 sm:h-16 lg:h-20 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
+                isTransparent ? 'scale-110 sm:scale-125 translate-y-0.5 sm:translate-y-1' : 'scale-100 translate-y-0 translate-x-0'
+              }`}
             />
-            <div className="flex flex-col justify-center leading-none">
-              <span className={`font-serif font-black text-xl sm:text-2xl lg:text-[28px] tracking-tight ${
-                isTransparent ? 'text-white drop-shadow-sm' : 'text-green-950'
-              }`}>NELSON</span>
-              <span className={`font-sans font-bold text-[7px] sm:text-[8px] lg:text-[10px] tracking-[0.18em] underline underline-offset-2 mt-0.5 ${
-                isTransparent ? 'text-amber-200' : 'text-green-700'
-              }`}>TOUR &amp; SAFARI</span>
-            </div>
           </Link>
 
           {/* Desktop Nav — centred */}
@@ -622,16 +616,12 @@ export default function Navbar() {
             >
               {/* Header: Logo + Close */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
-                <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5">
+                <Link to="/" onClick={() => setMenuOpen(false)}>
                   <img
-                    src="/images/logo/safari-icon.png"
+                    src="/images/logo/logo.png"
                     alt="Nelson Tours & Safari"
-                    className="h-12 w-auto object-contain flex-shrink-0"
+                    className="h-[72px] w-auto object-contain"
                   />
-                  <div className="flex flex-col justify-center leading-none">
-                    <span className="font-serif font-black text-2xl tracking-tight text-green-950">NELSON</span>
-                    <span className="font-sans font-bold text-[9px] tracking-[0.18em] underline underline-offset-2 mt-0.5 text-green-700">TOUR &amp; SAFARI</span>
-                  </div>
                 </Link>
                 <button
                   onClick={() => setMenuOpen(false)}
