@@ -103,35 +103,35 @@ export default function Navbar() {
     >
       {/* ── Social / contact top bar ─────────────────────────────────── */}
       <div className={`bg-green-950 overflow-hidden transition-all duration-500 ${
-        scrolled ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-10 opacity-100'
+        scrolled ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-6 opacity-100'
       }`}>
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 h-8 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 h-5 flex items-center justify-between">
           <div className="hidden sm:flex items-center gap-5">
-            <a href="tel:+255777123456" className="flex items-center gap-1.5 font-sans text-[11px] text-white/60 hover:text-white transition-colors">
-              <Phone size={11} /> +255 777 123 456
+            <a href="tel:+255777123456" className="flex items-center gap-1 font-sans text-[10px] text-white/60 hover:text-white transition-colors">
+              <Phone size={9} /> +255 777 123 456
             </a>
-            <a href="mailto:info@nelsontoursandsafari.com" className="flex items-center gap-1.5 font-sans text-[11px] text-white/60 hover:text-white transition-colors">
-              <Mail size={11} /> info@nelsontoursandsafari.com
+            <a href="mailto:info@nelsontoursandsafari.com" className="flex items-center gap-1 font-sans text-[10px] text-white/60 hover:text-white transition-colors">
+              <Mail size={9} /> info@nelsontoursandsafari.com
             </a>
           </div>
-          <div className="flex items-center gap-4 ml-auto">
-            <a href="https://facebook.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-white/50 hover:text-white transition-colors"><Facebook size={14} /></a>
-            <a href="https://instagram.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-white/50 hover:text-white transition-colors"><Instagram size={14} /></a>
-            <a href="https://twitter.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X" className="text-white/50 hover:text-white transition-colors"><Twitter size={14} /></a>
-            <a href="https://youtube.com/@nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-white/50 hover:text-white transition-colors"><Youtube size={14} /></a>
+          <div className="flex items-center gap-3 ml-auto">
+            <a href="https://facebook.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-white/50 hover:text-white transition-colors"><Facebook size={11} /></a>
+            <a href="https://instagram.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-white/50 hover:text-white transition-colors"><Instagram size={11} /></a>
+            <a href="https://twitter.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X" className="text-white/50 hover:text-white transition-colors"><Twitter size={11} /></a>
+            <a href="https://youtube.com/@nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-white/50 hover:text-white transition-colors"><Youtube size={11} /></a>
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-10">
 
           {/* Logo */}
-          <Link to="/" className="flex-shrink-0 flex items-center relative w-[140px] sm:w-[180px] h-full" aria-label="Nelson Tours and Safari — Home">
+          <Link to="/" className="flex-shrink-0 flex items-center relative w-[80px] sm:w-[100px] h-full" aria-label="Nelson Tours and Safari — Home">
             <img
               src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
               alt="Nelson Tours & Safari"
-              className={`h-16 sm:h-24 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
+              className={`h-8 sm:h-12 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
                 isTransparent ? 'scale-[1.2] sm:scale-[1.47] translate-y-1 sm:translate-y-2 -translate-x-1 sm:-translate-x-2' : 'scale-100 translate-y-0 translate-x-0'
               }`}
             />
@@ -531,7 +531,7 @@ export default function Navbar() {
               <div ref={avatarRef} className="relative hidden lg:block">
                 <button
                   onClick={() => setAvatarOpen((o) => !o)}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center font-sans text-sm font-bold transition-all duration-300 ring-2 ${
+                  className={`w-6 h-6 rounded-full flex items-center justify-center font-sans text-[10px] font-bold transition-all duration-300 ring-2 ${
                     isTransparent ? 'bg-white/20 text-white ring-white/40 hover:bg-white/30' : 'bg-green-700 text-white ring-green-700/30 hover:bg-green-800'
                   }`}
                 >
@@ -572,7 +572,7 @@ export default function Navbar() {
             ) : null}
             <Link
               to="/tours"
-              className={`hidden lg:block text-sm font-medium font-sans px-6 py-2.5 rounded-full transition-all duration-300 ${
+              className={`hidden lg:block text-xs font-medium font-sans px-4 py-1 rounded-full transition-all duration-300 ${
                 isTransparent ? 'bg-gold text-white hover:bg-gold-dark' : 'bg-green-950 text-white hover:bg-green-900'
               }`}
             >
