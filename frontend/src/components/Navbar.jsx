@@ -86,10 +86,9 @@ export default function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
-  const isHome        = location.pathname === '/'
-  const isTransparent = isHome && !scrolled
+  const isTransparent = false
 
-  const textCls  = isTransparent ? 'text-white/90' : 'text-gray-700'
+  const textCls  = 'text-gray-700'
   const activeCls = 'text-gold'
 
   return (
