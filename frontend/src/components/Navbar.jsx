@@ -103,9 +103,9 @@ export default function Navbar() {
     >
       {/* ── Social / contact top bar ─────────────────────────────────── */}
       <div className={`bg-green-950 overflow-hidden transition-all duration-500 ${
-        scrolled ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-9 opacity-100'
+        scrolled ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-8 opacity-100'
       }`}>
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 h-7 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 h-6 flex items-center justify-between">
           <div className="hidden sm:flex items-center gap-5">
             <a href="tel:+255777123456" className="flex items-center gap-1.5 font-sans text-[11px] text-white/60 hover:text-white transition-colors">
               <Phone size={12} /> +255 777 123 456
@@ -124,7 +124,7 @@ export default function Navbar() {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-between h-12">
 
           {/* Logo */}
           <Link to="/" className="flex-shrink-0 flex items-center relative w-[168px] sm:w-[210px] h-full" aria-label="Nelson Tours and Safari — Home">
@@ -531,7 +531,7 @@ export default function Navbar() {
               <div ref={avatarRef} className="relative hidden lg:block">
                 <button
                   onClick={() => setAvatarOpen((o) => !o)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-sans text-xs font-bold transition-all duration-300 ring-2 ${
+                  className={`w-7 h-7 rounded-full flex items-center justify-center font-sans text-xs font-bold transition-all duration-300 ring-2 ${
                     isTransparent ? 'bg-white/20 text-white ring-white/40 hover:bg-white/30' : 'bg-green-700 text-white ring-green-700/30 hover:bg-green-800'
                   }`}
                 >
@@ -572,7 +572,7 @@ export default function Navbar() {
             ) : null}
             <Link
               to="/tours"
-              className={`hidden lg:block text-sm font-medium font-sans px-5 py-1.5 rounded-full transition-all duration-300 ${
+              className={`hidden lg:block text-sm font-medium font-sans px-5 py-1 rounded-full transition-all duration-300 ${
                 isTransparent ? 'bg-gold text-white hover:bg-gold-dark' : 'bg-green-950 text-white hover:bg-green-900'
               }`}
             >
