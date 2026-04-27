@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ChevronDown, ChevronRight, LayoutDashboard, LogOut, MapPin, Clock, ArrowRight, Mountain, Phone, Mail } from 'lucide-react'
+import { Menu, X, ChevronDown, ChevronRight, LayoutDashboard, LogOut, MapPin, Clock, ArrowRight, Mountain, Phone, Mail, Facebook, Instagram, Twitter, Youtube } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { useSiteSettings } from '../hooks/useSiteSettings'
@@ -101,12 +101,33 @@ export default function Navbar() {
         isTransparent ? 'bg-transparent' : 'bg-white/95 backdrop-blur-md shadow-md'
       }`}
     >
+      {/* ── Social / contact top bar ─────────────────────────────────── */}
+      <div className={`bg-green-950 overflow-hidden transition-all duration-500 ${
+        scrolled ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-10 opacity-100'
+      }`}>
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 h-8 flex items-center justify-between">
+          <div className="hidden sm:flex items-center gap-5">
+            <a href="tel:+255777123456" className="flex items-center gap-1.5 font-sans text-[11px] text-white/60 hover:text-white transition-colors">
+              <Phone size={11} /> +255 777 123 456
+            </a>
+            <a href="mailto:info@nelsontoursandsafari.com" className="flex items-center gap-1.5 font-sans text-[11px] text-white/60 hover:text-white transition-colors">
+              <Mail size={11} /> info@nelsontoursandsafari.com
+            </a>
+          </div>
+          <div className="flex items-center gap-4 ml-auto">
+            <a href="https://facebook.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-white/50 hover:text-white transition-colors"><Facebook size={14} /></a>
+            <a href="https://instagram.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-white/50 hover:text-white transition-colors"><Instagram size={14} /></a>
+            <a href="https://twitter.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X" className="text-white/50 hover:text-white transition-colors"><Twitter size={14} /></a>
+            <a href="https://youtube.com/@nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-white/50 hover:text-white transition-colors"><Youtube size={14} /></a>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-6xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
 
-          {/* Logo + Desktop Nav grouped on the left */}
-          <div className="flex items-center gap-10">
-          <Link to="/" className="flex-shrink-0 flex items-center justify-start relative w-[140px] sm:w-[200px] h-full" aria-label="Nelson Tours and Safari — Home">
+          {/* Logo */}
+          <Link to="/" className="flex-shrink-0 flex items-center relative w-[140px] sm:w-[180px] h-full" aria-label="Nelson Tours and Safari — Home">
             <img
               src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
               alt="Nelson Tours & Safari"
@@ -116,8 +137,8 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-7">
+          {/* Desktop Nav — centred */}
+          <div className="hidden lg:flex items-center gap-6 flex-1 justify-center px-4">
             {visibleLinks.map((link) => (
               <div
                 key={link.label}
@@ -503,7 +524,6 @@ export default function Navbar() {
               </div>
             ))}
           </div>
-          </div>{/* end logo+nav group */}
 
           {/* CTA + Mobile Toggle */}
           <div className="flex items-center gap-3">
