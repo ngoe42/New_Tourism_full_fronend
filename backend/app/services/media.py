@@ -1,3 +1,4 @@
+import asyncio
 import io
 import os
 import uuid
@@ -64,12 +65,17 @@ class MediaService:
             api_key=settings.CLOUDINARY_API_KEY,
             api_secret=settings.CLOUDINARY_API_SECRET,
         )
-        result = cloudinary.uploader.upload(
-            io.BytesIO(contents),
-            folder="karibu_safari",
-            public_id=filename.rsplit(".", 1)[0],
-            overwrite=False,
-        )
+        stem = filename.rsplit(".", 1)[0]
+        unique_public_id = f"karibu_safari/{stem}_{uuid.uuid4().hex[:8]}"
+
+        def _do_upload():
+            return cloudinary.uploader.upload(
+                io.BytesIO(contents),
+                public_id=unique_public_id,
+                overwrite=False,
+            )
+
+        result = await asyncio.to_thread(_do_upload)
         return result["secure_url"], result["public_id"]
 
     async def _upload_local(self, contents: bytes, filename: str) -> tuple[str, None]:
