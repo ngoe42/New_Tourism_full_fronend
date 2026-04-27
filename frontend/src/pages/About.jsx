@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
   CheckCircle, ArrowRight, Shield, Heart, Leaf, Trophy,
-  Mountain, Binoculars, Waves, Users, Star, MapPin,
+  Mountain, Eye, Waves, Users, Star, MapPin,
   Truck, Globe, Lock, Phone, Zap, Award
 } from 'lucide-react'
 import CTASection from '../components/CTASection'
@@ -21,7 +21,7 @@ const stats = [
 ]
 
 const services = [
-  { icon: Binoculars, title: 'Tanzania Wildlife Safaris', desc: 'Witness the Great Migration across the Serengeti, descend into the Ngorongoro Crater, and track leopards through Tarangire — guided by people who have lived beside these animals their entire lives.' },
+  { icon: Eye, title: 'Tanzania Wildlife Safaris', desc: 'Witness the Great Migration across the Serengeti, descend into the Ngorongoro Crater, and track leopards through Tarangire — guided by people who have lived beside these animals their entire lives.' },
   { icon: Mountain, title: 'Mount Kilimanjaro Expeditions', desc: 'Africa\'s highest summit awaits. Our UIMLA-certified mountain crews guide you safely and confidently across Machame, Lemosho, Marangu, and more — with oxygen support, trained medics, and carefully inspected gear.' },
   { icon: Waves, title: 'Zanzibar Beach Escapes', desc: 'After the savannah, unwind on the spice-scented shores of Zanzibar. We arrange luxury beachfront retreats, dhow sailing tours, Stone Town explorations, and seamless transfers from the mainland.' },
   { icon: Users, title: 'Cultural & Day Tours', desc: 'From the vibrant Maasai villages of the Rift Valley to the thundering curtains of Materuni Waterfalls — our cultural journeys connect you with the soul of Tanzania, not just its scenery.' },
