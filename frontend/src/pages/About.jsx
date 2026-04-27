@@ -13,13 +13,6 @@ const fadeUp = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0
 const fadeLeft = { initial: { opacity: 0, x: -50 }, whileInView: { opacity: 1, x: 0 }, viewport: { once: true }, transition: { duration: 0.8 } }
 const fadeRight = { initial: { opacity: 0, x: 50 }, whileInView: { opacity: 1, x: 0 }, viewport: { once: true }, transition: { duration: 0.8 } }
 
-const stats = [
-  { value: '15+', label: 'Years of Expertise' },
-  { value: '12,000+', label: 'Lives Transformed' },
-  { value: '4.97★', label: 'Average Guest Rating' },
-  { value: '100%', label: 'Licensed & Insured' },
-]
-
 const services = [
   { icon: Eye, title: 'Tanzania Wildlife Safaris', desc: 'Witness the Great Migration across the Serengeti, descend into the Ngorongoro Crater, and track leopards through Tarangire — guided by people who have lived beside these animals their entire lives.' },
   { icon: Mountain, title: 'Mount Kilimanjaro Expeditions', desc: 'Africa\'s highest summit awaits. Our UIMLA-certified mountain crews guide you safely and confidently across Machame, Lemosho, Marangu, and more — with oxygen support, trained medics, and carefully inspected gear.' },
@@ -80,14 +73,6 @@ export default function About() {
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.22 }} className="font-sans text-base sm:text-lg text-white/75 max-w-2xl leading-relaxed mb-8">
             Nelson Tours and Safaris is a Tanzanian-owned, Arusha-based travel company dedicated to one mission: crafting life-changing adventures across Africa's most extraordinary landscapes. We are safari planners, mountain guides, beach escape architects and cultural storytellers — united by an unshakeable love for this land and an unwavering commitment to the guests who trust us to show it to them.
           </motion.p>
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.5 }} className="flex flex-wrap gap-6">
-            {stats.map(s => (
-              <div key={s.label} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-6 py-4 text-center min-w-[110px]">
-                <p className="font-serif text-2xl font-bold text-gold">{s.value}</p>
-                <p className="font-sans text-xs text-white/70 mt-0.5 leading-tight">{s.label}</p>
-              </div>
-            ))}
-          </motion.div>
         </div>
       </section>
 
