@@ -7,7 +7,7 @@ const cards = [
     title: 'Climb Kilimanjaro',
     subtitle: 'Highest Mountain in Africa',
     image: '/images/sections/parallax-kilimanjaro.jpg',
-    link: '/routes',
+    link: '/kilimanjaro',
   },
   {
     title: 'Tanzania Safari',
@@ -35,8 +35,7 @@ export default function WondersSection() {
           </h2>
           <div className="mx-auto mt-3 mb-5 w-14 h-[3px] rounded-full bg-gold" />
           <p className="font-sans text-gray-500 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-            Nelson Tours and Safaris is a Tanzania-based tour operator with over a decade of experience in
-            Kilimanjaro climbs and wildlife safaris, trusted for our exceptional service, safety, and local expertise.
+            Nelson Tours and Safaris is a Tanzania-based tour operator dedicated to creating exceptional Kilimanjaro climbs, unforgettable wildlife safaris, and tailor-made travel experiences built on local expertise, safety, and genuine hospitality.
           </p>
         </motion.div>
 
