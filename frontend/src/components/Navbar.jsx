@@ -103,36 +103,36 @@ export default function Navbar() {
     >
       {/* ── Social / contact top bar ─────────────────────────────────── */}
       <div className={`bg-green-950 overflow-hidden transition-all duration-500 ${
-        scrolled ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-8 opacity-100'
+        scrolled ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-7 opacity-100'
       }`}>
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 h-6 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-6 flex items-center justify-between">
           <div className="hidden sm:flex items-center gap-5">
-            <a href="tel:+255777123456" className="flex items-center gap-1.5 font-sans text-[11px] text-white/60 hover:text-white transition-colors">
-              <Phone size={12} /> +255 777 123 456
+            <a href="tel:+255777123456" className="flex items-center gap-1 font-sans text-[10px] text-white/60 hover:text-white transition-colors">
+              <Phone size={10} /> +255 777 123 456
             </a>
-            <a href="mailto:info@nelsontoursandsafari.com" className="flex items-center gap-1.5 font-sans text-[11px] text-white/60 hover:text-white transition-colors">
-              <Mail size={12} /> info@nelsontoursandsafari.com
+            <a href="mailto:info@nelsontoursandsafari.com" className="flex items-center gap-1 font-sans text-[10px] text-white/60 hover:text-white transition-colors">
+              <Mail size={10} /> info@nelsontoursandsafari.com
             </a>
           </div>
-          <div className="flex items-center gap-4 ml-auto">
-            <a href="https://facebook.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-white/50 hover:text-white transition-colors"><Facebook size={15} /></a>
-            <a href="https://instagram.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-white/50 hover:text-white transition-colors"><Instagram size={15} /></a>
-            <a href="https://twitter.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X" className="text-white/50 hover:text-white transition-colors"><Twitter size={15} /></a>
-            <a href="https://youtube.com/@nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-white/50 hover:text-white transition-colors"><Youtube size={15} /></a>
+          <div className="flex items-center gap-3 ml-auto">
+            <a href="https://facebook.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-white/50 hover:text-white transition-colors"><Facebook size={13} /></a>
+            <a href="https://instagram.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-white/50 hover:text-white transition-colors"><Instagram size={13} /></a>
+            <a href="https://twitter.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X" className="text-white/50 hover:text-white transition-colors"><Twitter size={13} /></a>
+            <a href="https://youtube.com/@nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-white/50 hover:text-white transition-colors"><Youtube size={13} /></a>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center justify-between h-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-12 lg:h-14">
 
           {/* Logo */}
-          <Link to="/" className="flex-shrink-0 flex items-center relative w-[168px] sm:w-[210px] h-full" aria-label="Nelson Tours and Safari — Home">
+          <Link to="/" className="flex-shrink-0 flex items-center relative w-[90px] sm:w-[110px] lg:w-[130px] h-full" aria-label="Nelson Tours and Safari — Home">
             <img
               src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
               alt="Nelson Tours & Safari"
-              className={`h-[66px] sm:h-24 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
-                isTransparent ? 'scale-[1.2] sm:scale-[1.47] translate-y-1 sm:translate-y-2 -translate-x-1 sm:-translate-x-2' : 'scale-100 translate-y-0 translate-x-0'
+              className={`h-9 sm:h-10 lg:h-12 w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
+                isTransparent ? 'scale-110 sm:scale-125 translate-y-0.5 sm:translate-y-1' : 'scale-100 translate-y-0 translate-x-0'
               }`}
             />
           </Link>
