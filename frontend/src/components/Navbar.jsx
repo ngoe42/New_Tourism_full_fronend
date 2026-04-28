@@ -603,45 +603,45 @@ export default function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="fixed inset-0 bg-black/60 z-[9998] lg:hidden"
+              className="fixed inset-0 bg-black/50 z-[9998] lg:hidden"
               onClick={() => setMenuOpen(false)}
             />
-            {/* Drawer */}
+            {/* Drawer — right-side panel, not full screen */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="fixed inset-0 bg-white z-[9999] lg:hidden flex flex-col"
+              transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+              className="fixed top-0 right-0 bottom-0 w-[82vw] max-w-[340px] bg-white z-[9999] lg:hidden flex flex-col shadow-2xl"
             >
               {/* Header: Logo + Close */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0 bg-white">
                 <Link to="/" onClick={() => setMenuOpen(false)}>
                   <img
-                    src="/images/logo/logo.png"
+                    src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
                     alt="Nelson Tours & Safari"
-                    className="h-[72px] w-auto object-contain"
+                    className="h-14 w-auto object-contain"
                   />
                 </Link>
                 <button
                   onClick={() => setMenuOpen(false)}
-                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                  className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors flex-shrink-0"
                 >
                   <X size={18} />
                 </button>
               </div>
 
               {/* Scrollable nav area */}
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
 
                 {/* Accordion Nav */}
-                <nav className="py-2">
+                <nav className="py-1">
 
-                  {/* HOME link */}
+                  {/* HOME */}
                   <Link
                     to="/"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors border-b border-gray-100"
+                    className="flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors border-b border-gray-100"
                   >
                     Home
                   </Link>
@@ -650,25 +650,25 @@ export default function Navbar() {
                   <div className="border-b border-gray-100">
                     <button
                       onClick={() => setMobileExpanded(mobileExpanded === 'kilimanjaro' ? null : 'kilimanjaro')}
-                      className="w-full flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors"
+                      className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Kilimanjaro</span>
-                      <ChevronRight size={16} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'kilimanjaro' ? 'rotate-90' : ''}`} />
+                      <ChevronRight size={15} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'kilimanjaro' ? 'rotate-90 text-gold' : ''}`} />
                     </button>
-                    <AnimatePresence>
+                    <AnimatePresence initial={false}>
                       {mobileExpanded === 'kilimanjaro' && (
                         <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: 'auto' }}
-                          exit={{ height: 0 }}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.22 }}
-                          className="overflow-hidden bg-gray-50"
+                          className="overflow-hidden bg-gray-50/80"
                         >
-                          <div className="px-6 pb-3 pt-1 space-y-0.5">
+                          <div className="px-5 py-2 space-y-0.5">
                             <Link
                               to="/routes"
                               onClick={() => setMenuOpen(false)}
-                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-80 transition-opacity"
+                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-75 transition-opacity"
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
                               All Routes Overview
@@ -678,9 +678,9 @@ export default function Navbar() {
                                 key={route.id}
                                 to={`/routes/${route.slug}`}
                                 onClick={() => setMenuOpen(false)}
-                                className="flex items-center gap-2.5 py-2 font-sans text-sm text-gray-700 hover:text-gold transition-colors border-b border-gray-100/70 last:border-0"
+                                className="flex items-center gap-2.5 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-100/60 last:border-0"
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-gold/50 flex-shrink-0" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-gold/40 flex-shrink-0" />
                                 {route.name}
                               </Link>
                             ))}
@@ -694,36 +694,36 @@ export default function Navbar() {
                   <div className="border-b border-gray-100">
                     <button
                       onClick={() => setMobileExpanded(mobileExpanded === 'safari' ? null : 'safari')}
-                      className="w-full flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors"
+                      className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Safari</span>
-                      <ChevronRight size={16} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'safari' ? 'rotate-90' : ''}`} />
+                      <ChevronRight size={15} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'safari' ? 'rotate-90 text-gold' : ''}`} />
                     </button>
-                    <AnimatePresence>
+                    <AnimatePresence initial={false}>
                       {mobileExpanded === 'safari' && (
                         <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: 'auto' }}
-                          exit={{ height: 0 }}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.22 }}
-                          className="overflow-hidden bg-gray-50"
+                          className="overflow-hidden bg-gray-50/80"
                         >
-                          <div className="px-6 pb-3 pt-1 space-y-0.5">
+                          <div className="px-5 py-2 space-y-0.5">
                             {SAFARI_CATEGORIES.map((cat) => (
                               <Link
                                 key={cat}
                                 to={`/tours?category=${encodeURIComponent(cat)}`}
                                 onClick={() => setMenuOpen(false)}
-                                className="flex items-center gap-2.5 py-2.5 font-sans text-sm text-gray-700 hover:text-gold transition-colors border-b border-gray-100/70 last:border-0"
+                                className="flex items-center gap-2.5 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-100/60 last:border-0"
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-gold/50 flex-shrink-0" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-gold/40 flex-shrink-0" />
                                 {cat}
                               </Link>
                             ))}
                             <Link
                               to="/tours"
                               onClick={() => setMenuOpen(false)}
-                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-80 transition-opacity pt-1"
+                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-75 transition-opacity"
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
                               View All Safaris
@@ -738,25 +738,25 @@ export default function Navbar() {
                   <div className="border-b border-gray-100">
                     <button
                       onClick={() => setMobileExpanded(mobileExpanded === 'experiences' ? null : 'experiences')}
-                      className="w-full flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors"
+                      className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Experiences</span>
-                      <ChevronRight size={16} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'experiences' ? 'rotate-90' : ''}`} />
+                      <ChevronRight size={15} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'experiences' ? 'rotate-90 text-gold' : ''}`} />
                     </button>
-                    <AnimatePresence>
+                    <AnimatePresence initial={false}>
                       {mobileExpanded === 'experiences' && (
                         <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: 'auto' }}
-                          exit={{ height: 0 }}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.22 }}
-                          className="overflow-hidden bg-gray-50"
+                          className="overflow-hidden bg-gray-50/80"
                         >
-                          <div className="px-6 pb-3 pt-1 space-y-0.5">
+                          <div className="px-5 py-2 space-y-0.5">
                             <Link
                               to="/experiences"
                               onClick={() => setMenuOpen(false)}
-                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-80 transition-opacity"
+                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-75 transition-opacity"
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
                               All Experiences
@@ -766,9 +766,9 @@ export default function Navbar() {
                                 key={exp.id}
                                 to="/experiences"
                                 onClick={() => setMenuOpen(false)}
-                                className="flex items-center gap-2.5 py-2 font-sans text-sm text-gray-700 hover:text-gold transition-colors border-b border-gray-100/70 last:border-0"
+                                className="flex items-center gap-2.5 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-100/60 last:border-0"
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-gold/50 flex-shrink-0" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-gold/40 flex-shrink-0" />
                                 {exp.title}
                               </Link>
                             ))}
@@ -781,24 +781,22 @@ export default function Navbar() {
                   {/* Flat links */}
                   {[
                     ...(showBlog ? [{ label: 'Blog', href: '/blog' }] : []),
-                    { label: 'About',   href: '/#about' },
+                    { label: 'About',   href: '/about' },
                     { label: 'Contact', href: '/contact' },
                   ].map((link) => (
                     <Link
                       key={link.label}
                       to={link.href}
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors border-b border-gray-100"
+                      className="flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors border-b border-gray-100"
                     >
                       {link.label}
                     </Link>
                   ))}
-                </nav>
 
-                {/* Auth links */}
-                <div className="px-5 py-4 border-t border-gray-100">
-                  {user ? (
-                    <div className="space-y-2">
+                  {/* Auth links — only rendered when logged in */}
+                  {user && (
+                    <div className="px-4 pt-4 pb-2 space-y-2">
                       {user.role === 'admin' && (
                         <Link
                           to="/admin"
@@ -815,48 +813,37 @@ export default function Navbar() {
                         <LogOut size={15} /> Sign Out
                       </button>
                     </div>
-                  ) : null}
-                </div>
+                  )}
+                </nav>
               </div>
 
-              {/* Footer: CTAs + Social */}
-              <div className="flex-shrink-0 border-t border-gray-100 px-5 py-5 space-y-3">
-                {/* Book Safari CTA */}
+              {/* Footer: CTAs + Social — always pinned to bottom */}
+              <div className="flex-shrink-0 bg-white border-t border-gray-100 px-4 py-4 space-y-2.5">
                 <Link
                   to="/tours"
                   onClick={() => setMenuOpen(false)}
-                  className="block w-full text-center bg-green-950 text-white font-sans text-sm font-semibold py-3.5 rounded-2xl hover:bg-green-800 transition-colors"
+                  className="flex items-center justify-center w-full bg-green-950 text-white font-sans text-sm font-semibold py-3.5 rounded-2xl hover:bg-green-800 transition-colors shadow-sm"
                 >
                   Book a Safari
                 </Link>
-                {/* WhatsApp */}
                 <a
                   href="https://wa.me/255750005973"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2.5 w-full bg-[#25D366] text-white font-sans text-sm font-semibold py-3.5 rounded-2xl hover:bg-[#1ebe5d] transition-colors"
+                  className="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white font-sans text-sm font-semibold py-3.5 rounded-2xl hover:bg-[#1fbd5a] transition-colors"
                 >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4.5 h-4.5" width={18} height={18}>
+                  <svg viewBox="0 0 24 24" fill="currentColor" width={17} height={17}>
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
                   Chat on WhatsApp
                 </a>
-                {/* Social icons */}
                 <div className="flex items-center justify-center gap-5 pt-1">
                   {[
-                    { href: 'https://instagram.com', label: 'Instagram', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" strokeWidth={0}/></svg> },
-                    { href: 'https://facebook.com', label: 'Facebook', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg> },
-                    { href: 'https://youtube.com', label: 'YouTube', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon fill="white" points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg> },
-                    { href: 'https://linkedin.com', label: 'LinkedIn', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg> },
+                    { href: 'https://instagram.com/nelsonsafari', label: 'Instagram', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" strokeWidth={0}/></svg> },
+                    { href: 'https://facebook.com/nelsonsafari', label: 'Facebook', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg> },
+                    { href: 'https://youtube.com/@nelsonsafari', label: 'YouTube', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon fill="white" points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg> },
                   ].map(({ href, label, icon }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={label}
-                      className="text-gray-400 hover:text-gold transition-colors"
-                    >
+                    <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="text-gray-400 hover:text-gold transition-colors">
                       {icon}
                     </a>
                   ))}
