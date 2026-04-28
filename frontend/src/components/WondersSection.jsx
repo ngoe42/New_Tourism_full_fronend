@@ -22,7 +22,7 @@ export default function WondersSection() {
       image: wondersSafariImage
         ? resolveImageUrl(wondersSafariImage)
         : '/images/sections/parallax-serengeti.jpg',
-      link: '/tours',
+      link: '/safari',
     },
   ]
   return (

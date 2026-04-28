@@ -32,6 +32,7 @@ import Experiences from './pages/Experiences'
 import Blog from './pages/Blog'
 import About from './pages/About'
 import KilimanjaroOverview from './pages/KilimanjaroOverview'
+import TanzaniaSafariOverview from './pages/TanzaniaSafariOverview'
 import WhatsAppButton from './components/WhatsAppButton'
 import PaymentCallback from './pages/PaymentCallback'
 import PaymentResume from './pages/PaymentResume'
@@ -79,6 +80,7 @@ function AppRoutes() {
         <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
         <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
         <Route path="/kilimanjaro" element={<PublicLayout><KilimanjaroOverview /></PublicLayout>} />
+        <Route path="/safari" element={<PublicLayout><TanzaniaSafariOverview /></PublicLayout>} />
         <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
         <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
         <Route path="/payment/callback" element={<PaymentCallback />} />
