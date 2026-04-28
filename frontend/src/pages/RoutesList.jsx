@@ -18,13 +18,14 @@ export default function RoutesList() {
     <div className="bg-beige min-h-screen">
       {/* Header */}
       <section className="pt-32 pb-16 lg:pt-40 lg:pb-20 bg-green-950 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 opacity-60">
           <img
             src={routesHeroImage ? resolveImageUrl(routesHeroImage) : '/images/hero-bg.jpg'}
             alt=""
-            className="w-full h-full object-cover mix-blend-overlay"
+            className="w-full h-full object-cover"
           />
         </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 to-green-950/70" />
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

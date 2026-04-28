@@ -145,10 +145,7 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="font-sans text-xs text-white/30">
-            © {new Date().getFullYear()} Nelson Tour and Safari. All rights reserved.
-          </p>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex items-center justify-center">
           <p className="font-sans text-xs text-white/20">Licensed by TATO & TTB · Arusha, Tanzania</p>
         </div>
       </div>

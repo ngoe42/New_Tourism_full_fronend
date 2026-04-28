@@ -64,14 +64,14 @@ export default function Tours() {
     <main className="min-h-screen">
       {/* Page Hero */}
       <section className="relative pt-28 sm:pt-36 pb-14 sm:pb-20 bg-green-950 overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 opacity-60">
           <img
             src={toursHeroImage ? resolveImageUrl(toursHeroImage) : '/images/hero-bg.jpg'}
             alt=""
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-green-950/50 to-green-950" />
+        <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 to-green-950/70" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center">
           <motion.span
