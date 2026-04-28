@@ -9,16 +9,16 @@ export default function WondersSection() {
 
   const cards = [
     {
-      title: 'Climb Kilimanjaro',
-      subtitle: 'Highest Mountain in Africa',
+      title: 'Journey to the Roof of Africa',
+      subtitle: 'Conquer Mount Kilimanjaro’s iconic summit.',
       image: wondersKilimanjaroImage
         ? resolveImageUrl(wondersKilimanjaroImage)
         : '/images/sections/parallax-kilimanjaro.jpg',
       link: '/kilimanjaro',
     },
     {
-      title: 'Tanzania Safari',
-      subtitle: "Experience Africa's Wildlife",
+      title: 'Journey Through the Wild',
+      subtitle: "Explore Tanzania’s Untouched Beauty",
       image: wondersSafariImage
         ? resolveImageUrl(wondersSafariImage)
         : '/images/sections/parallax-serengeti.jpg',
