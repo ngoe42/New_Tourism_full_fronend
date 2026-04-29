@@ -86,7 +86,7 @@ export default function Tours() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="font-serif text-3xl sm:text-5xl md:text-6xl text-white font-semibold leading-tight mb-4"
+            className="font-serif text-2xl sm:text-4xl md:text-5xl text-white font-semibold leading-tight mb-4"
           >
             {toursHeroTitle || 'Safari Tours & Expeditions'}
           </motion.h1>
@@ -94,7 +94,7 @@ export default function Tours() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="font-sans text-white/60 text-lg max-w-xl mx-auto"
+            className="font-sans text-white/60 text-base max-w-xl mx-auto"
           >
             {toursHeroDescription || `${data?.total ?? '…'} carefully curated journeys across Tanzania's most iconic landscapes.`}
           </motion.p>
