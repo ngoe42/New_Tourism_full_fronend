@@ -1,14 +1,27 @@
-import { motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ChevronRight, ArrowRight } from 'lucide-react'
 import KilimanjaroEnhancedSections from '../components/RouteEnhancedSections'
 
 export default function KilimanjaroOverview() {
+  const heroRef = useRef(null)
+  const [showSticky, setShowSticky] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowSticky(!entry.isIntersecting),
+      { threshold: 0 }
+    )
+    if (heroRef.current) observer.observe(heroRef.current)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="bg-[#faf8f3] min-h-screen">
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[70vh] sm:min-h-[80vh] flex flex-col justify-end bg-green-950 overflow-hidden">
+      <section ref={heroRef} className="relative min-h-[70vh] sm:min-h-[80vh] flex flex-col justify-end bg-green-950 overflow-hidden">
         <div className="absolute inset-0">
           <img
             src="/images/sections/parallax-kilimanjaro.jpg"
@@ -76,6 +89,34 @@ export default function KilimanjaroOverview() {
           </div>
         </div>
       </section>
+
+      {/* ── Sticky CTA bar ────────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showSticky && (
+          <motion.div
+            initial={{ y: -64, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -64, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="fixed top-12 lg:top-14 left-0 right-0 z-[49] flex items-center justify-center gap-3 px-4 py-3 bg-green-950/95 backdrop-blur-md shadow-lg"
+          >
+            <Link
+              to="/routes"
+              className="inline-flex items-center gap-2 bg-gold hover:bg-gold/90 text-white font-sans font-semibold text-sm px-6 py-2.5 rounded-full transition-all duration-200 shadow hover:shadow-md hover:-translate-y-0.5"
+            >
+              Choose Your Route <ArrowRight size={14} />
+            </Link>
+            <a
+              href="https://wa.me/255750005973"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-white/10 border border-white/25 hover:bg-white/20 text-white font-sans font-semibold text-sm px-6 py-2.5 rounded-full transition-all duration-200"
+            >
+              Talk to an Expert
+            </a>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Quick stats bar ───────────────────────────────────────────────────── */}
       <div className="bg-white shadow-sm border-b border-gray-100">
