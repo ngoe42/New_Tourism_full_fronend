@@ -1,6 +1,7 @@
+import asyncio
 import re
 import uuid
-from typing import Optional
+from typing import Optional, Set
 
 from fastapi import HTTPException, status
 from loguru import logger
@@ -14,6 +15,8 @@ from app.repositories.tour import TourRepository
 from app.services.booking import send_booking_confirmation_email
 from app.services.email_service import send_payment_success_email
 from app.services.pesapal import PesapalService
+
+_background_tasks: Set[asyncio.Task] = set()
 
 
 class PaymentService:
@@ -119,7 +122,7 @@ class PaymentService:
         if not email_already_sent:
             tour = booking.tour
             resume_link = f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
-            await send_booking_confirmation_email(
+            _t = asyncio.create_task(send_booking_confirmation_email(
                 booking_id=booking.id,
                 tour_title=tour.title if tour else f"Booking #{booking.id}",
                 contact_name=booking.contact_name,
@@ -131,7 +134,9 @@ class PaymentService:
                 tour_location=tour.location if tour else "",
                 tour_duration=tour.duration if tour else "",
                 tour_included=tour.included if tour else [],
-            )
+            ))
+            _background_tasks.add(_t)
+            _t.add_done_callback(_background_tasks.discard)
 
         return {
             "redirect_url": result["redirect_url"],
@@ -357,19 +362,18 @@ class PaymentService:
                         "status": BookingStatus.confirmed,
                     })
                     tour = locked.tour
-                    try:
-                        await send_payment_success_email(
-                            booking_id=locked.id,
-                            tour_title=tour.title if tour else f"Booking #{locked.id}",
-                            contact_name=locked.contact_name,
-                            contact_email=locked.contact_email,
-                            travel_date=locked.travel_date,
-                            guests=locked.guests,
-                            total_price=locked.total_price,
-                            transaction_id=booking.pesapal_order_tracking_id,
-                        )
-                    except Exception as exc:
-                        logger.error(f"Payment success email failed for booking #{locked.id}: {exc}")
+                    _s = asyncio.create_task(send_payment_success_email(
+                        booking_id=locked.id,
+                        tour_title=tour.title if tour else f"Booking #{locked.id}",
+                        contact_name=locked.contact_name,
+                        contact_email=locked.contact_email,
+                        travel_date=locked.travel_date,
+                        guests=locked.guests,
+                        total_price=locked.total_price,
+                        transaction_id=booking.pesapal_order_tracking_id,
+                    ))
+                    _background_tasks.add(_s)
+                    _s.add_done_callback(_background_tasks.discard)
                 else:
                     await self.booking_repo.update(booking, {"payment_status": payment_status})
             else:
