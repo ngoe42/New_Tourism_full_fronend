@@ -245,10 +245,12 @@ class UserManagementService:
             "hashed_password": get_password_hash(f"ERASED-{user_id}-{original_email}"),
             "is_active": False,
         })
-        await self.db.commit()
-
-        # 5 — Suppress in SendGrid (non-blocking; failure logged but does not abort)
+        # 5 — Suppress in SendGrid BEFORE committing the erasure so that if suppression
+        # succeeds but the DB commit fails, the email is suppressed (safe side).
+        # If suppression fails, we log and proceed — erasure still completes.
         suppressed = await suppress_sendgrid_email(original_email)
+
+        await self.db.commit()
 
         logger.info(
             f"[erase] Done: user #{user_id} anonymised, "

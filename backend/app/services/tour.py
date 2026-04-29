@@ -100,10 +100,14 @@ class TourService:
 
     async def delete_tour(self, tour_id: int) -> None:
         tour = await self.get_tour(tour_id)
-        media_svc = MediaService(self.db)
-        for img in (tour.images or []):
-            await media_svc.delete_file(img.url, img.public_id)
+        # Snapshot image refs before deleting the DB records
+        image_refs = [(img.url, img.public_id) for img in (tour.images or [])]
         await self.tour_repo.delete(tour)
+        await self.db.commit()
+        # Best-effort cloud cleanup after DB is committed
+        media_svc = MediaService(self.db)
+        for url, public_id in image_refs:
+            await media_svc.delete_file(url, public_id)
 
     async def add_image(self, tour_id: int, url: str, public_id: Optional[str] = None, is_cover: bool = False) -> TourImage:
         await self.get_tour(tour_id)
@@ -114,5 +118,8 @@ class TourService:
         image = await self.image_repo.get(image_id)
         if not image:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-        await MediaService(self.db).delete_file(image.url, image.public_id)
+        url, public_id = image.url, image.public_id
         await self.image_repo.delete(image)
+        await self.db.commit()
+        # Best-effort cloud cleanup after DB is committed
+        await MediaService(self.db).delete_file(url, public_id)

@@ -33,7 +33,15 @@ class AuthService:
             hashed_password=get_password_hash(data.password),
             role=UserRole.customer,
         )
-        return await self.user_repo.create(user)
+        from sqlalchemy.exc import IntegrityError
+        try:
+            return await self.user_repo.create(user)
+        except IntegrityError:
+            await self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered",
+            )
 
     async def login(self, email: str, password: str) -> TokenResponse:
         user = await self.user_repo.get_by_email(email)
@@ -59,24 +67,38 @@ class AuthService:
         )
 
     async def refresh_access_token(self, refresh_token: str) -> AccessTokenResponse:
-        from app.core.token_blacklist import is_blacklisted
+        from app.core.token_blacklist import is_blacklisted_async, blacklist_token, _fingerprint
+        from app.core.cache import _redis
         payload = decode_token(refresh_token)
         if not payload or payload.get("type") != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token",
             )
-        if is_blacklisted(payload):
+        if await is_blacklisted_async(payload):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has been revoked",
             )
+        # Atomically claim this token in Redis to prevent concurrent refresh race:
+        # two simultaneous requests with the same token would both pass the blacklist
+        # check above before either blacklists it, issuing two new session pairs.
+        if _redis:
+            fp = _fingerprint(payload)
+            claimed = await _redis.set(f"token_use:{fp}", "1", ex=30, nx=True)
+            if not claimed:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token is already being refreshed — please retry",
+                )
         user = await self.user_repo.get(int(payload["sub"]))
         if not user or not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found or inactive",
             )
+        # Blacklist the old refresh token so it cannot be reused (rotation)
+        blacklist_token(payload)
         access_token = create_access_token(
             subject=user.id,
             expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),

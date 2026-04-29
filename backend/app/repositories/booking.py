@@ -1,7 +1,8 @@
-from datetime import date, timedelta
+import hashlib
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import and_, or_, select, func, text
 from sqlalchemy.orm import selectinload
 from app.models.booking import Booking, BookingStatus
 from app.repositories.base import BaseRepository
@@ -32,7 +33,7 @@ class BookingRepository(BaseRepository[Booking]):
 
     async def update(self, obj: Booking, data: dict) -> Booking:
         for key, value in data.items():
-            if value is not None and hasattr(obj, key):
+            if hasattr(obj, key):
                 setattr(obj, key, value)
         await self.db.flush()
         result = await self.db.execute(
@@ -86,20 +87,29 @@ class BookingRepository(BaseRepository[Booking]):
         duration_days: int,
         exclude_booking_id: int | None = None,
     ) -> bool:
-        """Return True if a confirmed & paid booking already covers the date range."""
+        """Return True if a confirmed booking, or a fresh pending booking (< 24 h old),
+        already covers the date range.  Abandoned pending bookings older than 24 hours are
+        excluded so they no longer permanently block a tour date after payment abandonment.
+        """
         window = timedelta(days=max(duration_days - 1, 0))
         range_start = travel_date - window
         range_end = travel_date + window
+        pending_cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
 
         stmt = (
             select(func.count())
             .select_from(Booking)
             .where(
                 Booking.tour_id == tour_id,
-                Booking.status == BookingStatus.confirmed,
-                Booking.payment_status == "COMPLETED",
                 Booking.travel_date >= range_start,
                 Booking.travel_date <= range_end,
+                or_(
+                    Booking.status == BookingStatus.confirmed,
+                    and_(
+                        Booking.status == BookingStatus.pending,
+                        Booking.created_at >= pending_cutoff,
+                    ),
+                ),
             )
         )
         if exclude_booking_id:
@@ -113,3 +123,31 @@ class BookingRepository(BaseRepository[Booking]):
             select(func.sum(Booking.total_price)).where(Booking.status == BookingStatus.confirmed)
         )
         return result.scalar_one() or 0.0
+
+    async def acquire_booking_lock(self, tour_id: int, travel_date: date) -> None:
+        """Acquire a PostgreSQL advisory lock to serialize bookings for the same tour+date.
+        Uses SHA-256 for a deterministic key across all pods — Python hash() is randomized
+        per-process via PYTHONHASHSEED and must never be used for cross-pod coordination.
+        """
+        lock_key = int(
+            hashlib.sha256(f"booking:{tour_id}:{travel_date}".encode()).hexdigest(), 16
+        ) % (2**31)
+        await self.db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_key})
+
+    async def get_for_update(self, id: int) -> Optional[Booking]:
+        """SELECT ... FOR UPDATE to prevent concurrent modifications."""
+        result = await self.db.execute(
+            self._eager(select(Booking).where(Booking.id == id).with_for_update())
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_tracking_id_for_update(self, tracking_id: str) -> Optional[Booking]:
+        """SELECT ... FOR UPDATE by Pesapal tracking ID."""
+        result = await self.db.execute(
+            self._eager(
+                select(Booking).where(
+                    Booking.pesapal_order_tracking_id == tracking_id
+                ).with_for_update()
+            )
+        )
+        return result.scalar_one_or_none()

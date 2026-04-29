@@ -1,3 +1,4 @@
+import asyncio
 import io
 import uuid
 from pathlib import Path
@@ -49,9 +50,11 @@ class RouteService:
 
     async def delete_route(self, route_id: int) -> None:
         route = await self.get_route(route_id)
-        for img in (route.images or []):
-            await self._delete_file(img.url, img.public_id)
+        image_refs = [(img.url, img.public_id) for img in (route.images or [])]
         await self.repository.delete(route)
+        # Best-effort cloud cleanup after DB delete
+        for url, public_id in image_refs:
+            await self._delete_file(url, public_id)
 
     # ── Image management ────────────────────────────────────────────────────
     async def upload_image(self, route_id: int, file: UploadFile,
@@ -74,13 +77,15 @@ class RouteService:
             if public_id:
                 if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY:
                     import cloudinary.uploader
-                    cloudinary.uploader.destroy(public_id)
+                    await asyncio.to_thread(cloudinary.uploader.destroy, public_id)
                 elif settings.AWS_BUCKET_NAME and settings.AWS_ACCESS_KEY_ID:
                     import boto3
                     s3 = boto3.client("s3", aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                                       aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
                                       region_name=settings.AWS_REGION)
-                    s3.delete_object(Bucket=settings.AWS_BUCKET_NAME, Key=public_id)
+                    await asyncio.to_thread(
+                        s3.delete_object, Bucket=settings.AWS_BUCKET_NAME, Key=public_id
+                    )
             elif url and url.startswith('/uploads/'):
                 parts = url.split('/uploads/', 1)
                 if len(parts) == 2:
@@ -96,8 +101,13 @@ class RouteService:
             cloudinary.config(cloud_name=settings.CLOUDINARY_CLOUD_NAME,
                               api_key=settings.CLOUDINARY_API_KEY,
                               api_secret=settings.CLOUDINARY_API_SECRET)
-            r = cloudinary.uploader.upload(io.BytesIO(contents), folder="karibu_routes",
-                                           overwrite=False)
+
+            def _do_upload():
+                return cloudinary.uploader.upload(
+                    io.BytesIO(contents), folder="karibu_routes", overwrite=False
+                )
+
+            r = await asyncio.to_thread(_do_upload)
             return r["secure_url"], r["public_id"]
         elif settings.AWS_BUCKET_NAME and settings.AWS_ACCESS_KEY_ID:
             import boto3
@@ -105,8 +115,10 @@ class RouteService:
                               aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
                               region_name=settings.AWS_REGION)
             key = f"karibu_routes/{uuid.uuid4()}_{filename}"
-            s3.put_object(Bucket=settings.AWS_BUCKET_NAME, Key=key,
-                          Body=contents, ContentType=content_type)
+            await asyncio.to_thread(
+                s3.put_object, Bucket=settings.AWS_BUCKET_NAME, Key=key,
+                Body=contents, ContentType=content_type
+            )
             return (f"https://{settings.AWS_BUCKET_NAME}.s3.{settings.AWS_REGION}"
                     f".amazonaws.com/{key}"), key
         else:
@@ -122,5 +134,7 @@ class RouteService:
         image = await self.repository.get_image(image_id)
         if not image or image.route_id != route_id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-        await self._delete_file(image.url, image.public_id)
+        url, public_id = image.url, image.public_id
         await self.repository.delete_image(image)
+        # Best-effort cloud cleanup after DB delete
+        await self._delete_file(url, public_id)

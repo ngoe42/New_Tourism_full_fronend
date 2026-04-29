@@ -84,25 +84,29 @@ class MediaService:
         ext = Path(filename).suffix or ".jpg"
         unique_name = f"{uuid.uuid4().hex}{ext}"
         dest = upload_dir / unique_name
-        dest.write_bytes(contents)
+        await asyncio.to_thread(dest.write_bytes, contents)
         return f"/uploads/{unique_name}", None
 
     async def _upload_s3(self, contents: bytes, filename: str, content_type: str) -> tuple[str, str]:
         import boto3
-        import uuid
+        import uuid as _uuid
         s3 = boto3.client(
             "s3",
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             region_name=settings.AWS_REGION,
         )
-        key = f"karibu_safari/{uuid.uuid4()}_{filename}"
-        s3.put_object(
-            Bucket=settings.AWS_BUCKET_NAME,
-            Key=key,
-            Body=contents,
-            ContentType=content_type,
-        )
+        key = f"karibu_safari/{_uuid.uuid4()}_{filename}"
+
+        def _do_upload():
+            s3.put_object(
+                Bucket=settings.AWS_BUCKET_NAME,
+                Key=key,
+                Body=contents,
+                ContentType=content_type,
+            )
+
+        await asyncio.to_thread(_do_upload)
         url = f"https://{settings.AWS_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{key}"
         return url, key
 
@@ -117,7 +121,11 @@ class MediaService:
     async def _delete_from_provider(self, public_id: str) -> None:
         if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY:
             import cloudinary.uploader
-            cloudinary.uploader.destroy(public_id)
+
+            def _do_destroy():
+                cloudinary.uploader.destroy(public_id)
+
+            await asyncio.to_thread(_do_destroy)
         elif settings.AWS_BUCKET_NAME and settings.AWS_ACCESS_KEY_ID:
             import boto3
             s3 = boto3.client(
@@ -126,7 +134,9 @@ class MediaService:
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
                 region_name=settings.AWS_REGION,
             )
-            s3.delete_object(Bucket=settings.AWS_BUCKET_NAME, Key=public_id)
+            await asyncio.to_thread(
+                s3.delete_object, Bucket=settings.AWS_BUCKET_NAME, Key=public_id
+            )
 
     async def delete_file(self, url: Optional[str], public_id: Optional[str] = None) -> None:
         """Best-effort delete a file from storage (local, Cloudinary, or S3)."""

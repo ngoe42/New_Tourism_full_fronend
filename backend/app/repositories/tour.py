@@ -45,11 +45,12 @@ class TourRepository(BaseRepository[Tour]):
         stmt = select(Tour).where(Tour.is_published == True)
 
         if query:
+            q = query.replace("%", "\\%").replace("_", "\\_")
             stmt = stmt.where(
                 or_(
-                    Tour.title.ilike(f"%{query}%"),
-                    Tour.location.ilike(f"%{query}%"),
-                    Tour.description.ilike(f"%{query}%"),
+                    Tour.title.ilike(f"%{q}%"),
+                    Tour.location.ilike(f"%{q}%"),
+                    Tour.description.ilike(f"%{q}%"),
                 )
             )
         if category:

@@ -21,6 +21,8 @@ class DashboardService:
         self.testimonial_repo = TestimonialRepository(db)
 
     async def get_stats(self) -> DashboardStats:
+        # Run sequentially — all repos share a single AsyncSession which is
+        # NOT safe for concurrent use (asyncio.gather would risk InvalidRequestError).
         total_users = await self.user_repo.count()
         total_tours = await self.tour_repo.count()
         total_bookings = await self.booking_repo.count()

@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 import time
 import httpx
@@ -6,6 +7,34 @@ from app.core.config import settings
 
 _TOKEN_CACHE: dict = {}   # keyed by base_url → {"token": str, "expires_at": float}
 _TOKEN_TTL = 240          # cache for 4 min (token is valid 5 min per Pesapal docs)
+
+# Lock to prevent thundering herd on concurrent token refresh
+_token_lock: Optional[asyncio.Lock] = None
+
+# Shared httpx client with connection pooling (created lazily, closed at shutdown)
+_http_client: Optional[httpx.AsyncClient] = None
+
+
+def _get_token_lock() -> asyncio.Lock:
+    global _token_lock
+    if _token_lock is None:
+        _token_lock = asyncio.Lock()
+    return _token_lock
+
+
+def _get_http_client() -> httpx.AsyncClient:
+    global _http_client
+    if _http_client is None or _http_client.is_closed:
+        _http_client = httpx.AsyncClient(timeout=20)
+    return _http_client
+
+
+async def close_http_client() -> None:
+    """Call during application shutdown."""
+    global _http_client
+    if _http_client and not _http_client.is_closed:
+        await _http_client.aclose()
+        _http_client = None
 
 
 class PesapalService:
@@ -28,8 +57,14 @@ class PesapalService:
         if cached and time.monotonic() < cached["expires_at"]:
             return cached["token"]
 
-        url = f"{self.base_url}/api/Auth/RequestToken"
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with _get_token_lock():
+            # Double-check after acquiring lock (another coroutine may have refreshed)
+            cached = _TOKEN_CACHE.get(self.base_url)
+            if cached and time.monotonic() < cached["expires_at"]:
+                return cached["token"]
+
+            url = f"{self.base_url}/api/Auth/RequestToken"
+            client = _get_http_client()
             resp = await client.post(
                 url,
                 json={
@@ -61,17 +96,17 @@ class PesapalService:
         """Register an IPN URL and return the ipn_id."""
         headers = await self._headers()
         url = f"{self.base_url}/api/URLSetup/RegisterIPN"
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.post(
-                url,
-                json={"url": ipn_url, "ipn_notification_type": "GET"},
-                headers=headers,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            ipn_id: str = data["ipn_id"]
-            logger.info(f"Pesapal IPN registered: {ipn_id}")
-            return ipn_id
+        client = _get_http_client()
+        resp = await client.post(
+            url,
+            json={"url": ipn_url, "ipn_notification_type": "GET"},
+            headers=headers,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        ipn_id: str = data["ipn_id"]
+        logger.info(f"Pesapal IPN registered: {ipn_id}")
+        return ipn_id
 
     # ── Submit Order ──────────────────────────────────────────────────
 
@@ -107,16 +142,16 @@ class PesapalService:
                 "last_name": last_name,
             },
         }
-        async with httpx.AsyncClient(timeout=20) as client:
-            resp = await client.post(url, json=payload, headers=headers)
-            resp.raise_for_status()
-            data = resp.json()
-            if data.get("status") not in ("200", 200):
-                raise RuntimeError(f"Pesapal order submission failed: {data}")
-            logger.info(
-                f"Pesapal order submitted — ref={merchant_reference} tracking={data.get('order_tracking_id')}"
-            )
-            return data
+        client = _get_http_client()
+        resp = await client.post(url, json=payload, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
+        if data.get("status") not in ("200", 200):
+            raise RuntimeError(f"Pesapal order submission failed: {data}")
+        logger.info(
+            f"Pesapal order submitted — ref={merchant_reference} tracking={data.get('order_tracking_id')}"
+        )
+        return data
 
     # ── Transaction Status ────────────────────────────────────────────
 
@@ -124,7 +159,7 @@ class PesapalService:
         """Query the current payment status for a tracking ID."""
         headers = await self._headers()
         url = f"{self.base_url}/api/Transactions/GetTransactionStatus"
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(url, params={"orderTrackingId": order_tracking_id}, headers=headers)
-            resp.raise_for_status()
-            return resp.json()
+        client = _get_http_client()
+        resp = await client.get(url, params={"orderTrackingId": order_tracking_id}, headers=headers)
+        resp.raise_for_status()
+        return resp.json()

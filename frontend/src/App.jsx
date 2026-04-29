@@ -36,6 +36,8 @@ import TanzaniaSafariOverview from './pages/TanzaniaSafariOverview'
 import WhatsAppButton from './components/WhatsAppButton'
 import PaymentCallback from './pages/PaymentCallback'
 import PaymentResume from './pages/PaymentResume'
+import ErrorBoundary from './components/ErrorBoundary'
+import NotFound from './pages/NotFound'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -103,6 +105,9 @@ function AppRoutes() {
           <Route path="roles" element={<RequireSuperAdmin><AdminRoles /></RequireSuperAdmin>} />
           <Route path="profile" element={<AdminProfile />} />
         </Route>
+
+        {/* 404 catch-all */}
+        <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
       </Routes>
     </>
   )
@@ -113,7 +118,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
-          <AppRoutes />
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
         </AuthProvider>
       </Router>
     </QueryClientProvider>

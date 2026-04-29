@@ -133,6 +133,7 @@ async def update_user(user_id: int, data: AdminUserUpdate, db: AsyncSession = De
 @router.delete(
     "/users/{user_id}",
     status_code=204,
+    dependencies=[Depends(require_admin)],
 )
 async def delete_user(
     user_id: int,

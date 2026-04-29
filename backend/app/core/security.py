@@ -16,19 +16,19 @@ def get_password_hash(password: str) -> str:
 
 
 def create_access_token(subject: Any, expires_delta: Optional[timedelta] = None) -> str:
+    now = datetime.now(timezone.utc)
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = now + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-    payload = {"sub": str(subject), "exp": expire, "type": "access"}
+        expire = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload = {"sub": str(subject), "exp": expire, "iat": now, "type": "access"}
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def create_refresh_token(subject: Any) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    payload = {"sub": str(subject), "exp": expire, "type": "refresh"}
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    payload = {"sub": str(subject), "exp": expire, "iat": now, "type": "refresh"}
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -41,8 +41,9 @@ def decode_token(token: str) -> Optional[dict]:
 
 
 def create_password_reset_token(user_id: int) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(hours=1)
-    payload = {"sub": str(user_id), "exp": expire, "type": "password_reset"}
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(hours=1)
+    payload = {"sub": str(user_id), "exp": expire, "iat": now, "type": "password_reset"}
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 

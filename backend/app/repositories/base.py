@@ -31,7 +31,7 @@ class BaseRepository(Generic[ModelType]):
 
     async def update(self, obj: ModelType, data: dict) -> ModelType:
         for key, value in data.items():
-            if value is not None and hasattr(obj, key):
+            if hasattr(obj, key):
                 setattr(obj, key, value)
         await self.db.flush()
         await self.db.refresh(obj)

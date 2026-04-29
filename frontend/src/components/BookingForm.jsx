@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Users, Mail, Phone, MessageSquare, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
@@ -24,6 +24,16 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
   const [paymentUrl, setPaymentUrl] = useState(null)
   const [bookingRef, setBookingRef] = useState(null)
 
+  useEffect(() => {
+    if (user) {
+      setForm((prev) => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        email: prev.email || user.email || '',
+      }))
+    }
+  }, [user])
+
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
@@ -47,13 +57,7 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
         setBookingRef(booking.id)
         sessionStorage.setItem('lastBookingId', booking.id)
         sessionStorage.setItem('lastBookingEmail', form.email)
-        const hasPaymentUrl = !!(booking.payment_redirect_url)
-        if (!hasPaymentUrl) {
-          try {
-            await bookingsApi.initiatePayment(booking.id)
-          } catch {}
-        }
-        setPaymentUrl(hasPaymentUrl ? booking.payment_redirect_url : null)
+        setPaymentUrl(booking.payment_redirect_url || null)
         setStatus('success')
       } else {
         const inquiryPayload = {

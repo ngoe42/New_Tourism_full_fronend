@@ -115,7 +115,7 @@ export default function PaymentCallback() {
       setBookingId(id)
       setResendRef(`NTS-${id}`)
     }
-    if (storedEmail && !resendEmail) setResendEmail(storedEmail)
+    if (storedEmail) setResendEmail((prev) => prev || storedEmail)
 
     async function initialCheck() {
       if (!merchantReference && !orderTrackingId && !id) {
@@ -133,7 +133,8 @@ export default function PaymentCallback() {
 
     initialCheck()
     return () => { clearTimeout(pollTimer.current); clearInterval(countdownTimer.current) }
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merchantReference, orderTrackingId])
 
   const schedulePoll = (id, count) => {
     if (count > MAX_POLLS) return

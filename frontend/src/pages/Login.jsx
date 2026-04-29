@@ -125,7 +125,7 @@ export default function Login() {
         </div>
 
         <p className="font-sans text-xs text-center text-gray-400 mt-4">
-          Admin credentials: <span className="font-semibold">admin@nelsontoursandsafari.com</span>
+          Secure login · Nelson Tours &amp; Safari
         </p>
       </motion.div>
     </div>

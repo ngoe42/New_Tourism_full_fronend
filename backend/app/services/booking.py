@@ -1,9 +1,14 @@
+import asyncio
 import re
 import uuid
+from typing import Set
 
 from fastapi import HTTPException, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
+
+# Track background tasks to prevent silent GC and lost exceptions
+_background_tasks: Set[asyncio.Task] = set()
 
 from app.core.config import settings
 from app.models.booking import Booking, BookingStatus
@@ -11,7 +16,7 @@ from app.models.user import User
 from app.repositories.booking import BookingRepository
 from app.repositories.tour import TourRepository
 from app.schemas.booking import BookingCreate, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
-from app.services.email_service import send_email, send_booking_admin_notification
+from app.services.email_service import send_email, send_booking_admin_notification, send_payment_success_email
 from app.services.pesapal import PesapalService
 
 
@@ -22,7 +27,7 @@ def _parse_duration_days(duration: str) -> int:
 
 
 async def send_booking_confirmation_email(
-    booking: "Booking",
+    booking_id: int,
     tour_title: str,
     contact_name: str,
     contact_email: str,
@@ -35,7 +40,7 @@ async def send_booking_confirmation_email(
     tour_included: list | None = None,
 ) -> None:
     """Send booking confirmation email. Re-usable from create_booking & initiate_payment."""
-    logger.info(f"[email] Preparing booking confirmation for #{booking.id} → {contact_email}")
+    logger.info(f"[email] Preparing booking confirmation for #{booking_id} → {contact_email}")
     try:
         name = contact_name.split()[0]
 
@@ -70,7 +75,7 @@ async def send_booking_confirmation_email(
             f"Your booking request has been received. {payment_instruction}\n\n"
             f"Booking Summary\n"
             f"{'=' * 40}\n"
-            f"Booking Reference : #{booking.id}\n"
+            f"Booking Reference : #{booking_id}\n"
             f"Tour              : {tour_title}\n"
             + location_line
             + duration_line
@@ -93,7 +98,50 @@ async def send_booking_confirmation_email(
             include_terms=True,
         )
     except Exception as exc:
-        logger.error(f"[email] Booking confirmation FAILED for #{booking.id}: {type(exc).__name__}: {exc}")
+        logger.error(f"[email] Booking confirmation FAILED for #{booking_id}: {type(exc).__name__}: {exc}")
+
+
+async def _send_booking_emails_background(
+    booking_id: int,
+    tour_title: str,
+    contact_name: str,
+    contact_email: str,
+    contact_phone: str | None,
+    travel_date,
+    guests: int,
+    total_price: float,
+    payment_link: str | None,
+    tour_location: str = "",
+    tour_duration: str = "",
+    tour_included: list | None = None,
+) -> None:
+    """Background task: send confirmation + admin notification emails."""
+    await send_booking_confirmation_email(
+        booking_id=booking_id,
+        tour_title=tour_title,
+        contact_name=contact_name,
+        contact_email=contact_email,
+        travel_date=travel_date,
+        guests=guests,
+        total_price=total_price,
+        payment_link=payment_link,
+        tour_location=tour_location,
+        tour_duration=tour_duration,
+        tour_included=tour_included,
+    )
+    try:
+        await send_booking_admin_notification(
+            booking_id=booking_id,
+            tour_title=tour_title,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            travel_date=travel_date,
+            guests=guests,
+            total_price=total_price,
+        )
+    except Exception as exc:
+        logger.error(f"Admin booking notification failed for #{booking_id}: {exc}")
 
 
 class BookingService:
@@ -106,6 +154,9 @@ class BookingService:
         tour = await self.tour_repo.get(data.tour_id)
         if not tour or not tour.is_published:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tour not found")
+
+        # Serialize concurrent bookings for the same tour+date to prevent double-booking
+        await self.booking_repo.acquire_booking_lock(data.tour_id, data.travel_date)
 
         duration_days = _parse_duration_days(tour.duration)
         if await self.booking_repo.has_confirmed_overlap(tour.id, data.travel_date, duration_days):
@@ -162,31 +213,20 @@ class BookingService:
             except Exception as exc:
                 logger.error(f"Pesapal init failed for booking #{booking.id}: {exc}")
 
-        # Always send confirmation email immediately after booking is created.
-        # If Pesapal succeeded, payment_link contains the redirect URL.
-        # If Pesapal failed or is not configured, payment_link is None and
-        # send_booking_confirmation_email will fall back to a contact link.
+        # Commit before sending emails so the booking is persisted even if
+        # email delivery fails, and the frontend never receives a booking ID
+        # that doesn't exist in the database.
+        await self.db.commit()
+
+        # Fire-and-forget email tasks so the user isn't blocked by SendGrid latency.
         email_payment_link = (
             f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
             if payment_link else None
         )
-        logger.info(f"Booking #{booking.id} created — sending confirmation to {data.contact_email} (payment_link={'set' if payment_link else 'none'})")
-        await send_booking_confirmation_email(
-            booking=booking,
-            tour_title=tour.title,
-            contact_name=data.contact_name,
-            contact_email=data.contact_email,
-            travel_date=data.travel_date,
-            guests=data.guests,
-            total_price=total_price,
-            payment_link=email_payment_link,
-            tour_location=tour.location or "",
-            tour_duration=tour.duration or "",
-            tour_included=tour.included or [],
-        )
+        logger.info(f"Booking #{booking.id} created — queueing emails for {data.contact_email} (payment_link={'set' if payment_link else 'none'})")
 
-        try:
-            await send_booking_admin_notification(
+        task = asyncio.create_task(
+            _send_booking_emails_background(
                 booking_id=booking.id,
                 tour_title=tour.title,
                 contact_name=data.contact_name,
@@ -195,9 +235,14 @@ class BookingService:
                 travel_date=data.travel_date,
                 guests=data.guests,
                 total_price=total_price,
+                payment_link=email_payment_link,
+                tour_location=tour.location or "",
+                tour_duration=tour.duration or "",
+                tour_included=tour.included or [],
             )
-        except Exception as exc:
-            logger.error(f"Admin booking notification failed for #{booking.id}: {exc}")
+        )
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
         return booking
 
@@ -233,20 +278,65 @@ class BookingService:
             pages=max(1, -(-total // per_page)),
         )
 
+    # Valid booking status transitions
+    _VALID_TRANSITIONS: dict[BookingStatus, set[BookingStatus]] = {
+        BookingStatus.pending: {BookingStatus.confirmed, BookingStatus.cancelled},
+        BookingStatus.confirmed: {BookingStatus.completed, BookingStatus.cancelled},
+        BookingStatus.cancelled: {BookingStatus.pending},
+        BookingStatus.completed: set(),
+    }
+
     async def update_status(self, booking_id: int, data: BookingStatusUpdate) -> Booking:
         booking = await self.booking_repo.get(booking_id)
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+        allowed = self._VALID_TRANSITIONS.get(booking.status, set())
+        if data.status not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot transition from '{booking.status.value}' to '{data.status.value}'",
+            )
+        was_pending = booking.status != BookingStatus.confirmed
         update_data = {"status": data.status}
         if data.notes:
             update_data["notes"] = data.notes
-        return await self.booking_repo.update(booking, update_data)
+        updated = await self.booking_repo.update(booking, update_data)
+        # Notify customer when admin manually confirms (bank transfer, etc.)
+        if data.status == BookingStatus.confirmed and was_pending:
+            tour = updated.tour
+            task = asyncio.create_task(send_payment_success_email(
+                booking_id=updated.id,
+                tour_title=tour.title if tour else f"Booking #{updated.id}",
+                contact_name=updated.contact_name,
+                contact_email=updated.contact_email,
+                travel_date=updated.travel_date,
+                guests=updated.guests,
+                total_price=updated.total_price,
+                transaction_id=updated.pesapal_order_tracking_id or "Admin-Confirmed",
+            ))
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
+        return updated
 
     async def admin_update(self, booking_id: int, data: BookingAdminUpdate) -> Booking:
         booking = await self.booking_repo.get(booking_id)
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        # Guard: financial and date fields must not be mutated on a completed booking
+        # to preserve payment audit accuracy.
+        if booking.status == BookingStatus.completed:
+            protected = {"guests", "total_price", "travel_date"} & set(update_data)
+            if protected:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot modify {sorted(protected)} on a completed booking",
+                )
+        # Recalculate total_price when guests change without an explicit new price
+        if "guests" in update_data and "total_price" not in update_data:
+            tour = await self.tour_repo.get(booking.tour_id)
+            if tour:
+                update_data["total_price"] = tour.price * update_data["guests"]
         return await self.booking_repo.update(booking, update_data)
 
     async def delete_booking(self, booking_id: int) -> None:

@@ -10,6 +10,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/karibu_safari
       - DATABASE_URL_SYNC=postgresql://postgres:password@db:5432/karibu_safari
       - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=development
     env_file:
       - .env
     depends_on:

@@ -182,4 +182,4 @@ Browser → Frontend (Railway)
 - Docker maps the API container (port 8000) to **host port 8002**
 - Vite proxy (`vite.config.js`) forwards `/api/v1` → `http://localhost:8002`
 - `public/config.js` must stay as `window.APP_CONFIG = {}` (no API_URL set) so the proxy is used
-- With `DEBUG=true` in `backend/.env`, the backend allows all CORS origins (`*`) automatically
+- With `ENVIRONMENT=development` (set in `docker-compose.yml`), the backend allows all CORS origins (`*`) automatically. On Railway, `ENVIRONMENT=production` restricts CORS to `ALLOWED_ORIGINS` only.

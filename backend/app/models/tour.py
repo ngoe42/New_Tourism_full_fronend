@@ -39,15 +39,15 @@ class Tour(Base):
     images: Mapped[list["TourImage"]] = relationship(
         "TourImage", back_populates="tour", cascade="all, delete-orphan", lazy="selectin"
     )
-    bookings: Mapped[list["Booking"]] = relationship("Booking", back_populates="tour", lazy="selectin", passive_deletes=True)
-    testimonials: Mapped[list["Testimonial"]] = relationship("Testimonial", back_populates="tour", lazy="selectin", passive_deletes=True)
+    bookings: Mapped[list["Booking"]] = relationship("Booking", back_populates="tour", lazy="noload", passive_deletes=True)
+    testimonials: Mapped[list["Testimonial"]] = relationship("Testimonial", back_populates="tour", lazy="noload", passive_deletes=True)
 
 
 class TourImage(Base):
     __tablename__ = "tour_images"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    tour_id: Mapped[int] = mapped_column(ForeignKey("tours.id", ondelete="CASCADE"), nullable=False)
+    tour_id: Mapped[int] = mapped_column(ForeignKey("tours.id", ondelete="CASCADE"), nullable=False, index=True)
     url: Mapped[str] = mapped_column(String(1000), nullable=False)
     public_id: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_cover: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

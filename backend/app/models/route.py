@@ -49,7 +49,7 @@ class RouteImage(Base):
     __tablename__ = "route_images"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    route_id: Mapped[int] = mapped_column(ForeignKey("routes.id", ondelete="CASCADE"), nullable=False)
+    route_id: Mapped[int] = mapped_column(ForeignKey("routes.id", ondelete="CASCADE"), nullable=False, index=True)
     url: Mapped[str] = mapped_column(String(1000), nullable=False)
     public_id: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     caption: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

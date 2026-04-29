@@ -1,11 +1,12 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.limiter import limiter
 from app.dependencies.auth import get_current_user_optional, get_current_user
 from app.models.user import User
 from app.services.payment import PaymentService
@@ -69,6 +70,7 @@ async def register_ipn(
 @router.get("/status/{booking_id}")
 async def payment_status(
     booking_id: int,
+    token: str | None = Query(None, description="Booking access token for anonymous users"),
     current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
@@ -80,6 +82,7 @@ async def payment_status(
 @router.get("/link/{booking_id}")
 async def get_payment_link(
     booking_id: int,
+    current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
     """Return a FRESH Pesapal redirect URL for the resume page.
@@ -91,6 +94,14 @@ async def get_payment_link(
     booking = await repo.get(booking_id)
     if not booking:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+
+    # Ownership check: must be the booking owner, an admin, or an
+    # anonymous booking (user_id is NULL, e.g. guest checkout)
+    if booking.user_id is not None:
+        if not current_user or (
+            booking.user_id != current_user.id and current_user.role.value != "admin"
+        ):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     tour_title = booking.tour.title if booking.tour else f"Booking #{booking.id}"
 
@@ -107,7 +118,7 @@ async def get_payment_link(
     # Try to generate a fresh Pesapal URL
     service = PaymentService(db)
     try:
-        result = await service.initiate_payment(booking_id, user=None)
+        result = await service.initiate_payment(booking_id, user=current_user)
         return {
             "booking_id": booking.id,
             "redirect_url": result["redirect_url"],
@@ -132,7 +143,9 @@ async def get_payment_link(
 
 
 @router.post("/resend-link")
+@limiter.limit("3/hour")
 async def resend_payment_link(
+    request: Request,
     data: ResendLinkRequest,
     db: AsyncSession = Depends(get_db),
 ):

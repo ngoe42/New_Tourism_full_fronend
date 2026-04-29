@@ -48,6 +48,8 @@ async def lifespan(app: FastAPI):
     seed_task = getattr(app.state, "admin_seed_task", None)
     if seed_task and not seed_task.done():
         seed_task.cancel()
+    from app.services.pesapal import close_http_client
+    await close_http_client()
     await close_redis()
     logger.info("Shutting down...")
 
@@ -124,6 +126,23 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    import uuid as _uuid
+    request_id = request.headers.get("X-Request-ID", _uuid.uuid4().hex[:12])
+    with logger.contextualize(request_id=request_id):
+        response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if not request.url.path.startswith("/api/v1/payments"):
+        response.headers["X-Frame-Options"] = "DENY"
+    return response
+
+
 # Global exception handler to ensure CORS headers on all errors
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -138,9 +157,14 @@ async def global_exception_handler(request: Request, exc: Exception):
         },
     )
 
+_cors_origins = (
+    ["*"]
+    if settings.ENVIRONMENT != "production"
+    else [o.strip() for o in (settings.ALLOWED_ORIGINS or "").split(",") if o.strip()] or ["*"]
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -157,6 +181,7 @@ app.mount("/uploads", CachedStaticFiles(directory=str(_uploads_dir)), name="uplo
 @app.get("/health", tags=["Health"])
 async def health_check():
     from app.core.cache import _redis
+    from app.core.database import AsyncSessionLocal
     redis_status = "disabled"
     if _redis is not None:
         try:
@@ -164,9 +189,19 @@ async def health_check():
             redis_status = "connected"
         except Exception:
             redis_status = "error"
+    db_status = "unknown"
+    try:
+        async with AsyncSessionLocal() as session:
+            from sqlalchemy import text
+            await session.execute(text("SELECT 1"))
+            db_status = "connected"
+    except Exception:
+        db_status = "error"
+    overall = "ok" if db_status == "connected" else "degraded"
     return {
-        "status": "ok",
+        "status": overall,
         "version": settings.APP_VERSION,
         "app": settings.APP_NAME,
         "redis": redis_status,
+        "database": db_status,
     }
