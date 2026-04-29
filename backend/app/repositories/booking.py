@@ -122,7 +122,7 @@ class BookingRepository(BaseRepository[Booking]):
         result = await self.db.execute(
             select(func.sum(Booking.total_price)).where(Booking.status == BookingStatus.confirmed)
         )
-        return result.scalar_one() or 0.0
+        return float(result.scalar_one() or 0)
 
     async def acquire_booking_lock(self, tour_id: int, travel_date: date) -> None:
         """Acquire a PostgreSQL advisory lock to serialize bookings for the same tour+date.
@@ -151,3 +151,40 @@ class BookingRepository(BaseRepository[Booking]):
             )
         )
         return result.scalar_one_or_none()
+
+    async def expire_abandoned(self) -> int:
+        """Cancel pending bookings that have been abandoned.
+
+        • No payment URL (link never generated): expire after 2 h.
+        • Has payment URL (checkout started but abandoned): expire after 24 h.
+
+        Returns the number of bookings expired.
+        """
+        now = datetime.now(timezone.utc)
+        cutoff_no_link = now - timedelta(hours=2)
+        cutoff_with_link = now - timedelta(hours=24)
+        stmt = (
+            select(Booking)
+            .where(
+                Booking.status == BookingStatus.pending,
+                or_(
+                    and_(
+                        Booking.payment_redirect_url.is_(None),
+                        Booking.created_at < cutoff_no_link,
+                    ),
+                    and_(
+                        Booking.payment_redirect_url.isnot(None),
+                        Booking.created_at < cutoff_with_link,
+                    ),
+                ),
+            )
+        )
+        result = await self.db.execute(stmt)
+        bookings = list(result.scalars().all())
+        count = 0
+        for b in bookings:
+            b.status = BookingStatus.cancelled
+            count += 1
+        if count:
+            await self.db.flush()
+        return count

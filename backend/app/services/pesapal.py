@@ -25,7 +25,9 @@ def _get_token_lock() -> asyncio.Lock:
 def _get_http_client() -> httpx.AsyncClient:
     global _http_client
     if _http_client is None or _http_client.is_closed:
-        _http_client = httpx.AsyncClient(timeout=20)
+        _http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(connect=5.0, read=15.0, write=5.0, pool=2.0)
+        )
     return _http_client
 
 
@@ -130,7 +132,7 @@ class PesapalService:
         payload = {
             "id": merchant_reference,
             "currency": currency,
-            "amount": round(amount, 2),
+            "amount": round(float(amount), 2),
             "description": description,
             "callback_url": callback_url,
             "notification_id": ipn_id,

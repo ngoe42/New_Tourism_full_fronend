@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.cache import cache_get, cache_set, cache_delete, cache_delete_pattern, TTL_SHORT, TTL_MEDIUM
-from app.dependencies.auth import get_current_user, require_admin
+from app.dependencies.auth import get_current_user, get_current_user_optional, require_admin
 from app.models.user import User
 from app.schemas.tour import TourCreate, TourUpdate, TourResponse, TourListResponse, TourImageResponse, PaginatedTours
 from app.services.tour import TourService
@@ -31,10 +31,11 @@ async def list_tours(
     category: Optional[str] = Query(None),
     min_price: Optional[float] = Query(None, ge=0),
     max_price: Optional[float] = Query(None, ge=0),
-    admin: bool = Query(False),
     db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(get_current_user_optional),
 ):
-    raw = f"{page}:{per_page}:{q}:{category}:{min_price}:{max_price}:{admin}"
+    is_admin = current_user is not None and current_user.role.value == "admin"
+    raw = f"{page}:{per_page}:{q}:{category}:{min_price}:{max_price}:{is_admin}"
     cache_key = "tours:list:" + hashlib.md5(raw.encode()).hexdigest()
     cached = await cache_get(cache_key)
     if cached is not None:
@@ -43,7 +44,7 @@ async def list_tours(
     data = await service.list_tours(
         page=page, per_page=per_page, query=q,
         category=category, min_price=min_price, max_price=max_price,
-        admin=admin,
+        admin=is_admin,
     )
     await cache_set(cache_key, jsonable_encoder(data), TTL_SHORT)
     return data

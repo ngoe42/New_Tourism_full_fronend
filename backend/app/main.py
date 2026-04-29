@@ -39,6 +39,7 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("[payment] PESAPAL_CONSUMER_KEY/SECRET not set — payment initiation will fail!")
     app.state.admin_seed_task = asyncio.create_task(_seed_admin_background())
+    app.state.booking_expiry_task = asyncio.create_task(_booking_expiry_loop())
     await init_redis()
     from app.core.cache import cache_delete_pattern
     for pattern in ("tours:*", "tour:*", "routes:*", "route:*", "experiences:*", "experience:*", "settings:*"):
@@ -48,6 +49,9 @@ async def lifespan(app: FastAPI):
     seed_task = getattr(app.state, "admin_seed_task", None)
     if seed_task and not seed_task.done():
         seed_task.cancel()
+    expiry_task = getattr(app.state, "booking_expiry_task", None)
+    if expiry_task and not expiry_task.done():
+        expiry_task.cancel()
     from app.services.pesapal import close_http_client
     await close_http_client()
     await close_redis()
@@ -112,6 +116,26 @@ async def _seed_admin_background():
         logger.exception("Admin seeding failed during startup; continuing so the app can serve health checks")
 
 
+_EXPIRY_INTERVAL_SECONDS = 900  # run every 15 minutes
+
+
+async def _booking_expiry_loop() -> None:
+    """Background task: periodically cancel abandoned pending bookings."""
+    from app.core.database import AsyncSessionLocal
+    from app.repositories.booking import BookingRepository
+    while True:
+        await asyncio.sleep(_EXPIRY_INTERVAL_SECONDS)
+        try:
+            async with AsyncSessionLocal() as db:
+                repo = BookingRepository(db)
+                count = await repo.expire_abandoned()
+                await db.commit()
+                if count:
+                    logger.info(f"[expiry] Cancelled {count} abandoned pending booking(s)")
+        except Exception:
+            logger.exception("[expiry] Booking expiry loop error — will retry next interval")
+
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -143,25 +167,22 @@ async def security_headers_middleware(request: Request, call_next):
     return response
 
 
-# Global exception handler to ensure CORS headers on all errors
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.exception(f"Unhandled exception on {request.method} {request.url.path}: {exc}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "*",
-            "Access-Control-Allow-Headers": "*",
-        },
-    )
+# Compute allowed origins once so both the CORS middleware and the exception
+# handler (which runs outside the middleware stack) use the same policy.
+if settings.ENVIRONMENT == "production":
+    _cors_origins = [
+        o.strip()
+        for o in (settings.ALLOWED_ORIGINS or "").split(",")
+        if o.strip()
+    ]
+    if not _cors_origins:
+        logger.critical(
+            "ALLOWED_ORIGINS is not set — CORS will block all cross-origin requests "
+            "in production.  Set ALLOWED_ORIGINS to your frontend domain(s)."
+        )
+else:
+    _cors_origins = ["*"]
 
-_cors_origins = (
-    ["*"]
-    if settings.ENVIRONMENT != "production"
-    else [o.strip() for o in (settings.ALLOWED_ORIGINS or "").split(",") if o.strip()] or ["*"]
-)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
@@ -170,6 +191,24 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+
+# Global exception handler to ensure CORS headers on all errors.
+# CORSMiddleware does not run on unhandled 500s, so we add the header here.
+# We reflect the request Origin only when it is explicitly in _cors_origins;
+# a wildcard (*) is never emitted in production to prevent CORS bypass.
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception(f"Unhandled exception on {request.method} {request.url.path}: {exc}")
+    origin = request.headers.get("origin", "")
+    response_headers: dict = {}
+    if origin and ("*" in _cors_origins or origin in _cors_origins):
+        response_headers["Access-Control-Allow-Origin"] = origin
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+        headers=response_headers,
+    )
 
 app.include_router(api_router)
 

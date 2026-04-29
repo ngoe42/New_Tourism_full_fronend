@@ -12,8 +12,10 @@ _background_tasks: Set[asyncio.Task] = set()
 
 from app.core.config import settings
 from app.models.booking import Booking, BookingStatus
+from app.models.payment_attempt import PaymentAttempt
 from app.models.user import User
 from app.repositories.booking import BookingRepository
+from app.repositories.payment_attempt import PaymentAttemptRepository
 from app.repositories.tour import TourRepository
 from app.schemas.booking import BookingCreate, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
 from app.services.email_service import send_email, send_booking_admin_notification, send_payment_success_email
@@ -149,6 +151,7 @@ class BookingService:
         self.db = db
         self.booking_repo = BookingRepository(db)
         self.tour_repo = TourRepository(db)
+        self.attempt_repo = PaymentAttemptRepository(db)
 
     async def create_booking(self, data: BookingCreate, user: User | None) -> Booking:
         tour = await self.tour_repo.get(data.tour_id)
@@ -167,6 +170,14 @@ class BookingService:
 
         total_price = tour.price * data.guests
 
+        # Snapshot tour scalars needed after the commit.  SQLAlchemy expires all ORM
+        # objects on commit; accessing tour.title etc. afterwards would trigger a
+        # lazy-load that raises MissingGreenlet in async context.
+        tour_title = tour.title
+        tour_location = tour.location or ""
+        tour_duration = tour.duration or ""
+        tour_included = list(tour.included or [])
+
         booking = Booking(
             user_id=user.id if user else None,
             tour_id=data.tour_id,
@@ -181,6 +192,14 @@ class BookingService:
         )
         booking = await self.booking_repo.create(booking)
 
+        # ── First commit: persist booking row and release the advisory lock. ────
+        # pg_advisory_xact_lock is transaction-scoped.  Committing here unblocks
+        # concurrent booking attempts for the same tour+date before we make the
+        # external Pesapal API call (which can hold a DB connection open for up to
+        # 20 s under load, exhausting the connection pool).
+        await self.db.commit()
+        booking_id = booking.id     # capture before the object is expired by commit
+
         payment_link: str | None = None
 
         if settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET:
@@ -189,13 +208,13 @@ class BookingService:
                 ipn_id = settings.PESAPAL_IPN_ID or await pesapal.register_ipn(
                     f"{settings.BACKEND_URL}/api/v1/payments/ipn"
                 )
-                merchant_ref = f"NTS-{booking.id}-{uuid.uuid4().hex[:8].upper()}"
+                merchant_ref = f"NTS-{booking_id}-{uuid.uuid4().hex[:8].upper()}"
                 name_parts = data.contact_name.split(" ", 1)
                 result = await pesapal.submit_order(
                     merchant_reference=merchant_ref,
                     amount=total_price,
                     currency="USD",
-                    description=f"Safari booking #{booking.id} — {tour.title}",
+                    description=f"Safari booking #{booking_id} — {tour_title}",
                     callback_url=f"{settings.FRONTEND_URL}/payment/callback",
                     ipn_id=ipn_id,
                     email=data.contact_email,
@@ -204,31 +223,37 @@ class BookingService:
                     last_name=name_parts[1] if len(name_parts) > 1 else ".",
                 )
                 payment_link = result["redirect_url"]
+                # ── Second commit: persist Pesapal tracking fields + attempt row. ─
+                booking = await self.booking_repo.get(booking_id)
                 await self.booking_repo.update(booking, {
                     "pesapal_order_tracking_id": result["order_tracking_id"],
                     "pesapal_merchant_reference": merchant_ref,
                     "payment_status": "PENDING",
                     "payment_redirect_url": payment_link,
                 })
+                await self.attempt_repo.create(PaymentAttempt(
+                    booking_id=booking_id,
+                    order_tracking_id=result["order_tracking_id"],
+                    merchant_reference=merchant_ref,
+                    redirect_url=payment_link,
+                    status="PENDING",
+                ))
+                await self.db.commit()
             except Exception as exc:
-                logger.error(f"Pesapal init failed for booking #{booking.id}: {exc}")
-
-        # Commit before sending emails so the booking is persisted even if
-        # email delivery fails, and the frontend never receives a booking ID
-        # that doesn't exist in the database.
-        await self.db.commit()
+                logger.error(f"Pesapal init failed for booking #{booking_id}: {exc}")
+                await self.db.rollback()
 
         # Fire-and-forget email tasks so the user isn't blocked by SendGrid latency.
         email_payment_link = (
-            f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
+            f"{settings.FRONTEND_URL}/payment/resume?id={booking_id}"
             if payment_link else None
         )
-        logger.info(f"Booking #{booking.id} created — queueing emails for {data.contact_email} (payment_link={'set' if payment_link else 'none'})")
+        logger.info(f"Booking #{booking_id} created — queueing emails for {data.contact_email} (payment_link={'set' if payment_link else 'none'})")
 
         task = asyncio.create_task(
             _send_booking_emails_background(
-                booking_id=booking.id,
-                tour_title=tour.title,
+                booking_id=booking_id,
+                tour_title=tour_title,
                 contact_name=data.contact_name,
                 contact_email=data.contact_email,
                 contact_phone=data.contact_phone,
@@ -236,15 +261,16 @@ class BookingService:
                 guests=data.guests,
                 total_price=total_price,
                 payment_link=email_payment_link,
-                tour_location=tour.location or "",
-                tour_duration=tour.duration or "",
-                tour_included=tour.included or [],
+                tour_location=tour_location,
+                tour_duration=tour_duration,
+                tour_included=tour_included,
             )
         )
         _background_tasks.add(task)
         task.add_done_callback(_background_tasks.discard)
 
-        return booking
+        # Re-fetch so the returned object is fully loaded and not in an expired state.
+        return await self.booking_repo.get(booking_id)
 
     async def get_booking(self, booking_id: int, user: User) -> Booking:
         booking = await self.booking_repo.get(booking_id)

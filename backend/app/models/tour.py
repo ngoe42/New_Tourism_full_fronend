@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Optional
-from sqlalchemy import String, Text, Float, Integer, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import String, Text, Float, Numeric, Integer, Boolean, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -13,7 +14,7 @@ class Tour(Base):
     slug: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     subtitle: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    price: Mapped[float] = mapped_column(Float, nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     duration: Mapped[str] = mapped_column(String(100), nullable=False)
     location: Mapped[str] = mapped_column(String(255), nullable=False)
     group_size: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)

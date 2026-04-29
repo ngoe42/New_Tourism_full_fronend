@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Users, Mail, Phone, MessageSquare, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
@@ -23,6 +23,7 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
   const navigate = useNavigate()
   const [paymentUrl, setPaymentUrl] = useState(null)
   const [bookingRef, setBookingRef] = useState(null)
+  const submitting = useRef(false)
 
   useEffect(() => {
     if (user) {
@@ -40,6 +41,8 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (submitting.current) return
+    submitting.current = true
     setStatus('loading')
     setErrorMsg('')
     try {
@@ -80,6 +83,8 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
       setErrorMsg(
         err?.response?.data?.detail ?? 'Something went wrong. Please try again or contact us directly.'
       )
+    } finally {
+      submitting.current = false
     }
   }
 

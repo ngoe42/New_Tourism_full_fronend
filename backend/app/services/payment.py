@@ -9,14 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models.booking import Booking, BookingStatus
+from app.models.payment_attempt import PaymentAttempt
 from app.models.user import User
 from app.repositories.booking import BookingRepository
+from app.repositories.payment_attempt import PaymentAttemptRepository
 from app.repositories.tour import TourRepository
 from app.services.booking import send_booking_confirmation_email
-from app.services.email_service import send_payment_success_email
+from app.services.email_service import send_payment_success_email, send_email as _send_email
 from app.services.pesapal import PesapalService
 
 _background_tasks: Set[asyncio.Task] = set()
+_TERMINAL_PAYMENT_STATES = frozenset({"COMPLETED", "FAILED", "INVALID", "REVERSED"})
 
 
 class PaymentService:
@@ -24,6 +27,7 @@ class PaymentService:
         self.db = db
         self.booking_repo = BookingRepository(db)
         self.tour_repo = TourRepository(db)
+        self.attempt_repo = PaymentAttemptRepository(db)
         self.pesapal = PesapalService()
 
     # ── IPN ID ───────────────────────────────────────────────────────
@@ -118,6 +122,13 @@ class PaymentService:
             "payment_status": "PENDING",
             "payment_redirect_url": result["redirect_url"],
         })
+        await self.attempt_repo.create(PaymentAttempt(
+            booking_id=booking.id,
+            order_tracking_id=result["order_tracking_id"],
+            merchant_reference=merchant_reference,
+            redirect_url=result["redirect_url"],
+            status="PENDING",
+        ))
 
         if not email_already_sent:
             tour = booking.tour
@@ -147,32 +158,97 @@ class PaymentService:
 
     # ── IPN Callback ─────────────────────────────────────────────────
 
+    # Compiled pattern for valid NTS merchant references (NTS-{id}-{8 hex chars}).
+    _MERCHANT_REF_RE = re.compile(r"^NTS-(\d+)-[A-F0-9]{8}$", re.IGNORECASE)
+
     async def handle_ipn(
         self,
         order_tracking_id: str,
         merchant_reference: Optional[str] = None,
     ) -> dict:
-        """Handle Pesapal IPN — update booking payment & booking status."""
-        booking = await self.booking_repo.get_by_tracking_id_for_update(order_tracking_id)
-        if not booking and merchant_reference:
-            # Fallback: tracking ID was overwritten by a link refresh.
-            # Extract booking ID from merchant_reference (NTS-{id}-XXXX).
-            match = re.match(r"^NTS-(\d+)-", merchant_reference)
-            if match:
-                booking = await self.booking_repo.get_for_update(int(match.group(1)))
-                if booking:
+        """Handle Pesapal IPN — update booking payment & booking status.
+
+        Transaction discipline
+        ─────────────────────
+        TX-1  Acquire row-level locks; snapshot IDs & contact data; commit so locks
+              are released *before* the outbound Pesapal HTTP call (2–20 s).
+        HTTP  Query Pesapal with no DB lock held.
+        TX-2  Re-acquire locks, write authoritative status, commit.
+        BG    Fire confirmation email as asyncio background task — never blocks.
+        """
+        # ── TX-1 : resolve attempt → booking, snapshot, commit ───────────────
+        attempt = await self.attempt_repo.get_by_tracking_id_for_update(order_tracking_id)
+
+        if not attempt and merchant_reference:
+            if self._MERCHANT_REF_RE.match(merchant_reference.strip()):
+                attempt = await self.attempt_repo.get_by_merchant_reference(
+                    merchant_reference.strip()
+                )
+                if attempt:
                     logger.info(
-                        f"IPN fallback: matched booking #{booking.id} via "
+                        f"IPN fallback: matched attempt #{attempt.id} via "
                         f"merchant_reference {merchant_reference}"
                     )
-                    await self.booking_repo.update(booking, {
-                        "pesapal_order_tracking_id": order_tracking_id,
-                        "pesapal_merchant_reference": merchant_reference,
-                    })
-        if not booking:
-            logger.warning(f"IPN received for unknown tracking ID: {order_tracking_id}")
-            return {"status": "200", "message": "IPN received"}
 
+        use_legacy = False
+        booking_id: Optional[int] = None
+        attempt_merchant_ref: Optional[str] = None
+
+        if attempt:
+            booking_snap = await self.booking_repo.get_for_update(attempt.booking_id)
+            if not booking_snap:
+                logger.warning(
+                    f"IPN: booking #{attempt.booking_id} not found for attempt #{attempt.id}"
+                )
+                await self.db.commit()
+                return {"status": "200", "message": "IPN received"}
+            booking_id = booking_snap.id
+            attempt_merchant_ref = attempt.merchant_reference
+            _tour = booking_snap.tour  # eager-loaded; attributes persist after commit
+            _email_ctx = dict(
+                booking_id=booking_snap.id,
+                tour_title=_tour.title if _tour else f"Booking #{booking_snap.id}",
+                contact_name=booking_snap.contact_name,
+                contact_email=booking_snap.contact_email,
+                travel_date=booking_snap.travel_date,
+                guests=booking_snap.guests,
+                total_price=booking_snap.total_price,
+            )
+        else:
+            # RB-2 — Legacy: booking created before the payment_attempts migration.
+            # Fall back to a direct tracking-ID lookup on the booking row itself.
+            booking_snap = await self.booking_repo.get_by_tracking_id_for_update(
+                order_tracking_id
+            )
+            if not booking_snap:
+                logger.warning(
+                    f"IPN received for unknown tracking_id={order_tracking_id} "
+                    f"merchant_reference={merchant_reference} — no attempt or booking found"
+                )
+                await self.db.commit()
+                return {"status": "200", "message": "IPN received"}
+            logger.info(
+                f"IPN legacy fallback: matched booking #{booking_snap.id} "
+                f"by tracking_id (pre-migration)"
+            )
+            use_legacy = True
+            booking_id = booking_snap.id
+            attempt_merchant_ref = merchant_reference
+            _tour = booking_snap.tour
+            _email_ctx = dict(
+                booking_id=booking_snap.id,
+                tour_title=_tour.title if _tour else f"Booking #{booking_snap.id}",
+                contact_name=booking_snap.contact_name,
+                contact_email=booking_snap.contact_email,
+                travel_date=booking_snap.travel_date,
+                guests=booking_snap.guests,
+                total_price=booking_snap.total_price,
+            )
+
+        # Release all row-level locks BEFORE any outbound network call.
+        await self.db.commit()
+
+        # ── HTTP : query Pesapal — no DB lock held ────────────────────────────
         try:
             status_data = await self.pesapal.get_transaction_status(order_tracking_id)
         except Exception as exc:
@@ -180,37 +256,64 @@ class PaymentService:
             return {"status": "200", "message": "IPN received"}
 
         payment_status = status_data.get("payment_status_description", "").upper()
-        updates: dict = {"payment_status": payment_status}
+
+        # ── TX-2 : re-lock → write ─────────────────────────────────────────────
+        booking = await self.booking_repo.get_for_update(booking_id)
+        if not booking:
+            logger.error(f"IPN TX-2: booking #{booking_id} disappeared between transactions")
+            return {"status": "200", "message": "IPN received"}
+
+        if not use_legacy:
+            attempt = await self.attempt_repo.get_by_tracking_id_for_update(order_tracking_id)
+            if attempt:
+                await self.attempt_repo.update_status(attempt, payment_status)
+
+        is_latest = booking.pesapal_order_tracking_id == order_tracking_id
         already_confirmed = booking.status == BookingStatus.confirmed
+        booking_updates: dict = {}
+        send_confirmation_email = False
 
         if payment_status == "COMPLETED":
-            updates["status"] = BookingStatus.confirmed
-            logger.info(f"Booking #{booking.id} confirmed via Pesapal IPN")
-        elif payment_status in ("FAILED", "INVALID", "REVERSED"):
-            logger.warning(f"Booking #{booking.id} payment {payment_status}")
-
-        await self.booking_repo.update(booking, updates)
-
-        if payment_status == "COMPLETED" and not already_confirmed:
-            tour = booking.tour
-            try:
-                await send_payment_success_email(
-                    booking_id=booking.id,
-                    tour_title=tour.title if tour else f"Booking #{booking.id}",
-                    contact_name=booking.contact_name,
-                    contact_email=booking.contact_email,
-                    travel_date=booking.travel_date,
-                    guests=booking.guests,
-                    total_price=booking.total_price,
-                    transaction_id=order_tracking_id,
+            booking_updates["payment_status"] = payment_status
+            if booking.status == BookingStatus.cancelled:
+                # RB-3 — never silently reactivate a cancelled booking.
+                logger.warning(
+                    f"IPN COMPLETED for cancelled booking #{booking.id} "
+                    f"— not reactivating. Manual review required."
                 )
-            except Exception as exc:
-                logger.error(f"Payment success email failed for booking #{booking.id}: {exc}")
+            elif not already_confirmed:
+                booking_updates["status"] = BookingStatus.confirmed
+                send_confirmation_email = True
+                logger.info(
+                    f"Booking #{booking.id} confirmed via Pesapal IPN "
+                    f"(tracking={order_tracking_id})"
+                )
+        elif is_latest:
+            booking_updates["payment_status"] = payment_status
+            if payment_status in ("FAILED", "INVALID", "REVERSED"):
+                logger.warning(f"Booking #{booking.id} latest payment {payment_status}")
+        else:
+            logger.info(
+                f"IPN for stale attempt (tracking={order_tracking_id}): "
+                f"booking #{booking.id} current={booking.pesapal_order_tracking_id} "
+                f"— not applied"
+            )
+
+        if booking_updates:
+            await self.booking_repo.update(booking, booking_updates)
+
+        # ── BG : email fired after write, no locks held ───────────────────────
+        if send_confirmation_email:
+            _t = asyncio.create_task(
+                send_payment_success_email(**_email_ctx, transaction_id=order_tracking_id)
+            )
+            _background_tasks.add(_t)
+            _t.add_done_callback(_background_tasks.discard)
 
         return {
             "orderNotificationType": "IPNCHANGE",
             "orderTrackingId": order_tracking_id,
-            "orderMerchantReference": merchant_reference or booking.pesapal_merchant_reference,
+            "orderMerchantReference": attempt_merchant_ref or merchant_reference,
             "status": "200",
         }
 
@@ -252,9 +355,8 @@ class PaymentService:
             if age < timedelta(minutes=5):
                 tour = booking.tour
                 tour_title = tour.title if tour else f"Booking #{booking.id}"
-                from app.services.email_service import send_email as _send
                 first = booking.contact_name.split()[0]
-                await _send(
+                _email_kw = dict(
                     to=booking.contact_email,
                     subject=f"Your Payment Link — {tour_title} | Nelson Tours & Safari",
                     body=(
@@ -267,7 +369,12 @@ class PaymentService:
                     payment_link=f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}",
                     btn_label="Complete Payment",
                 )
-                logger.info(f"resend-link: existing fresh link resent for booking #{booking.id} to {email}")
+                _log_id = booking.id
+                await self.db.commit()  # release FOR UPDATE lock before I/O
+                _t = asyncio.create_task(_send_email(**_email_kw))
+                _background_tasks.add(_t)
+                _t.add_done_callback(_background_tasks.discard)
+                logger.info(f"resend-link: existing fresh link resent for booking #{_log_id} to {email}")
                 return
 
         tour = booking.tour
@@ -297,11 +404,17 @@ class PaymentService:
                 "payment_status": "PENDING",
                 "payment_redirect_url": payment_link,
             })
+            await self.attempt_repo.create(PaymentAttempt(
+                booking_id=booking.id,
+                order_tracking_id=result["order_tracking_id"],
+                merchant_reference=merchant_ref,
+                redirect_url=payment_link,
+                status="PENDING",
+            ))
         except Exception as exc:
             logger.error(f"resend-link: Pesapal order failed for booking #{booking.id}: {exc}")
             return
 
-        from app.services.email_service import send_email
         first = booking.contact_name.split()[0]
         body = (
             f"Dear {first},\n\n"
@@ -311,7 +424,7 @@ class PaymentService:
             f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
         )
         resume_link = f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
-        await send_email(
+        _email_kw = dict(
             to=booking.contact_email,
             subject=f"Your Payment Link — {tour_title} | Nelson Tours & Safari",
             body=body,
@@ -320,16 +433,21 @@ class PaymentService:
             payment_link=resume_link,
             btn_label="Complete Payment",
         )
-        logger.info(f"resend-link: payment link resent for booking #{booking.id} to {email}")
+        _log_id = booking.id
+        await self.db.commit()  # release FOR UPDATE lock before I/O
+        _t = asyncio.create_task(_send_email(**_email_kw))
+        _background_tasks.add(_t)
+        _t.add_done_callback(_background_tasks.discard)
+        logger.info(f"resend-link: payment link resent for booking #{_log_id} to {email}")
 
     # ── Poll Status ──────────────────────────────────────────────────
 
     async def get_payment_status(self, booking_id: int, user: User | None) -> dict:
         """Poll Pesapal for latest payment status and sync to booking.
-        Uses a plain read for the initial fetch so the FOR UPDATE lock is never held
-        during the external Pesapal HTTP call (2-5 s) — which would block IPN processing
-        and risk Pesapal IPN timeouts.  The lock is acquired only when a confirmed status
-        transition actually needs to be written.
+
+        Short-circuits for terminal states to avoid hammering Pesapal and writing
+        unchanged status on every frontend poll.  Acquires a write lock only when
+        a confirmed status transition actually needs to be written.
         """
         booking = await self.booking_repo.get(booking_id)   # plain read — no lock
         if not booking:
@@ -345,16 +463,36 @@ class PaymentService:
                 "booking_id": booking.id,
             }
 
-        payment_status = booking.payment_status or "UNKNOWN"
+        current_status = booking.payment_status or "UNKNOWN"
+
+        # Short-circuit: terminal failure states never change — skip HTTP + DB entirely.
+        if current_status in ("FAILED", "INVALID", "REVERSED"):
+            return {
+                "payment_status": current_status,
+                "booking_status": booking.status,
+                "booking_id": booking.id,
+                "order_tracking_id": booking.pesapal_order_tracking_id,
+                "redirect_url": booking.payment_redirect_url,
+            }
+        # Short-circuit: fully confirmed — nothing left to do.
+        if current_status == "COMPLETED" and booking.status == BookingStatus.confirmed:
+            return {
+                "payment_status": current_status,
+                "booking_status": booking.status,
+                "booking_id": booking.id,
+                "order_tracking_id": booking.pesapal_order_tracking_id,
+                "redirect_url": booking.payment_redirect_url,
+            }
+
+        payment_status = current_status
         try:
             status_data = await self.pesapal.get_transaction_status(
                 booking.pesapal_order_tracking_id
             )   # external call — no DB lock held here
             payment_status = status_data.get("payment_status_description", "UNKNOWN").upper()
-            already_confirmed = booking.status == BookingStatus.confirmed
 
-            if payment_status == "COMPLETED" and not already_confirmed:
-                # Acquire lock only for the write, then re-check to avoid duplicate emails
+            if payment_status == "COMPLETED" and booking.status != BookingStatus.confirmed:
+                # Acquire lock only for the write; re-check to avoid duplicate emails.
                 locked = await self.booking_repo.get_for_update(booking_id)
                 if locked and locked.status != BookingStatus.confirmed:
                     await self.booking_repo.update(locked, {
@@ -374,9 +512,8 @@ class PaymentService:
                     ))
                     _background_tasks.add(_s)
                     _s.add_done_callback(_background_tasks.discard)
-                else:
-                    await self.booking_repo.update(booking, {"payment_status": payment_status})
-            else:
+            elif payment_status != current_status:
+                # Only write if status actually changed — avoids constant flush storm.
                 await self.booking_repo.update(booking, {"payment_status": payment_status})
 
         except Exception as exc:

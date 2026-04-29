@@ -32,12 +32,16 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    from datetime import datetime, timezone
     from app.core.security import verify_password
     from fastapi import HTTPException, status
     if not verify_password(data.current_password, current_user.hashed_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
     repo = UserRepository(db)
-    return await repo.update(current_user, {"hashed_password": get_password_hash(data.new_password)})
+    return await repo.update(current_user, {
+        "hashed_password": get_password_hash(data.new_password),
+        "password_changed_at": datetime.now(timezone.utc),
+    })
 
 
 @router.get("", response_model=list[UserResponse], dependencies=[Depends(require_admin)])

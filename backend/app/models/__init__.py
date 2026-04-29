@@ -2,6 +2,7 @@ from app.models.user import User, UserRole
 from app.models.role import Role, Permission, role_permissions
 from app.models.tour import Tour, TourImage
 from app.models.booking import Booking, BookingStatus
+from app.models.payment_attempt import PaymentAttempt
 from app.models.inquiry import Inquiry
 from app.models.trip_plan import TripPlan, TripPlanStatus
 from app.models.media import Media
@@ -20,6 +21,7 @@ __all__ = [
     "TourImage",
     "Booking",
     "BookingStatus",
+    "PaymentAttempt",
     "Inquiry",
     "TripPlan",
     "TripPlanStatus",

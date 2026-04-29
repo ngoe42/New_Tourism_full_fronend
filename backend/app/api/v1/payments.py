@@ -32,7 +32,9 @@ async def initiate_payment(
 
 
 @router.get("/ipn")
+@limiter.limit("30/minute")
 async def pesapal_ipn(
+    request: Request,
     orderTrackingId: str = Query(...),
     orderMerchantReference: Optional[str] = Query(None),
     orderNotificationType: Optional[str] = Query(None),

@@ -85,6 +85,15 @@ class Settings(BaseSettings):
                 "Set a strong SECRET_KEY environment variable immediately.",
                 stacklevel=2,
             )
+
+        if self.ENVIRONMENT == "production" and not self.REDIS_URL:
+            raise ValueError(
+                "REDIS_URL must be set in production.  Without Redis, the slowapi rate limiter "
+                "falls back to in-memory storage (per-process), making rate limits ineffective "
+                "under multi-worker deployments and enabling brute-force attacks on payment "
+                "and auth endpoints.  Set REDIS_URL or change ENVIRONMENT to 'development'."
+            )
+
         return self
 
     def get_allowed_origins(self) -> List[str]:
