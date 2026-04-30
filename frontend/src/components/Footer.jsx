@@ -145,8 +145,17 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex items-center justify-center">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-1.5">
           <p className="font-sans text-xs text-white/20">Licensed by TATO & TTB · Arusha, Tanzania</p>
+          <p className="font-sans text-[11px] text-white/25">
+            Designed &amp; Built by{' '}
+            <a
+              href="mailto:ngoekenedy@gmail.com"
+              className="text-white/40 hover:text-gold transition-colors underline underline-offset-2"
+            >
+              Kenedy Ngoe
+            </a>
+          </p>
         </div>
       </div>
     </footer>
