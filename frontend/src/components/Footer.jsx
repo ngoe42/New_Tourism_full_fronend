@@ -3,6 +3,7 @@ import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, MessageCircle, Clock
 import { useQuery } from '@tanstack/react-query'
 import { experiencesApi } from '../api/experiences'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 const navLinks = [
   { label: 'Safari Tours', href: '/tours' },
@@ -27,7 +28,7 @@ const bookingPoints = [
 ]
 
 export default function Footer() {
-  const { showBlog } = useSiteSettings()
+  const { showBlog, logoUrl } = useSiteSettings()
   const visibleNavLinks = navLinks.filter((l) => l.href !== '/blog' || showBlog)
   const { data } = useQuery({
     queryKey: ['experiences-footer'],
@@ -43,7 +44,11 @@ export default function Footer() {
         {/* Brand */}
         <div>
           <Link to="/" aria-label="Home">
-            <img src="/images/logo/logo.png" alt="Nelson Tours & Safari" className="h-24 w-auto object-contain drop-shadow mb-3" />
+            <img
+              src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
+              alt="Nelson Tours & Safari"
+              className="h-24 w-auto object-contain drop-shadow mb-3"
+            />
           </Link>
           <p className="font-sans text-white/50 text-xs leading-relaxed mb-4 max-w-[220px]">
             Crafting world-class safari experiences in Tanzania. Born local, built for the world.

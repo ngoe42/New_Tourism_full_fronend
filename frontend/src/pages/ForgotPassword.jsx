@@ -29,8 +29,13 @@ export default function ForgotPassword() {
       <div className="w-full max-w-sm">
 
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-green-950 border border-green-800 mb-4">
-            <Mail size={22} className="text-amber-400" />
+          <div className="flex justify-center mb-5">
+            <div className="bg-white/10 rounded-2xl px-5 py-3 backdrop-blur-sm">
+              <img src="/images/logo/logo.png" alt="Nelson Tours & Safari" className="h-14 w-auto object-contain" />
+            </div>
+          </div>
+          <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-green-950 border border-green-800 mb-3">
+            <Mail size={18} className="text-amber-400" />
           </div>
           <h1 className="font-serif text-2xl font-bold text-white mb-1">Reset Password</h1>
           <p className="font-sans text-sm text-gray-500">We'll send a reset link to your email</p>

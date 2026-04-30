@@ -157,7 +157,7 @@ export default function PaymentResume() {
           <ArrowLeft size={15} />
           Back to site
         </Link>
-        <span className="font-serif text-base font-semibold tracking-wide">Nelson Tours &amp; Safari</span>
+        <img src="/images/logo/logo.png" alt="Nelson Tours & Safari" className="h-10 w-auto object-contain brightness-0 invert" />
         <div className="flex items-center gap-1.5 text-green-300 text-xs font-sans">
           <Shield size={13} />
           Secure Payment
