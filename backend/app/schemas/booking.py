@@ -70,6 +70,25 @@ class BookingResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class BookingPublicResponse(BaseModel):
+    id: int
+    tour_id: int
+    travel_date: date
+    guests: int
+    total_price: float
+    status: BookingStatus
+    special_requests: Optional[str] = None
+    contact_name: str
+    contact_email: str
+    contact_phone: Optional[str] = None
+    payment_status: Optional[str] = None
+    tour: Optional[BookingTourInfo] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class PaginatedBookings(BaseModel):
     items: list[BookingResponse]
     total: int

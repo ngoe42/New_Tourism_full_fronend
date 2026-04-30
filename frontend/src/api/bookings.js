@@ -4,6 +4,9 @@ export const bookingsApi = {
   create: (data) =>
     apiClient.post('/bookings', data).then((r) => r.data),
 
+  lookupPublic: (id, email) =>
+    apiClient.get('/bookings/lookup', { params: { id, email } }).then((r) => r.data),
+
   myBookings: (params = {}) =>
     apiClient.get('/bookings/me', { params }).then((r) => r.data),
 

@@ -120,7 +120,15 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
           </button>
         )}
         {bookingRef && (
-          <p className="font-sans text-[11px] text-gray-400 mb-4">Visa · Mastercard · M-Pesa · Airtel Money · Secured by Pesapal</p>
+          <p className="font-sans text-[11px] text-gray-400 mb-2">Visa · Mastercard · M-Pesa · Airtel Money · Secured by Pesapal</p>
+        )}
+        {bookingRef && (
+          <button
+            onClick={() => navigate(`/booking/${bookingRef}`)}
+            className="w-full flex items-center justify-center gap-2 px-6 py-2.5 border border-gray-200 text-gray-600 hover:border-green-900 hover:text-green-900 font-sans text-sm font-medium rounded-xl transition-colors"
+          >
+            View My Booking
+          </button>
         )}
         <button
           onClick={() => { setStatus('idle'); setPaymentUrl(null); setBookingRef(null) }}

@@ -35,6 +35,7 @@ import KilimanjaroOverview from './pages/KilimanjaroOverview'
 import TanzaniaSafariOverview from './pages/TanzaniaSafariOverview'
 import WhatsAppButton from './components/WhatsAppButton'
 import PaymentCallback from './pages/PaymentCallback'
+import BookingConfirmation from './pages/BookingConfirmation'
 import PaymentResume from './pages/PaymentResume'
 import ErrorBoundary from './components/ErrorBoundary'
 import NotFound from './pages/NotFound'
@@ -86,6 +87,7 @@ function AppRoutes() {
         <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
         <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
         <Route path="/payment/callback" element={<PaymentCallback />} />
+        <Route path="/booking/:id" element={<PublicLayout><BookingConfirmation /></PublicLayout>} />
         <Route path="/payment/resume" element={<PaymentResume />} />
         <Route path="/login/admin" element={<SuperAdminLogin />} />
         <Route path="/login/admin/forgot" element={<ForgotPassword />} />
