@@ -1,5 +1,6 @@
 import hashlib
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, or_, select, func, text
@@ -118,11 +119,11 @@ class BookingRepository(BaseRepository[Booking]):
         result = await self.db.execute(stmt)
         return result.scalar_one() > 0
 
-    async def get_total_revenue(self) -> float:
+    async def get_total_revenue(self) -> Decimal:
         result = await self.db.execute(
             select(func.sum(Booking.total_price)).where(Booking.status == BookingStatus.confirmed)
         )
-        return float(result.scalar_one() or 0)
+        return result.scalar_one() or Decimal("0.00")
 
     async def acquire_booking_lock(self, tour_id: int, travel_date: date) -> None:
         """Acquire a PostgreSQL advisory lock to serialize bookings for the same tour+date.
@@ -147,6 +148,17 @@ class BookingRepository(BaseRepository[Booking]):
             self._eager(
                 select(Booking).where(
                     Booking.pesapal_order_tracking_id == tracking_id
+                ).with_for_update()
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_merchant_reference_for_update(self, merchant_ref: str) -> Optional[Booking]:
+        """SELECT ... FOR UPDATE by Pesapal merchant reference (legacy IPN fallback)."""
+        result = await self.db.execute(
+            self._eager(
+                select(Booking).where(
+                    Booking.pesapal_merchant_reference == merchant_ref
                 ).with_for_update()
             )
         )

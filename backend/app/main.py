@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request
@@ -117,16 +118,44 @@ async def _seed_admin_background():
 
 
 _EXPIRY_INTERVAL_SECONDS = 900  # run every 15 minutes
+_EXPIRY_ADVISORY_KEY = int(
+    hashlib.sha256(b"booking:expiry:job").hexdigest(), 16
+) % (2**31)
 
 
 async def _booking_expiry_loop() -> None:
-    """Background task: periodically cancel abandoned pending bookings."""
+    """Background task: periodically cancel abandoned pending bookings.
+
+    Distributed safety: only one worker per interval runs the cleanup.
+    Uses Redis NX lock when Redis is available; falls back to
+    pg_try_advisory_xact_lock (non-blocking, auto-released on tx end)
+    for multi-pod deployments without Redis.
+    """
     from app.core.database import AsyncSessionLocal
+    from app.core import cache as _cache
     from app.repositories.booking import BookingRepository
+    from sqlalchemy import text
     while True:
         await asyncio.sleep(_EXPIRY_INTERVAL_SECONDS)
         try:
             async with AsyncSessionLocal() as db:
+                redis_client = _cache._redis  # live module-attr — None if unavailable
+                if redis_client is not None:
+                    acquired = await redis_client.set(
+                        "lock:booking_expiry", "1",
+                        nx=True, ex=_EXPIRY_INTERVAL_SECONDS - 60,
+                    )
+                    if not acquired:
+                        logger.debug("[expiry] Skipped — another worker holds the Redis lock")
+                        continue
+                else:
+                    result = await db.execute(
+                        text("SELECT pg_try_advisory_xact_lock(:key)"),
+                        {"key": _EXPIRY_ADVISORY_KEY},
+                    )
+                    if not result.scalar_one():
+                        logger.debug("[expiry] Skipped — another worker holds the advisory lock")
+                        continue
                 repo = BookingRepository(db)
                 count = await repo.expire_abandoned()
                 await db.commit()

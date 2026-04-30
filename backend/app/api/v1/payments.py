@@ -21,7 +21,9 @@ class ResendLinkRequest(BaseModel):
 
 
 @router.post("/initiate/{booking_id}")
+@limiter.limit("10/minute")
 async def initiate_payment(
+    request: Request,
     booking_id: int,
     current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
@@ -82,7 +84,9 @@ async def payment_status(
 
 
 @router.get("/link/{booking_id}")
+@limiter.limit("10/minute")
 async def get_payment_link(
+    request: Request,
     booking_id: int,
     current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),

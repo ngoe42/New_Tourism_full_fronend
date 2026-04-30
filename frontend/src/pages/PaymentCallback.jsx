@@ -113,7 +113,7 @@ export default function PaymentCallback() {
     const id = extractBookingId(merchantReference) || (storedId ? parseInt(storedId) : null)
     if (id) {
       setBookingId(id)
-      setResendRef(`NTS-${id}`)
+      setResendRef(String(id))
     }
     if (storedEmail) setResendEmail((prev) => prev || storedEmail)
 

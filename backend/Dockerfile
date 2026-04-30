@@ -29,7 +29,11 @@ COPY --from=builder /install /usr/local
 COPY . .
 
 RUN sed -i 's/\r$//' start.sh && chmod +x start.sh && \
-    mkdir -p /app/static/uploads
+    mkdir -p /app/static/uploads && \
+    addgroup --system app && adduser --system --ingroup app app && \
+    chown -R app:app /app
+
+USER app
 
 EXPOSE 8000
 

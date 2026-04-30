@@ -216,10 +216,26 @@ class PaymentService:
             )
         else:
             # RB-2 — Legacy: booking created before the payment_attempts migration.
-            # Fall back to a direct tracking-ID lookup on the booking row itself.
+            # Tier 1: tracking-ID column on the booking row itself.
+            # Tier 2: merchant_reference column (handles callbacks where Pesapal
+            #         sends a different tracking ID than the one we stored).
             booking_snap = await self.booking_repo.get_by_tracking_id_for_update(
                 order_tracking_id
             )
+            if booking_snap:
+                logger.info(
+                    f"IPN legacy fallback: matched booking #{booking_snap.id} "
+                    f"by tracking_id (pre-migration)"
+                )
+            elif merchant_reference:
+                booking_snap = await self.booking_repo.get_by_merchant_reference_for_update(
+                    merchant_reference.strip()
+                )
+                if booking_snap:
+                    logger.info(
+                        f"IPN legacy fallback: matched booking #{booking_snap.id} "
+                        f"by merchant_reference={merchant_reference} (pre-migration)"
+                    )
             if not booking_snap:
                 logger.warning(
                     f"IPN received for unknown tracking_id={order_tracking_id} "
@@ -227,10 +243,6 @@ class PaymentService:
                 )
                 await self.db.commit()
                 return {"status": "200", "message": "IPN received"}
-            logger.info(
-                f"IPN legacy fallback: matched booking #{booking_snap.id} "
-                f"by tracking_id (pre-migration)"
-            )
             use_legacy = True
             booking_id = booking_snap.id
             attempt_merchant_ref = merchant_reference

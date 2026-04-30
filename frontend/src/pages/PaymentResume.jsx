@@ -81,6 +81,7 @@ export default function PaymentResume() {
   // sends window.parent.postMessage — this gives us instant status without polling.
   useEffect(() => {
     const handleMessage = (event) => {
+      if (event.origin !== window.location.origin) return
       if (event.data?.type === 'pesapal_payment_status') {
         const s = event.data.status?.toUpperCase()
         if (s) setPaymentStatus(s)

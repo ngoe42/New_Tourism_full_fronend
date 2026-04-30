@@ -54,6 +54,11 @@ class MediaService:
             return await self._upload_cloudinary(contents, filename)
         elif settings.AWS_BUCKET_NAME and settings.AWS_ACCESS_KEY_ID:
             return await self._upload_s3(contents, filename, content_type)
+        elif settings.ENVIRONMENT == "production":
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="File storage not configured. Set CLOUDINARY_* or AWS_* environment variables.",
+            )
         else:
             return await self._upload_local(contents, filename)
 

@@ -351,7 +351,7 @@ class BookingService:
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         # Guard: financial and date fields must not be mutated on a completed booking
         # to preserve payment audit accuracy.
-        if booking.status == BookingStatus.completed:
+        if booking.status in (BookingStatus.confirmed, BookingStatus.completed):
             protected = {"guests", "total_price", "travel_date"} & set(update_data)
             if protected:
                 raise HTTPException(

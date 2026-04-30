@@ -52,6 +52,14 @@ Railway Project
 | `PESAPAL_ENVIRONMENT` | `sandbox` (use `live` for production) |
 | `PESAPAL_IPN_ID` | *(leave blank — auto-registered on first booking)* |
 
+> **Required — File storage:** Railway has an ephemeral filesystem; local file writes are lost on every redeploy.
+> You **must** configure one of the following cloud storage providers or image uploads will return `503`:
+>
+> | Provider | Variables required |
+> |---|---|
+> | Cloudinary (recommended) | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
+> | AWS S3 | `AWS_BUCKET_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` |
+
 > **Tip:** In Railway, go to PostgreSQL plugin → **Connect** and use **"Add to service"** to automatically inject `DATABASE_URL` into the backend service.
 
 4. Click **Deploy** — wait for green ✅
