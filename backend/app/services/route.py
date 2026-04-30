@@ -19,8 +19,8 @@ class RouteService:
         self.repository = RouteRepository(session)
         self._session = session
 
-    async def get_all_routes(self) -> List[Route]:
-        return await self.repository.get_all()
+    async def get_all_routes(self, mountain: Optional[str] = None) -> List[Route]:
+        return await self.repository.get_all(mountain=mountain)
 
     async def get_route(self, route_id: int) -> Route:
         route = await self.repository.get_by_id(route_id)

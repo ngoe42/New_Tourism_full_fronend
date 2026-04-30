@@ -21,14 +21,15 @@ router = APIRouter()
 @router.get("/", response_model=List[RouteOut])
 async def get_all_routes(
     published_only: bool = Query(True),
+    mountain: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    cache_key = "routes:published" if published_only else "routes:all"
+    cache_key = f"routes:{'published' if published_only else 'all'}:{mountain or 'all'}"
     cached = await cache_get(cache_key)
     if cached is not None:
         return JSONResponse(content=cached)
     service = RouteService(db)
-    routes = await service.get_all_routes()
+    routes = await service.get_all_routes(mountain=mountain)
     if published_only:
         routes = [r for r in routes if r.is_published]
     await cache_set(cache_key, jsonable_encoder(routes), TTL_MEDIUM)

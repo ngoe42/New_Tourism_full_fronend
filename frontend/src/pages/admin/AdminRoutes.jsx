@@ -9,6 +9,12 @@ import { routesApi } from '../../api/routes'
 import { resolveImageUrl } from '../../utils/imageUrl'
 import extractError from '../../utils/extractError'
 
+const MOUNTAINS = [
+  { value: 'kilimanjaro', label: 'Kilimanjaro', color: 'bg-green-100 text-green-800' },
+  { value: 'meru',        label: 'Mount Meru',  color: 'bg-blue-100 text-blue-800'  },
+  { value: 'lengai',      label: 'Ol Doinyo Lengai', color: 'bg-orange-100 text-orange-800' },
+]
+
 const EMPTY_FORM = {
   name: '', slug: '', nickname: '', nickname_explanation: '',
   short_description: '', full_description: '',
@@ -16,6 +22,7 @@ const EMPTY_FORM = {
   distance: '', group_size: '', best_season: '', requirements: '',
   price: 0, package_details: '',
   highlights: [], itinerary: [], included: [], excluded: [], packing_list: [],
+  mountain: 'kilimanjaro',
   is_published: true,
 }
 
@@ -205,11 +212,11 @@ function RouteImages({ route, onRefresh }) {
 }
 
 /* ── Route form modal ──────────────────────────────────────────────────────── */
-function RouteModal({ route, onClose, onSaved }) {
+function RouteModal({ route, defaultMountain, onClose, onSaved }) {
   const [createdRoute, setCreatedRoute] = useState(null)
   const isEdit = !!(route || createdRoute)
   const editTarget = createdRoute ?? route
-  const [form, setForm] = useState(route ? { ...route } : { ...EMPTY_FORM })
+  const [form, setForm] = useState(route ? { ...route } : { ...EMPTY_FORM, mountain: defaultMountain ?? 'kilimanjaro' })
   const [saving, setSaving] = useState(false)
   const [section, setSection] = useState('basic')
   const overlayRef = useRef(null)
@@ -261,7 +268,7 @@ function RouteModal({ route, onClose, onSaved }) {
         <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
           <div>
             <h2 className="font-serif text-xl font-bold text-gray-900">
-              {isEdit ? `Edit: ${editTarget?.name ?? route?.name ?? 'Route'}` : 'New Kilimanjaro Route'}
+              {isEdit ? `Edit: ${editTarget?.name ?? route?.name ?? 'Route'}` : `New ${MOUNTAINS.find(m => m.value === form.mountain)?.label ?? ''} Route`}
             </h2>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition">
@@ -287,6 +294,20 @@ function RouteModal({ route, onClose, onSaved }) {
             {/* ── BASIC ─────────────────────────────────────────────── */}
             {section === 'basic' && (
               <>
+                <Field label="Mountain *">
+                  <div className="flex gap-2 flex-wrap">
+                    {MOUNTAINS.map(m => (
+                      <button key={m.value} type="button" onClick={() => set('mountain', m.value)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-sans text-sm font-medium transition border ${
+                          form.mountain === m.value
+                            ? 'bg-green-950 text-white border-green-950'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
+                        }`}>
+                        <Mountain size={13} />{m.label}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
                 <Field label="Route Name *">
                   <Input required value={form.name}
                     onChange={(e) => {
@@ -430,11 +451,12 @@ function RouteModal({ route, onClose, onSaved }) {
 /* ── Main AdminRoutes page ─────────────────────────────────────────────────── */
 export default function AdminRoutes() {
   const qc = useQueryClient()
-  const [modal, setModal] = useState(null)  // null | 'new' | route-object
+  const [modal, setModal] = useState(null)
+  const [activeMountain, setActiveMountain] = useState('kilimanjaro')
 
   const { data: routes = [], isLoading } = useQuery({
-    queryKey: ['admin-routes'],
-    queryFn: () => routesApi.listAll(),
+    queryKey: ['admin-routes', activeMountain],
+    queryFn: () => routesApi.listAll(activeMountain),
   })
 
   const deleteRoute = async (route) => {
@@ -457,15 +479,29 @@ export default function AdminRoutes() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="font-serif text-2xl font-bold text-gray-900">Kilimanjaro Routes</h1>
-          <p className="font-sans text-sm text-gray-400 mt-0.5">{routes.length} route{routes.length !== 1 ? 's' : ''} total</p>
+          <h1 className="font-serif text-2xl font-bold text-gray-900">Mountain Routes</h1>
+          <p className="font-sans text-sm text-gray-400 mt-0.5">{routes.length} route{routes.length !== 1 ? 's' : ''} · {MOUNTAINS.find(m => m.value === activeMountain)?.label}</p>
         </div>
-        <button onClick={() => setModal('new')}
+        <button onClick={() => setModal({ _new: true, mountain: activeMountain })}
           className="flex items-center gap-2 px-5 py-2.5 bg-green-950 text-white rounded-xl font-sans text-sm font-medium hover:bg-green-800 transition shadow-sm">
           <Plus size={16} /> New Route
         </button>
+      </div>
+
+      {/* Mountain tabs */}
+      <div className="flex gap-2 mb-6">
+        {MOUNTAINS.map(m => (
+          <button key={m.value} onClick={() => setActiveMountain(m.value)}
+            className={`px-4 py-2 rounded-xl font-sans text-sm font-medium transition border ${
+              activeMountain === m.value
+                ? 'bg-green-950 text-white border-green-950'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-green-300 hover:text-green-800'
+            }`}>
+            {m.label}
+          </button>
+        ))}
       </div>
 
       {/* Table */}
@@ -477,8 +513,8 @@ export default function AdminRoutes() {
         <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
           <Mountain size={40} className="text-gray-200 mx-auto mb-4" />
           <p className="font-serif text-lg text-gray-500 mb-2">No routes yet</p>
-          <p className="font-sans text-sm text-gray-400 mb-6">Create the first Kilimanjaro route for the website.</p>
-          <button onClick={() => setModal('new')}
+          <p className="font-sans text-sm text-gray-400 mb-6">Create the first {MOUNTAINS.find(m => m.value === activeMountain)?.label} route for the website.</p>
+          <button onClick={() => setModal({ _new: true, mountain: activeMountain })}
             className="px-5 py-2.5 bg-green-950 text-white rounded-xl font-sans text-sm font-medium hover:bg-green-800 transition">
             Create First Route
           </button>
@@ -490,6 +526,7 @@ export default function AdminRoutes() {
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
                 <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider">Route</th>
+                <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Mountain</th>
                 <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Duration</th>
                 <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Difficulty</th>
                 <th className="text-left px-5 py-3 font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Price</th>
@@ -519,6 +556,9 @@ export default function AdminRoutes() {
                         )}
                       </div>
                     </div>
+                  </td>
+                  <td className="px-5 py-4 hidden sm:table-cell">
+                    {(() => { const m = MOUNTAINS.find(x => x.value === route.mountain); return m ? <span className={`inline-block px-2 py-0.5 rounded-full font-sans text-xs font-semibold ${m.color}`}>{m.label}</span> : null })()}
                   </td>
                   <td className="px-5 py-4 hidden md:table-cell">
                     <span className="font-sans text-sm text-gray-600">{route.duration}</span>
@@ -573,10 +613,10 @@ export default function AdminRoutes() {
 
       {/* Modal */}
       <AnimatePresence>
-        {modal !== null && (
+        {modal && (
           <RouteModal
-            key={modal === 'new' ? 'new' : modal?.id}
-            route={modal === 'new' ? null : modal}
+            route={modal._new ? null : modal}
+            defaultMountain={modal._new ? modal.mountain : undefined}
             onClose={() => setModal(null)}
             onSaved={onSaved}
           />

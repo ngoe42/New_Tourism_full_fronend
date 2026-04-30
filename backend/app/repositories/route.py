@@ -9,8 +9,11 @@ class RouteRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_all(self) -> List[Route]:
-        result = await self.session.execute(select(Route).order_by(Route.name))
+    async def get_all(self, mountain: Optional[str] = None) -> List[Route]:
+        q = select(Route).order_by(Route.name)
+        if mountain:
+            q = q.where(Route.mountain == mountain)
+        result = await self.session.execute(q)
         return list(result.scalars().all())
 
     async def get_by_id(self, route_id: int) -> Optional[Route]:

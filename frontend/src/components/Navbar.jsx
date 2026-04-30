@@ -52,6 +52,8 @@ export default function Navbar() {
   const [activeRouteHover, setActiveRouteHover] = useState(null)
   const [activeTourHover, setActiveTourHover] = useState(null)
   const [activeExpHover, setActiveExpHover] = useState(null)
+  const [activeKiliSubItem, setActiveKiliSubItem] = useState(null)
+  const [mobileSub, setMobileSub] = useState(null)
 
   const { data: experiencesData } = useQuery({
     queryKey: ['nav-experiences'],
@@ -151,6 +153,7 @@ export default function Navbar() {
                   setActiveRouteHover(null)
                   setActiveTourHover(null)
                   setActiveExpHover(null)
+                  setActiveKiliSubItem(null)
                 }}
               >
                 <Link
@@ -165,7 +168,7 @@ export default function Navbar() {
                   )}
                 </Link>
 
-                {/* Kilimanjaro Route Megamenu */}
+                {/* Kilimanjaro Megamenu — 3-column */}
                 <AnimatePresence>
                   {link.hasRouteDropdown && activeDropdown === link.label && (
                     <motion.div
@@ -174,117 +177,202 @@ export default function Navbar() {
                       exit={{ opacity: 0, y: 10 }}
                       transition={{ duration: 0.2 }}
                       className="absolute top-full -left-10 mt-3 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex"
-                      style={{ width: activeRouteHover ? 700 : 290 }}
+                      style={{
+                        width: activeKiliSubItem === 'routes'
+                          ? (activeRouteHover ? 800 : 490)
+                          : activeKiliSubItem === 'mountains'
+                          ? 450
+                          : 250,
+                      }}
                     >
-                      {/* Left: Route List */}
-                      <div className="w-[290px] flex-shrink-0 bg-white border-r border-gray-100 flex flex-col">
+                      {/* Column 1: Kilimanjaro main menu */}
+                      <div className="w-[250px] flex-shrink-0 bg-white flex flex-col">
                         <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
                           <Mountain size={14} className="text-gold" />
-                          <span className="font-sans text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Select Route</span>
+                          <span className="font-sans text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Kilimanjaro</span>
                         </div>
                         <div className="py-2 flex-1">
-                          {routeList.length === 0 ? (
-                            <div className="px-5 py-4 font-sans text-sm text-gray-400">Loading routes…</div>
-                          ) : (
-                            routeList.map((route) => (
-                              <div
-                                key={route.id}
-                                onMouseEnter={() => setActiveRouteHover(route)}
-                                onClick={() => { navigate(`/routes/${route.slug}`); setActiveDropdown(null) }}
-                                className={`px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors duration-150 flex items-center justify-between group ${
-                                  activeRouteHover?.id === route.id ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
-                                }`}
-                              >
-                                <span>{route.name}</span>
-                                <ArrowRight size={12} className={`transition-all duration-200 ${activeRouteHover?.id === route.id ? 'text-gold translate-x-0 opacity-100' : 'text-gray-300 -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0'}`} />
-                              </div>
-                            ))
-                          )}
+                          {/* Overview */}
+                          <Link
+                            to="/trekking"
+                            onClick={() => setActiveDropdown(null)}
+                            onMouseEnter={() => { setActiveKiliSubItem(null); setActiveRouteHover(null) }}
+                            className="flex items-center gap-2.5 px-4 py-2.5 font-sans text-sm text-gray-700 hover:bg-gray-50 hover:text-green-800 transition-colors"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                            Kilimanjaro &amp; Trekking Overview
+                          </Link>
+                          {/* Routes → sub-panel */}
+                          <div
+                            onMouseEnter={() => { setActiveKiliSubItem('routes') }}
+                            className={`flex items-center justify-between px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors ${
+                              activeKiliSubItem === 'routes' ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                              Kilimanjaro Routes
+                            </div>
+                            <ChevronRight size={13} className={`flex-shrink-0 transition-colors ${activeKiliSubItem === 'routes' ? 'text-gold' : 'text-gray-300'}`} />
+                          </div>
+                          {/* Packing List */}
+                          <Link
+                            to="/trekking#packing-list"
+                            onClick={() => setActiveDropdown(null)}
+                            onMouseEnter={() => { setActiveKiliSubItem(null); setActiveRouteHover(null) }}
+                            className="flex items-center gap-2.5 px-4 py-2.5 font-sans text-sm text-gray-700 hover:bg-gray-50 hover:text-green-800 transition-colors"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                            Kilimanjaro Packing List
+                          </Link>
+                          {/* Other Mountains → sub-panel */}
+                          <div
+                            onMouseEnter={() => { setActiveKiliSubItem('mountains'); setActiveRouteHover(null) }}
+                            className={`flex items-center justify-between px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors ${
+                              activeKiliSubItem === 'mountains' ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                              Other Mountains
+                            </div>
+                            <ChevronRight size={13} className={`flex-shrink-0 transition-colors ${activeKiliSubItem === 'mountains' ? 'text-gold' : 'text-gray-300'}`} />
+                          </div>
                         </div>
                         <div className="p-3 border-t border-gray-100 bg-gray-50">
-                          <Link to="/routes" onClick={() => setActiveDropdown(null)} className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
-                            View All Kilimanjaro Routes <ArrowRight size={11} />
+                          <Link to="/trekking" onClick={() => setActiveDropdown(null)} className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
+                            Trekking Overview <ArrowRight size={11} />
                           </Link>
                         </div>
                       </div>
 
-                      {/* Right: Route Details Preview */}
-                      {activeRouteHover && (
+                      {/* Column 2a: Routes list */}
+                      {activeKiliSubItem === 'routes' && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="w-[240px] flex-shrink-0 bg-white border-l border-gray-100 flex flex-col"
+                        >
+                          <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 bg-beige/40">
+                            <Mountain size={12} className="text-gold" />
+                            <span className="font-sans text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Select Route</span>
+                          </div>
+                          <div className="py-2 flex-1">
+                            {routeList.length === 0 ? (
+                              <div className="px-4 py-3 font-sans text-sm text-gray-400">Loading routes…</div>
+                            ) : (
+                              routeList.map((route) => (
+                                <div
+                                  key={route.id}
+                                  onMouseEnter={() => setActiveRouteHover(route)}
+                                  onClick={() => { navigate(`/routes/${route.slug}`); setActiveDropdown(null) }}
+                                  className={`px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors flex items-center justify-between group ${
+                                    activeRouteHover?.id === route.id ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <span>{route.name}</span>
+                                  <ArrowRight size={11} className={`transition-all duration-200 ${activeRouteHover?.id === route.id ? 'text-gold opacity-100' : 'text-gray-300 -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0'}`} />
+                                </div>
+                              ))
+                            )}
+                          </div>
+                          <div className="p-3 border-t border-gray-100 bg-gray-50">
+                            <Link to="/routes" onClick={() => setActiveDropdown(null)} className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
+                              View All Routes <ArrowRight size={11} />
+                            </Link>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Column 3: Route detail preview */}
+                      {activeKiliSubItem === 'routes' && activeRouteHover && (
                         <motion.div
                           key={activeRouteHover.id}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.18 }}
-                          className="w-[410px] flex flex-col"
+                          className="w-[310px] flex flex-col"
                         >
-                          {/* Cover image */}
-                          <div className="relative h-48 flex-shrink-0 overflow-hidden">
+                          <div className="relative h-40 flex-shrink-0 overflow-hidden">
                             {(() => {
                               const cover = activeRouteHover.images?.find(i => i.is_cover) ?? activeRouteHover.images?.[0]
                               return cover ? (
-                                <img
-                                  src={resolveImageUrl(cover.url)}
-                                  alt={activeRouteHover.name}
-                                  className="w-full h-full object-cover"
-                                />
+                                <img src={resolveImageUrl(cover.url)} alt={activeRouteHover.name} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
-                                  <Mountain size={32} className="text-white/30" />
+                                  <Mountain size={28} className="text-white/30" />
                                 </div>
                               )
                             })()}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                             <div className="absolute bottom-3 left-4 right-4">
-                              <h4 className="font-serif text-lg text-white font-bold leading-tight drop-shadow">
-                                {activeRouteHover.name}
-                              </h4>
+                              <h4 className="font-serif text-base text-white font-bold leading-tight drop-shadow">{activeRouteHover.name}</h4>
                               {activeRouteHover.nickname && (
                                 <p className="font-sans text-xs text-[#c9a96e] italic mt-0.5">"{activeRouteHover.nickname}"</p>
                               )}
                             </div>
                           </div>
-
-                          {/* Details */}
                           <div className="bg-[#faf8f3] p-4 flex flex-col flex-1">
-                            <div className="flex gap-2 mb-3">
-                              <span className="flex items-center gap-1 font-sans text-[11px] font-semibold text-gray-500 bg-white px-2 py-1 rounded-md shadow-sm">
-                                <Clock size={11} className="text-gold"/> {activeRouteHover.duration}
-                              </span>
+                            <div className="flex gap-2 mb-3 flex-wrap">
+                              {activeRouteHover.duration && (
+                                <span className="flex items-center gap-1 font-sans text-[11px] font-semibold text-gray-500 bg-white px-2 py-1 rounded-md shadow-sm">
+                                  <Clock size={10} className="text-gold" /> {activeRouteHover.duration}
+                                </span>
+                              )}
                               {activeRouteHover.difficulty && (
                                 <span className="flex items-center gap-1 font-sans text-[11px] font-semibold text-gray-500 bg-white px-2 py-1 rounded-md shadow-sm">
-                                  <Mountain size={11} className="text-gold"/> {activeRouteHover.difficulty}
+                                  <Mountain size={10} className="text-gold" /> {activeRouteHover.difficulty}
                                 </span>
                               )}
                             </div>
-
-                            <p className="font-sans text-xs text-gray-600 leading-relaxed mb-3 line-clamp-3">
-                              {activeRouteHover.short_description}
-                            </p>
-
-                            {activeRouteHover.nickname_explanation && (
-                              <div className="bg-white/80 p-2.5 rounded-lg border border-white mb-3">
-                                <p className="font-sans text-[11px] text-gray-500 leading-snug line-clamp-2">
-                                  <span className="font-semibold text-green-800">Why the nickname?</span> {activeRouteHover.nickname_explanation}
-                                </p>
-                              </div>
-                            )}
-
-                            <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
-                              <Link
-                                to="/routes"
-                                onClick={() => setActiveDropdown(null)}
-                                className="text-center font-sans text-xs font-semibold text-green-800 border border-green-800/20 bg-white hover:bg-gray-50 py-2 rounded-lg transition-colors"
-                              >
-                                View All Routes
+                            <p className="font-sans text-xs text-gray-600 leading-relaxed mb-3 line-clamp-3">{activeRouteHover.short_description}</p>
+                            <div className="grid grid-cols-2 gap-2 mt-auto">
+                              <Link to="/routes" onClick={() => setActiveDropdown(null)} className="text-center font-sans text-xs font-semibold text-green-800 border border-green-800/20 bg-white hover:bg-gray-50 py-2 rounded-lg transition-colors">
+                                All Routes
                               </Link>
-                              <Link
-                                to={`/routes/${activeRouteHover.slug}`}
-                                onClick={() => setActiveDropdown(null)}
-                                className="text-center font-sans text-xs font-semibold text-white bg-green-800 hover:bg-green-700 py-2 rounded-lg transition-colors shadow-md"
-                              >
-                                Book Now
+                              <Link to={`/routes/${activeRouteHover.slug}`} onClick={() => setActiveDropdown(null)} className="text-center font-sans text-xs font-semibold text-white bg-green-800 hover:bg-green-700 py-2 rounded-lg transition-colors shadow-sm">
+                                View Route
                               </Link>
                             </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Column 2b: Other Mountains sub-panel */}
+                      {activeKiliSubItem === 'mountains' && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="w-[200px] flex-shrink-0 bg-white border-l border-gray-100 flex flex-col"
+                        >
+                          <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 bg-beige/40">
+                            <Mountain size={12} className="text-gold" />
+                            <span className="font-sans text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Other Mountains</span>
+                          </div>
+                          <div className="py-2">
+                            <Link
+                              to="/oldoinyo-lengai"
+                              onClick={() => setActiveDropdown(null)}
+                              className="flex items-center justify-between px-4 py-2.5 font-sans text-sm text-gray-700 hover:bg-beige hover:text-green-800 transition-colors group"
+                            >
+                              <span>Oldoinyo Lengai</span>
+                              <ArrowRight size={11} className="text-gray-300 group-hover:text-gold transition-colors" />
+                            </Link>
+                            <Link
+                              to="/meru"
+                              onClick={() => setActiveDropdown(null)}
+                              className="flex items-center justify-between px-4 py-2.5 font-sans text-sm text-gray-700 hover:bg-beige hover:text-green-800 transition-colors group"
+                            >
+                              <span>Mount Meru</span>
+                              <ArrowRight size={11} className="text-gray-300 group-hover:text-gold transition-colors" />
+                            </Link>
+                          </div>
+                          <div className="p-3 border-t border-gray-100 bg-gray-50 mt-auto">
+                            <Link to="/contact" onClick={() => setActiveDropdown(null)} className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
+                              Enquire Now <ArrowRight size={11} />
+                            </Link>
                           </div>
                         </motion.div>
                       )}
@@ -664,26 +752,117 @@ export default function Navbar() {
                           transition={{ duration: 0.22 }}
                           className="overflow-hidden bg-gray-50/80"
                         >
-                          <div className="px-5 py-2 space-y-0.5">
+                          <div className="py-1">
+                            {/* Overview */}
                             <Link
-                              to="/routes"
+                              to="/trekking"
                               onClick={() => setMenuOpen(false)}
-                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-75 transition-opacity"
+                              className="flex items-center gap-2.5 px-5 py-2.5 font-sans text-sm text-gray-700 hover:text-gold hover:bg-beige/50 transition-colors"
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
-                              All Routes Overview
+                              Kilimanjaro &amp; Trekking Overview
                             </Link>
-                            {routeList.map((route) => (
-                              <Link
-                                key={route.id}
-                                to={`/routes/${route.slug}`}
-                                onClick={() => setMenuOpen(false)}
-                                className="flex items-center gap-2.5 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-100/60 last:border-0"
+
+                            {/* Routes sub-accordion */}
+                            <div>
+                              <button
+                                onClick={() => setMobileSub(mobileSub === 'routes' ? null : 'routes')}
+                                className="w-full flex items-center justify-between px-5 py-2.5 font-sans text-sm text-gray-700 hover:text-gold hover:bg-beige/50 transition-colors"
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-gold/40 flex-shrink-0" />
-                                {route.name}
-                              </Link>
-                            ))}
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                                  Kilimanjaro Routes
+                                </div>
+                                <ChevronRight size={13} className={`text-gray-400 transition-transform duration-200 ${mobileSub === 'routes' ? 'rotate-90 text-gold' : ''}`} />
+                              </button>
+                              <AnimatePresence initial={false}>
+                                {mobileSub === 'routes' && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.18 }}
+                                    className="overflow-hidden bg-white/60"
+                                  >
+                                    <div className="pl-9 pr-5 py-1 space-y-0.5">
+                                      {routeList.map((route) => (
+                                        <Link
+                                          key={route.id}
+                                          to={`/routes/${route.slug}`}
+                                          onClick={() => setMenuOpen(false)}
+                                          className="flex items-center gap-2 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-100/60 last:border-0"
+                                        >
+                                          <span className="w-1 h-1 rounded-full bg-gold/40 flex-shrink-0" />
+                                          {route.name}
+                                        </Link>
+                                      ))}
+                                      <Link
+                                        to="/routes"
+                                        onClick={() => setMenuOpen(false)}
+                                        className="flex items-center gap-2 py-2 font-sans text-xs font-semibold text-gold hover:opacity-75 transition-opacity"
+                                      >
+                                        <span className="w-1 h-1 rounded-full bg-gold flex-shrink-0" />
+                                        View All Routes
+                                      </Link>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+
+                            {/* Packing List */}
+                            <Link
+                              to="/trekking#packing-list"
+                              onClick={() => setMenuOpen(false)}
+                              className="flex items-center gap-2.5 px-5 py-2.5 font-sans text-sm text-gray-700 hover:text-gold hover:bg-beige/50 transition-colors"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                              Kilimanjaro Packing List
+                            </Link>
+
+                            {/* Other Mountains sub-accordion */}
+                            <div>
+                              <button
+                                onClick={() => setMobileSub(mobileSub === 'mountains' ? null : 'mountains')}
+                                className="w-full flex items-center justify-between px-5 py-2.5 font-sans text-sm text-gray-700 hover:text-gold hover:bg-beige/50 transition-colors"
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                                  Other Mountains
+                                </div>
+                                <ChevronRight size={13} className={`text-gray-400 transition-transform duration-200 ${mobileSub === 'mountains' ? 'rotate-90 text-gold' : ''}`} />
+                              </button>
+                              <AnimatePresence initial={false}>
+                                {mobileSub === 'mountains' && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.18 }}
+                                    className="overflow-hidden bg-white/60"
+                                  >
+                                    <div className="pl-9 pr-5 py-1 space-y-0.5">
+                                      <Link
+                                        to="/oldoinyo-lengai"
+                                        onClick={() => setMenuOpen(false)}
+                                        className="flex items-center gap-2 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-100/60"
+                                      >
+                                        <span className="w-1 h-1 rounded-full bg-gold/40 flex-shrink-0" />
+                                        Oldoinyo Lengai
+                                      </Link>
+                                      <Link
+                                        to="/meru"
+                                        onClick={() => setMenuOpen(false)}
+                                        className="flex items-center gap-2 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors"
+                                      >
+                                        <span className="w-1 h-1 rounded-full bg-gold/40 flex-shrink-0" />
+                                        Mount Meru
+                                      </Link>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
                           </div>
                         </motion.div>
                       )}

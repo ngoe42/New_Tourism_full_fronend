@@ -31,6 +31,7 @@ class Route(Base):
     included: Mapped[Optional[list]] = mapped_column(JSON, nullable=True, default=list)
     excluded: Mapped[Optional[list]] = mapped_column(JSON, nullable=True, default=list)
     packing_list: Mapped[Optional[list]] = mapped_column(JSON, nullable=True, default=list)
+    mountain: Mapped[str] = mapped_column(String(50), nullable=False, default='kilimanjaro', index=True)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
