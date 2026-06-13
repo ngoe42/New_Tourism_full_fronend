@@ -116,7 +116,7 @@ export default function Navbar() {
           </div>
           <div className="flex items-center gap-3 ml-auto">
             <a href="https://facebook.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-white/50 hover:text-white transition-colors"><Facebook size={13} /></a>
-            <a href="https://instagram.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-white/50 hover:text-white transition-colors"><Instagram size={13} /></a>
+            <a href="https://www.instagram.com/nelson_tour_and_safari?utm_source=qr&igsh=MWVscDEwcmdzYjJqNg==" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-white/50 hover:text-white transition-colors"><Instagram size={13} /></a>
             <a href="https://twitter.com/nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X" className="text-white/50 hover:text-white transition-colors"><Twitter size={13} /></a>
             <a href="https://youtube.com/@nelsonsafari" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-white/50 hover:text-white transition-colors"><Youtube size={13} /></a>
           </div>
