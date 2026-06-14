@@ -39,18 +39,4 @@
         <priority>0.8</priority>
     </url>
 
-    <url>
-        <loc>https://nelsontoursandsafaris.com/routes</loc>
-        <lastmod>2026-06-14</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-
-    <url>
-        <loc>https://nelsontoursandsafaris.com/trekking</loc>
-        <lastmod>2026-06-14</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-
 </urlset>
