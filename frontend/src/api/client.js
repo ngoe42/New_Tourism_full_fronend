@@ -4,7 +4,13 @@ import axios from 'axios'
 //   1. window.APP_CONFIG.API_URL  — runtime config injected by config.js (set at serve time)
 //   2. VITE_API_URL env var       — baked in at build time by Vite
 //   3. /api/v1                    — relative fallback (only works behind a reverse proxy)
-const API_URL = window.APP_CONFIG?.API_URL || import.meta.env.VITE_API_URL || '/api/v1'
+let API_URL = window.APP_CONFIG?.API_URL || import.meta.env.VITE_API_URL || '/api/v1'
+
+// Prevent mixed-content errors: if the page is served over HTTPS, upgrade the
+// API URL to HTTPS too (the same domain supports both protocols).
+if (window.location.protocol === 'https:' && API_URL.startsWith('http://')) {
+  API_URL = API_URL.replace('http://', 'https://')
+}
 
 const apiClient = axios.create({
   baseURL: API_URL,
