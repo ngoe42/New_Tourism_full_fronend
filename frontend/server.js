@@ -89,33 +89,30 @@ const server = createServer((req, res) => {
     return
   }
 
-  // Normalize path for file lookup
-  path = path || '/'
-  const filePath = join(DIST, path === '/' ? 'index.html' : path)
-
-  if (serveFile(res, filePath)) return
+  // SPA — serve index.html with canonical tag injected for SEO
+  const isSPARoute = path === '/' || !hasFileExtension(path)
+  if (isSPARoute) {
+    try {
+      const indexContent = readFileSync(INDEX, 'utf-8')
+      const canonicalUrl = `https://${PRODUCTION_DOMAIN}${path}${queryString ? '?' + queryString : ''}`
+      const modified = indexContent.replace(
+        '</head>',
+        `  <link rel="canonical" href="${canonicalUrl}" />\n</head>`
+      )
+      res.writeHead(200, { 'Content-Type': 'text/html' })
+      res.end(modified)
+      return
+    } catch {
+      serveFile(res, INDEX, 200)
+      return
+    }
+  }
 
   // Static asset with known extension → 404 (don't serve SPA HTML)
-  if (hasFileExtension(path)) {
-    if (serveFile(res, NOT_FOUND, 404)) return
-    res.writeHead(404, { 'Content-Type': 'text/plain' })
-    res.end('Not Found')
-    return
-  }
-
-  // SPA fallback for navigation-style paths — inject canonical tag for SEO
-  try {
-    const indexContent = readFileSync(INDEX, 'utf-8')
-    const canonicalUrl = `https://${PRODUCTION_DOMAIN}${path}${queryString ? '?' + queryString : ''}`
-    const modified = indexContent.replace(
-      '</head>',
-      `  <link rel="canonical" href="${canonicalUrl}" />\n</head>`
-    )
-    res.writeHead(200, { 'Content-Type': 'text/html' })
-    res.end(modified)
-  } catch {
-    serveFile(res, INDEX, 200)
-  }
+  if (serveFile(res, join(DIST, path), 200)) return
+  if (serveFile(res, NOT_FOUND, 404)) return
+  res.writeHead(404, { 'Content-Type': 'text/plain' })
+  res.end('Not Found')
 })
 
 server.listen(PORT, () => {
