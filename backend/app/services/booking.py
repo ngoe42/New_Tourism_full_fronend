@@ -243,7 +243,7 @@ class BookingService:
                 logger.error(f"Pesapal init failed for booking #{booking_id}: {exc}")
                 await self.db.rollback()
 
-        # Fire-and-forget email tasks so the user isn't blocked by SendGrid latency.
+        # Fire-and-forget email tasks so the user isn't blocked by SES latency.
         email_payment_link = (
             f"{settings.FRONTEND_URL}/payment/resume?id={booking_id}"
             if payment_link else None

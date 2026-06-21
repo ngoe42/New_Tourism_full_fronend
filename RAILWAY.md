@@ -43,8 +43,11 @@ Railway Project
 | `FIRST_ADMIN_PASSWORD` | *(choose a strong password)* |
 | `ALLOWED_ORIGINS` | *(leave blank for now — fill in Step 5)* |
 | `REDIS_URL` | *(optional — add Redis plugin if needed)* |
-| `SENDGRID_API_KEY` | *(your SendGrid API key)* |
-| `EMAIL_FROM` | *(your verified SendGrid sender email)* |
+| `AWS_ACCESS_KEY_ID` | *(your AWS IAM access key with ses:SendEmail permission)* |
+| `AWS_SECRET_ACCESS_KEY` | *(your AWS IAM secret key)* |
+| `AWS_REGION` | `us-east-1` *(or your SES region)* |
+| `SES_FROM_EMAIL` | `noreply@nelsontoursandsafaris.com` *(verified SES sender)* |
+| `EMAIL_FROM` | *(admin notification recipient — defaults to your email)* |
 | `BACKEND_URL` | `https://YOUR-BACKEND-URL.railway.app` *(fill after Step 3)* |
 | `FRONTEND_URL` | `https://YOUR-FRONTEND-URL.railway.app` *(fill after Step 4)* |
 | `PESAPAL_CONSUMER_KEY` | *(from Pesapal dashboard — sandbox or live)* |
@@ -136,9 +139,12 @@ ALLOWED_ORIGINS=https://frontend-xxx.railway.app
 FIRST_ADMIN_EMAIL=admin@nelsontoursandsafari.com
 FIRST_ADMIN_PASSWORD=YourSecurePassword123!
 
-# Email
-SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxx
-EMAIL_FROM=bookings@nelsontoursandsafari.com
+# Email — Amazon SES
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=us-east-1
+SES_FROM_EMAIL=noreply@nelsontoursandsafaris.com
+EMAIL_FROM=admin@nelsontoursandsafaris.com
 
 # URLs (use your actual Railway service URLs)
 BACKEND_URL=https://backend-xxx.railway.app

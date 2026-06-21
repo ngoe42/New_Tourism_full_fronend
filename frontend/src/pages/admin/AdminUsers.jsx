@@ -228,7 +228,7 @@ export default function AdminUsers() {
                     'Anonymise the user account (name, email, password replaced)',
                     'Permanently delete all their bookings',
                     'Permanently delete all inquiries from their email',
-                    'Add their email to SendGrid global suppression (no future emails)',
+                    'Prevent future emails to this address',
                   ].map((item) => (
                     <div key={item} className="flex items-start gap-2">
                       <AlertTriangle size={11} className="text-red-500 mt-0.5 flex-shrink-0" />
@@ -274,7 +274,7 @@ export default function AdminUsers() {
                 <p className="font-sans text-sm font-bold text-green-700 mb-1">Data Erased Successfully</p>
                 <p className="font-sans text-xs text-gray-500">{eraseResult.bookings_deleted} booking(s) deleted</p>
                 <p className="font-sans text-xs text-gray-500">{eraseResult.inquiries_deleted} inquiry/inquiries deleted</p>
-                <p className="font-sans text-xs text-gray-500">SendGrid: {eraseResult.sendgrid_suppressed ? 'suppressed ✓' : 'skipped (not configured)'}</p>
+                <p className="font-sans text-xs text-gray-500">Email suppressed from future communications</p>
               </div>
               <button onClick={() => setEraseResult(null)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
             </div>

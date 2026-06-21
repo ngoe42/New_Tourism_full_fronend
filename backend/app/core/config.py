@@ -40,8 +40,8 @@ class Settings(BaseSettings):
     SUPER_ADMIN_PASSWORD: str = "admin@123"
     SUPER_ADMIN_NAME: str = "Kenedy"
 
-    SENDGRID_API_KEY: Optional[str] = None
-    EMAIL_FROM: str = "ngoekenedy@gmail.com"
+    SES_FROM_EMAIL: Optional[str] = None  # SES verified sender (e.g. noreply@...)
+    EMAIL_FROM: str = "ngoekenedy@gmail.com"  # Admin notification recipient
     FRONTEND_URL: str = "https://nelsontoursandsafari.com"
     BACKEND_URL: str = "https://nelsonsafari-backend-development.up.railway.app"
     # "https://api.nelsontoursandsafari.com"

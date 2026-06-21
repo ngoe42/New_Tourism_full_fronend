@@ -32,10 +32,11 @@ from app.api.v1.router import api_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    if settings.SENDGRID_API_KEY:
-        logger.info(f"[email] SendGrid configured ✓ — sending from {settings.EMAIL_FROM}")
+    if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+        ses_from = settings.SES_FROM_EMAIL or settings.EMAIL_FROM
+        logger.info(f"[email] Amazon SES configured ✓ — sending from {ses_from}")
     else:
-        logger.warning("[email] SENDGRID_API_KEY is NOT set — all emails will be silently skipped!")
+        logger.warning("[email] AWS SES credentials are NOT set — all emails will be silently skipped!")
     if settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET:
         logger.info(f"[payment] Pesapal configured ✓ — environment={settings.PESAPAL_ENVIRONMENT}, IPN ID={'set' if settings.PESAPAL_IPN_ID else 'NOT SET (will auto-register)'}")
     else:
