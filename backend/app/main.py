@@ -1,12 +1,13 @@
 import asyncio
 import hashlib
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse, PlainTextResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.gzip import GZipMiddleware
@@ -179,6 +180,20 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
+PRODUCTION_DOMAIN = "nelsontoursandsafaris.com"
+RAILWAY_HOST_SUFFIX = "railway.app"
+
+
+@app.middleware("http")
+async def railway_redirect_middleware(request: Request, call_next):
+    host = request.headers.get("host", "")
+    if RAILWAY_HOST_SUFFIX in host:
+        production_url = f"https://{PRODUCTION_DOMAIN}{request.url.path}"
+        if request.url.query:
+            production_url += f"?{request.url.query}"
+        return RedirectResponse(url=production_url, status_code=301)
+    return await call_next(request)
+
 
 @app.middleware("http")
 async def security_headers_middleware(request: Request, call_next):
@@ -273,3 +288,85 @@ async def health_check():
         "redis": redis_status,
         "database": db_status,
     }
+
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt(request: Request):
+    host = request.headers.get("host", "")
+    if RAILWAY_HOST_SUFFIX in host:
+        return PlainTextResponse(
+            "User-agent: *\nDisallow: /\n"
+        )
+    return PlainTextResponse(
+        "User-agent: *\nAllow: /\n\n"
+        f"Sitemap: https://{PRODUCTION_DOMAIN}/sitemap.xml\n"
+    )
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml(request: Request):
+    from app.core.database import AsyncSessionLocal
+    from sqlalchemy import text
+
+    static_pages = [
+        ("/", "2026-06-21", "weekly", "1.0"),
+        ("/tours", "2026-06-21", "daily", "0.9"),
+        ("/routes", "2026-06-21", "weekly", "0.8"),
+        ("/experiences", "2026-06-21", "weekly", "0.8"),
+        ("/blog", "2026-06-21", "weekly", "0.7"),
+        ("/about", "2026-06-21", "monthly", "0.7"),
+        ("/kilimanjaro", "2026-06-21", "weekly", "0.9"),
+        ("/trekking", "2026-06-21", "weekly", "0.8"),
+        ("/meru", "2026-06-21", "weekly", "0.8"),
+        ("/oldoinyo-lengai", "2026-06-21", "weekly", "0.8"),
+        ("/safari", "2026-06-21", "weekly", "0.9"),
+        ("/contact", "2026-06-21", "monthly", "0.6"),
+    ]
+
+    urls = []
+    for path, lastmod, changefreq, priority in static_pages:
+        urls.append(f"""  <url>
+    <loc>https://{PRODUCTION_DOMAIN}{path}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>{changefreq}</changefreq>
+    <priority>{priority}</priority>
+  </url>""")
+
+    try:
+        async with AsyncSessionLocal() as db:
+            tours = await db.execute(
+                text("SELECT slug, updated_at FROM tours WHERE is_published = TRUE ORDER BY updated_at DESC")
+            )
+            for row in tours.fetchall():
+                slug, updated = row
+                lastmod = (updated.strftime("%Y-%m-%d") if updated else "2026-06-21")
+                urls.append(f"""  <url>
+    <loc>https://{PRODUCTION_DOMAIN}/tours/{slug}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>""")
+
+            routes = await db.execute(
+                text("SELECT slug, updated_at FROM routes WHERE is_published = TRUE ORDER BY updated_at DESC")
+            )
+            for row in routes.fetchall():
+                slug, updated = row
+                lastmod = (updated.strftime("%Y-%m-%d") if updated else "2026-06-21")
+                urls.append(f"""  <url>
+    <loc>https://{PRODUCTION_DOMAIN}/routes/{slug}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>""")
+    except Exception:
+        logger.warning("Failed to fetch dynamic routes for sitemap — using static pages only")
+
+    content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+{chr(10).join(urls)}
+</urlset>"""
+    return Response(content=content, media_type="application/xml")
