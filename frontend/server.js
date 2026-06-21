@@ -87,8 +87,8 @@ const server = createServer((req, res) => {
     redirectUrl = `https://${PRODUCTION_DOMAIN}${path}`
   }
 
-  // Force lowercase path
-  if (!redirectUrl && path !== path.toLowerCase()) {
+  // Force lowercase path (only for SPA routes, not static assets with hashed filenames)
+  if (!redirectUrl && !hasFileExtension(path) && path !== path.toLowerCase()) {
     redirectUrl = `https://${host}${path.toLowerCase()}`
   }
 
