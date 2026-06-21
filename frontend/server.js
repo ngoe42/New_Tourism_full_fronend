@@ -52,14 +52,29 @@ function hasFileExtension(urlPath) {
   return base.includes('.')
 }
 
+const TRACKING_PARAMS = new Set([
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+  'fbclid', 'gclid', 'gclsrc', 'dclid', 'msclkid',
+  'ref', 'source', 'si', 's_kwcid',
+])
+
+function stripTrackingParams(query) {
+  if (!query) return ''
+  const params = new URLSearchParams(query)
+  for (const key of TRACKING_PARAMS) params.delete(key)
+  const clean = params.toString()
+  return clean ? `?${clean}` : ''
+}
+
 const server = createServer((req, res) => {
   const host = (req.headers.host || '').split(':')[0].toLowerCase()
-  const [pathPart, queryString] = req.url.split('?')
+  const [pathPart, rawQuery] = req.url.split('?')
   let path = pathPart
+  const queryString = stripTrackingParams(rawQuery)
 
   // Railway staging → production
   if (host.includes('.up.railway.app')) {
-    const url = `https://${PRODUCTION_DOMAIN}${req.url}`
+    const url = `https://${PRODUCTION_DOMAIN}${path}${queryString}`
     res.writeHead(301, { Location: url })
     res.end()
     return
@@ -83,7 +98,7 @@ const server = createServer((req, res) => {
   }
 
   if (redirectUrl) {
-    if (queryString) redirectUrl += `?${queryString}`
+    redirectUrl += queryString
     res.writeHead(301, { Location: redirectUrl })
     res.end()
     return
@@ -94,7 +109,7 @@ const server = createServer((req, res) => {
   if (isSPARoute) {
     try {
       const indexContent = readFileSync(INDEX, 'utf-8')
-      const canonicalUrl = `https://${PRODUCTION_DOMAIN}${path}${queryString ? '?' + queryString : ''}`
+      const canonicalUrl = `https://${PRODUCTION_DOMAIN}${path}${queryString}`
       const modified = indexContent.replace(
         '</head>',
         `  <link rel="canonical" href="${canonicalUrl}" />\n</head>`
