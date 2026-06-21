@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import SEO from '../components/SEO'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, EffectFade } from 'swiper/modules'
 import 'swiper/css/effect-fade'
@@ -63,6 +64,7 @@ export default function TourDetail() {
   if (isError || !tour) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-beige">
+        <SEO title="Tour Not Found — Nelson Tour and Safari" noindex />
         <div className="text-center">
           <div className="text-6xl mb-4">🦁</div>
           <h2 className="font-serif text-3xl text-green-950 mb-4">Tour not found</h2>
@@ -72,12 +74,24 @@ export default function TourDetail() {
     )
   }
 
+  // Redirect numeric ID to canonical slug
+  const slugFromId = tour.slug
+  if (id !== slugFromId && !isNaN(id)) {
+    navigate(`/tours/${slugFromId}`, { replace: true })
+  }
+
   const coverImage = resolveImageUrl(tour.images?.find((i) => i.is_cover)?.url ?? tour.images?.[0]?.url ?? '/images/hero-bg.jpg')
   const galleryImages = tour.images?.length ? tour.images.map((i) => resolveImageUrl(i.url)) : [coverImage]
   const related = relatedData ?? []
 
   return (
-    <main className="min-h-screen bg-beige">
+    <>
+      <SEO
+        title={`${tour.title} — Nelson Tour and Safari`}
+        description={tour.short_description || `${tour.title} — Book your luxury Tanzania safari with expert local guides.`}
+        canonicalPath={`/tours/${tour.slug}`}
+      />
+      <main className="min-h-screen bg-beige">
       {/* Sticky Booking Bar */}
       <AnimatePresence>
         {stickyVisible && (
@@ -479,5 +493,6 @@ export default function TourDetail() {
         )}
       </div>
     </main>
+    </>
   )
 }

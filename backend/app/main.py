@@ -186,13 +186,34 @@ RAILWAY_HOST_SUFFIX = ".up.railway.app"
 
 
 @app.middleware("http")
-async def railway_redirect_middleware(request: Request, call_next):
-    host = request.headers.get("host", "")
+async def canonical_redirect_middleware(request: Request, call_next):
+    host = request.headers.get("host", "").split(":")[0].lower()
+    path = request.url.path
+    query = request.url.query
+
+    # Railway staging → production
     if RAILWAY_HOST_SUFFIX in host:
-        production_url = f"https://{PRODUCTION_DOMAIN}{request.url.path}"
-        if request.url.query:
-            production_url += f"?{request.url.query}"
-        return RedirectResponse(url=production_url, status_code=301)
+        redirect_url = f"https://{PRODUCTION_DOMAIN}{path}"
+        if query:
+            redirect_url += f"?{query}"
+        return RedirectResponse(url=redirect_url, status_code=301)
+
+    target_host = PRODUCTION_DOMAIN
+    # www → non-www
+    if host == f"www.{PRODUCTION_DOMAIN}":
+        target_host = PRODUCTION_DOMAIN
+
+    # Normalize path: lowercase, no trailing slash (except root)
+    normalized = path.lower()
+    if len(normalized) > 1 and normalized.endswith("/"):
+        normalized = normalized.rstrip("/")
+
+    if host != target_host or normalized != path:
+        redirect_url = f"https://{target_host}{normalized}"
+        if query:
+            redirect_url += f"?{query}"
+        return RedirectResponse(url=redirect_url, status_code=301)
+
     return await call_next(request)
 
 
@@ -336,7 +357,7 @@ async def sitemap_xml(request: Request):
     try:
         async with AsyncSessionLocal() as db:
             tours = await db.execute(
-                text("SELECT slug, updated_at FROM tours WHERE is_published = TRUE ORDER BY updated_at DESC")
+                text("SELECT slug, updated_at FROM tours WHERE is_published = TRUE AND slug !~ '^[0-9]+$' ORDER BY updated_at DESC")
             )
             for row in tours.fetchall():
                 slug, updated = row

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
+import SEO from '../components/SEO'
 import {
   Clock, Mountain, TrendingUp, Users, Calendar, MapPin, CheckCircle,
   XCircle, Backpack, ChevronRight, ArrowLeft, ShieldCheck, Info,
@@ -43,19 +44,28 @@ export default function RouteDetail() {
 
   if (error || !route) {
     return (
-      <div className="pt-32 min-h-screen flex flex-col items-center justify-center gap-4">
-        <Mountain size={48} className="text-gray-300" />
-        <h2 className="font-serif text-3xl font-bold text-green-950">Route Not Found</h2>
-        <p className="font-sans text-gray-500">The Kilimanjaro route you're looking for doesn't exist.</p>
-        <Link to="/routes" className="mt-4 bg-green-950 text-white px-6 py-3 rounded-full font-sans font-medium hover:bg-green-800 transition-colors">
-          View All Routes
-        </Link>
-      </div>
+      <>
+        <SEO title="Route Not Found — Nelson Tour and Safari" noindex />
+        <div className="pt-32 min-h-screen flex flex-col items-center justify-center gap-4">
+          <Mountain size={48} className="text-gray-300" />
+          <h2 className="font-serif text-3xl font-bold text-green-950">Route Not Found</h2>
+          <p className="font-sans text-gray-500">The Kilimanjaro route you're looking for doesn't exist.</p>
+          <Link to="/routes" className="mt-4 bg-green-950 text-white px-6 py-3 rounded-full font-sans font-medium hover:bg-green-800 transition-colors">
+            View All Routes
+          </Link>
+        </div>
+      </>
     )
   }
 
   return (
-    <div className="bg-[#faf8f3] min-h-screen">
+    <>
+      <SEO
+        title={`${route.name} — Nelson Tour and Safari`}
+        description={route.short_description || `Climb ${route.name} with expert guides. Book your Kilimanjaro trek today.`}
+        canonicalPath={`/routes/${route.slug}`}
+      />
+      <div className="bg-[#faf8f3] min-h-screen">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="relative min-h-[60vh] sm:min-h-[75vh] flex flex-col justify-end bg-green-950 overflow-hidden">
@@ -426,5 +436,6 @@ export default function RouteDetail() {
       </div>
 
     </div>
+    </>
   )
 }
