@@ -32,10 +32,11 @@ export default function Hero() {
   const wantVideo  = heroMode === 'video' || heroMode === 'both'
   const wantImages = heroMode === 'images' || heroMode === 'both'
 
-  const shouldUseVideo     = wantVideo && !!heroVideoUrl && !videoFailed
+  const hasVideo = !!heroVideoUrl
+  const shouldUseVideo     = wantVideo && hasVideo && !videoFailed
   const shouldUseSlideshow = !shouldUseVideo && wantImages && heroImages.length > 0
 
-  const videoSrc  = heroVideoUrl || '/videos/hero.mp4'
+  const videoSrc  = heroVideoUrl
 
   useEffect(() => {
     if (!shouldUseSlideshow || heroImages.length <= 1) return
