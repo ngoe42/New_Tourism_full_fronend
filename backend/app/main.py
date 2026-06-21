@@ -191,6 +191,10 @@ async def canonical_redirect_middleware(request: Request, call_next):
     path = request.url.path
     query = request.url.query
 
+    # Bypass redirects for healthcheck endpoints (Railway uses healthcheck.railway.app)
+    if path in ("/health", "/api/v1/health"):
+        return await call_next(request)
+
     # Railway staging → production
     if RAILWAY_HOST_SUFFIX in host:
         redirect_url = f"https://{PRODUCTION_DOMAIN}{path}"
