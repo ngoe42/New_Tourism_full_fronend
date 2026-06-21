@@ -43,14 +43,25 @@ Railway Project
 | `FIRST_ADMIN_PASSWORD` | *(choose a strong password)* |
 | `ALLOWED_ORIGINS` | *(leave blank for now — fill in Step 5)* |
 | `REDIS_URL` | *(optional — add Redis plugin if needed)* |
-| `SENDGRID_API_KEY` | *(your SendGrid API key)* |
-| `EMAIL_FROM` | *(your verified SendGrid sender email)* |
+| `AWS_ACCESS_KEY_ID` | *(your AWS IAM access key with ses:SendEmail permission)* |
+| `AWS_SECRET_ACCESS_KEY` | *(your AWS IAM secret key)* |
+| `AWS_REGION` | `us-east-1` *(or your SES region)* |
+| `SES_FROM_EMAIL` | `noreply@nelsontoursandsafaris.com` *(verified SES sender)* |
+| `EMAIL_FROM` | *(admin notification recipient — defaults to your email)* |
 | `BACKEND_URL` | `https://YOUR-BACKEND-URL.railway.app` *(fill after Step 3)* |
 | `FRONTEND_URL` | `https://YOUR-FRONTEND-URL.railway.app` *(fill after Step 4)* |
 | `PESAPAL_CONSUMER_KEY` | *(from Pesapal dashboard — sandbox or live)* |
 | `PESAPAL_CONSUMER_SECRET` | *(from Pesapal dashboard)* |
 | `PESAPAL_ENVIRONMENT` | `sandbox` (use `live` for production) |
 | `PESAPAL_IPN_ID` | *(leave blank — auto-registered on first booking)* |
+
+> **Required — File storage:** Railway has an ephemeral filesystem; local file writes are lost on every redeploy.
+> You **must** configure one of the following cloud storage providers or image uploads will return `503`:
+>
+> | Provider | Variables required |
+> |---|---|
+> | Cloudinary (recommended) | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
+> | AWS S3 | `AWS_BUCKET_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` |
 
 > **Tip:** In Railway, go to PostgreSQL plugin → **Connect** and use **"Add to service"** to automatically inject `DATABASE_URL` into the backend service.
 
@@ -128,9 +139,12 @@ ALLOWED_ORIGINS=https://frontend-xxx.railway.app
 FIRST_ADMIN_EMAIL=admin@nelsontoursandsafari.com
 FIRST_ADMIN_PASSWORD=YourSecurePassword123!
 
-# Email
-SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxx
-EMAIL_FROM=bookings@nelsontoursandsafari.com
+# Email — Amazon SES
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=us-east-1
+SES_FROM_EMAIL=noreply@nelsontoursandsafaris.com
+EMAIL_FROM=admin@nelsontoursandsafaris.com
 
 # URLs (use your actual Railway service URLs)
 BACKEND_URL=https://backend-xxx.railway.app
@@ -182,4 +196,4 @@ Browser → Frontend (Railway)
 - Docker maps the API container (port 8000) to **host port 8002**
 - Vite proxy (`vite.config.js`) forwards `/api/v1` → `http://localhost:8002`
 - `public/config.js` must stay as `window.APP_CONFIG = {}` (no API_URL set) so the proxy is used
-- With `DEBUG=true` in `backend/.env`, the backend allows all CORS origins (`*`) automatically
+- With `ENVIRONMENT=development` (set in `docker-compose.yml`), the backend allows all CORS origins (`*`) automatically. On Railway, `ENVIRONMENT=production` restricts CORS to `ALLOWED_ORIGINS` only.

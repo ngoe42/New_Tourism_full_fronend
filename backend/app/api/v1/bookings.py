@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, Query, Request, status as http_status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.limiter import limiter
 from app.dependencies.auth import get_current_user, get_current_user_optional, require_admin
 from app.models.user import User
-from app.schemas.booking import BookingCreate, BookingResponse, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
+from app.schemas.booking import BookingCreate, BookingResponse, BookingPublicResponse, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
+from app.repositories.booking import BookingRepository
 from app.services.booking import BookingService
 
 router = APIRouter(tags=["Bookings"])
@@ -21,6 +22,22 @@ async def create_booking(
 ):
     service = BookingService(db)
     return await service.create_booking(data, current_user)
+
+
+@router.get("/lookup", response_model=BookingPublicResponse)
+@limiter.limit("10/minute")
+async def lookup_booking_public(
+    request: Request,
+    id: int = Query(..., description="Booking ID"),
+    email: str = Query(..., description="Email used when booking"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Public booking lookup — verifies ID + email match before returning details."""
+    repo = BookingRepository(db)
+    booking = await repo.get(id)
+    if not booking or booking.contact_email.lower() != email.strip().lower():
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return booking
 
 
 @router.get("/me", response_model=PaginatedBookings)

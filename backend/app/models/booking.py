@@ -1,7 +1,8 @@
 import enum
 from datetime import datetime, date, timezone
+from decimal import Decimal
 from typing import Optional
-from sqlalchemy import String, Text, Float, Integer, Enum, DateTime, Date, ForeignKey
+from sqlalchemy import String, Text, Numeric, Integer, Enum, DateTime, Date, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -21,7 +22,7 @@ class Booking(Base):
     tour_id: Mapped[int] = mapped_column(ForeignKey("tours.id", ondelete="CASCADE"), nullable=False, index=True)
     travel_date: Mapped[date] = mapped_column(Date, nullable=False)
     guests: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    total_price: Mapped[float] = mapped_column(Float, nullable=False)
+    total_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     status: Mapped[BookingStatus] = mapped_column(
         Enum(BookingStatus), default=BookingStatus.pending, nullable=False, index=True
     )
@@ -47,3 +48,6 @@ class Booking(Base):
 
     user: Mapped["User"] = relationship("User", back_populates="bookings")
     tour: Mapped["Tour"] = relationship("Tour", back_populates="bookings")
+    payment_attempts: Mapped[list["PaymentAttempt"]] = relationship(
+        "PaymentAttempt", back_populates="booking", lazy="noload"
+    )

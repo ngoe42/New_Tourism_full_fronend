@@ -443,25 +443,9 @@ export default function KilimanjaroEnhancedSections() {
             <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">
               The Summit Is Waiting. <br className="hidden sm:block" />Your Story Begins Now.
             </h2>
-            <p className="font-sans text-white/65 text-base sm:text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
+            <p className="font-sans text-white/65 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
               The moment you take your first step onto Kilimanjaro, something shifts. The noise of daily life falls away. The mountain takes over. And every step forward brings you closer to standing at the highest point in Africa — 5,895 metres above the world, above the clouds, above every doubt you ever had about yourself. Nelson Tours and Safaris has guided thousands of climbers to that moment. It is time to begin your story.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/routes"
-                className="inline-flex items-center justify-center gap-2 bg-gold hover:bg-gold/90 text-white font-sans font-semibold text-base px-8 py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-              >
-                Explore Our Routes <ArrowRight size={16} />
-              </Link>
-              <a
-                href="https://wa.me/255750005973"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-sans font-semibold text-base px-8 py-4 rounded-full transition-all duration-300"
-              >
-                Chat with an Expert
-              </a>
-            </div>
           </motion.div>
         </div>
       </section>

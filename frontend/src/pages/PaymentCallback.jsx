@@ -12,8 +12,8 @@ const STATUS_MAP = {
     bg: 'bg-green-50',
     title: 'Payment Successful!',
     message: 'Your booking is confirmed. A confirmation email has been sent to your inbox.',
-    cta: 'View My Bookings',
-    ctaTo: '/my-bookings',
+    cta: 'View My Booking',
+    ctaTo: null,
     ctaStyle: 'bg-green-900 hover:bg-gold',
   },
   FAILED: {
@@ -113,9 +113,9 @@ export default function PaymentCallback() {
     const id = extractBookingId(merchantReference) || (storedId ? parseInt(storedId) : null)
     if (id) {
       setBookingId(id)
-      setResendRef(`NTS-${id}`)
+      setResendRef(String(id))
     }
-    if (storedEmail && !resendEmail) setResendEmail(storedEmail)
+    if (storedEmail) setResendEmail((prev) => prev || storedEmail)
 
     async function initialCheck() {
       if (!merchantReference && !orderTrackingId && !id) {
@@ -133,7 +133,8 @@ export default function PaymentCallback() {
 
     initialCheck()
     return () => { clearTimeout(pollTimer.current); clearInterval(countdownTimer.current) }
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merchantReference, orderTrackingId])
 
   const schedulePoll = (id, count) => {
     if (count > MAX_POLLS) return
@@ -314,7 +315,7 @@ export default function PaymentCallback() {
 
         <div className="flex flex-col gap-3">
           <Link
-            to={config.ctaTo}
+            to={paymentStatus === 'COMPLETED' && bookingId ? `/booking/${bookingId}` : (config.ctaTo || '/')}
             className={`${config.ctaStyle} text-white font-sans font-medium py-3 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2 text-sm`}
           >
             {config.cta} <ArrowRight size={15} />

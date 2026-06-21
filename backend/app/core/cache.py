@@ -94,12 +94,18 @@ async def cache_delete(*keys: str) -> None:
 
 
 async def cache_delete_pattern(pattern: str) -> None:
-    """Delete all keys matching a glob pattern, e.g. 'tours:list:*'."""
+    """Delete all keys matching a glob pattern, e.g. 'tours:list:*'.
+    Uses SCAN instead of KEYS to avoid blocking Redis under load.
+    """
     if _redis is None:
         return
     try:
-        keys = await _redis.keys(pattern)
-        if keys:
-            await _redis.delete(*keys)
+        cursor: int = 0
+        while True:
+            cursor, keys = await _redis.scan(cursor=cursor, match=pattern, count=100)
+            if keys:
+                await _redis.delete(*keys)
+            if cursor == 0:
+                break
     except Exception as exc:
         logger.warning(f"cache_delete_pattern [{pattern}]: {exc}")

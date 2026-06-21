@@ -52,6 +52,8 @@ export default function Navbar() {
   const [activeRouteHover, setActiveRouteHover] = useState(null)
   const [activeTourHover, setActiveTourHover] = useState(null)
   const [activeExpHover, setActiveExpHover] = useState(null)
+  const [activeKiliSubItem, setActiveKiliSubItem] = useState(null)
+  const [mobileSub, setMobileSub] = useState(null)
 
   const { data: experiencesData } = useQuery({
     queryKey: ['nav-experiences'],
@@ -151,6 +153,7 @@ export default function Navbar() {
                   setActiveRouteHover(null)
                   setActiveTourHover(null)
                   setActiveExpHover(null)
+                  setActiveKiliSubItem(null)
                 }}
               >
                 <Link
@@ -165,7 +168,7 @@ export default function Navbar() {
                   )}
                 </Link>
 
-                {/* Kilimanjaro Route Megamenu */}
+                {/* Kilimanjaro Megamenu — 3-column */}
                 <AnimatePresence>
                   {link.hasRouteDropdown && activeDropdown === link.label && (
                     <motion.div
@@ -174,117 +177,202 @@ export default function Navbar() {
                       exit={{ opacity: 0, y: 10 }}
                       transition={{ duration: 0.2 }}
                       className="absolute top-full -left-10 mt-3 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex"
-                      style={{ width: activeRouteHover ? 700 : 290 }}
+                      style={{
+                        width: activeKiliSubItem === 'routes'
+                          ? (activeRouteHover ? 800 : 490)
+                          : activeKiliSubItem === 'mountains'
+                          ? 450
+                          : 250,
+                      }}
                     >
-                      {/* Left: Route List */}
-                      <div className="w-[290px] flex-shrink-0 bg-white border-r border-gray-100 flex flex-col">
+                      {/* Column 1: Kilimanjaro main menu */}
+                      <div className="w-[250px] flex-shrink-0 bg-white flex flex-col">
                         <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
                           <Mountain size={14} className="text-gold" />
-                          <span className="font-sans text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Select Route</span>
+                          <span className="font-sans text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Kilimanjaro</span>
                         </div>
                         <div className="py-2 flex-1">
-                          {routeList.length === 0 ? (
-                            <div className="px-5 py-4 font-sans text-sm text-gray-400">Loading routes…</div>
-                          ) : (
-                            routeList.map((route) => (
-                              <div
-                                key={route.id}
-                                onMouseEnter={() => setActiveRouteHover(route)}
-                                onClick={() => { navigate(`/routes/${route.slug}`); setActiveDropdown(null) }}
-                                className={`px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors duration-150 flex items-center justify-between group ${
-                                  activeRouteHover?.id === route.id ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
-                                }`}
-                              >
-                                <span>{route.name}</span>
-                                <ArrowRight size={12} className={`transition-all duration-200 ${activeRouteHover?.id === route.id ? 'text-gold translate-x-0 opacity-100' : 'text-gray-300 -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0'}`} />
-                              </div>
-                            ))
-                          )}
+                          {/* Overview */}
+                          <Link
+                            to="/trekking"
+                            onClick={() => setActiveDropdown(null)}
+                            onMouseEnter={() => { setActiveKiliSubItem(null); setActiveRouteHover(null) }}
+                            className="flex items-center gap-2.5 px-4 py-2.5 font-sans text-sm text-gray-700 hover:bg-gray-50 hover:text-green-800 transition-colors"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                            Kilimanjaro &amp; Trekking Overview
+                          </Link>
+                          {/* Routes → sub-panel */}
+                          <div
+                            onMouseEnter={() => { setActiveKiliSubItem('routes') }}
+                            className={`flex items-center justify-between px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors ${
+                              activeKiliSubItem === 'routes' ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                              Kilimanjaro Routes
+                            </div>
+                            <ChevronRight size={13} className={`flex-shrink-0 transition-colors ${activeKiliSubItem === 'routes' ? 'text-gold' : 'text-gray-300'}`} />
+                          </div>
+                          {/* Packing List */}
+                          <Link
+                            to="/trekking#packing-list"
+                            onClick={() => setActiveDropdown(null)}
+                            onMouseEnter={() => { setActiveKiliSubItem(null); setActiveRouteHover(null) }}
+                            className="flex items-center gap-2.5 px-4 py-2.5 font-sans text-sm text-gray-700 hover:bg-gray-50 hover:text-green-800 transition-colors"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                            Kilimanjaro Packing List
+                          </Link>
+                          {/* Other Mountains → sub-panel */}
+                          <div
+                            onMouseEnter={() => { setActiveKiliSubItem('mountains'); setActiveRouteHover(null) }}
+                            className={`flex items-center justify-between px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors ${
+                              activeKiliSubItem === 'mountains' ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                              Other Mountains
+                            </div>
+                            <ChevronRight size={13} className={`flex-shrink-0 transition-colors ${activeKiliSubItem === 'mountains' ? 'text-gold' : 'text-gray-300'}`} />
+                          </div>
                         </div>
                         <div className="p-3 border-t border-gray-100 bg-gray-50">
-                          <Link to="/routes" onClick={() => setActiveDropdown(null)} className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
-                            View All Kilimanjaro Routes <ArrowRight size={11} />
+                          <Link to="/trekking" onClick={() => setActiveDropdown(null)} className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
+                            Trekking Overview <ArrowRight size={11} />
                           </Link>
                         </div>
                       </div>
 
-                      {/* Right: Route Details Preview */}
-                      {activeRouteHover && (
+                      {/* Column 2a: Routes list */}
+                      {activeKiliSubItem === 'routes' && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="w-[240px] flex-shrink-0 bg-white border-l border-gray-100 flex flex-col"
+                        >
+                          <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 bg-beige/40">
+                            <Mountain size={12} className="text-gold" />
+                            <span className="font-sans text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Select Route</span>
+                          </div>
+                          <div className="py-2 flex-1">
+                            {routeList.length === 0 ? (
+                              <div className="px-4 py-3 font-sans text-sm text-gray-400">Loading routes…</div>
+                            ) : (
+                              routeList.map((route) => (
+                                <div
+                                  key={route.id}
+                                  onMouseEnter={() => setActiveRouteHover(route)}
+                                  onClick={() => { navigate(`/routes/${route.slug}`); setActiveDropdown(null) }}
+                                  className={`px-4 py-2.5 font-sans text-sm cursor-pointer transition-colors flex items-center justify-between group ${
+                                    activeRouteHover?.id === route.id ? 'bg-beige text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <span>{route.name}</span>
+                                  <ArrowRight size={11} className={`transition-all duration-200 ${activeRouteHover?.id === route.id ? 'text-gold opacity-100' : 'text-gray-300 -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0'}`} />
+                                </div>
+                              ))
+                            )}
+                          </div>
+                          <div className="p-3 border-t border-gray-100 bg-gray-50">
+                            <Link to="/routes" onClick={() => setActiveDropdown(null)} className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
+                              View All Routes <ArrowRight size={11} />
+                            </Link>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Column 3: Route detail preview */}
+                      {activeKiliSubItem === 'routes' && activeRouteHover && (
                         <motion.div
                           key={activeRouteHover.id}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.18 }}
-                          className="w-[410px] flex flex-col"
+                          className="w-[310px] flex flex-col"
                         >
-                          {/* Cover image */}
-                          <div className="relative h-48 flex-shrink-0 overflow-hidden">
+                          <div className="relative h-40 flex-shrink-0 overflow-hidden">
                             {(() => {
                               const cover = activeRouteHover.images?.find(i => i.is_cover) ?? activeRouteHover.images?.[0]
                               return cover ? (
-                                <img
-                                  src={resolveImageUrl(cover.url)}
-                                  alt={activeRouteHover.name}
-                                  className="w-full h-full object-cover"
-                                />
+                                <img src={resolveImageUrl(cover.url)} alt={activeRouteHover.name} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
-                                  <Mountain size={32} className="text-white/30" />
+                                  <Mountain size={28} className="text-white/30" />
                                 </div>
                               )
                             })()}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                             <div className="absolute bottom-3 left-4 right-4">
-                              <h4 className="font-serif text-lg text-white font-bold leading-tight drop-shadow">
-                                {activeRouteHover.name}
-                              </h4>
+                              <h4 className="font-serif text-base text-white font-bold leading-tight drop-shadow">{activeRouteHover.name}</h4>
                               {activeRouteHover.nickname && (
                                 <p className="font-sans text-xs text-[#c9a96e] italic mt-0.5">"{activeRouteHover.nickname}"</p>
                               )}
                             </div>
                           </div>
-
-                          {/* Details */}
                           <div className="bg-[#faf8f3] p-4 flex flex-col flex-1">
-                            <div className="flex gap-2 mb-3">
-                              <span className="flex items-center gap-1 font-sans text-[11px] font-semibold text-gray-500 bg-white px-2 py-1 rounded-md shadow-sm">
-                                <Clock size={11} className="text-gold"/> {activeRouteHover.duration}
-                              </span>
+                            <div className="flex gap-2 mb-3 flex-wrap">
+                              {activeRouteHover.duration && (
+                                <span className="flex items-center gap-1 font-sans text-[11px] font-semibold text-gray-500 bg-white px-2 py-1 rounded-md shadow-sm">
+                                  <Clock size={10} className="text-gold" /> {activeRouteHover.duration}
+                                </span>
+                              )}
                               {activeRouteHover.difficulty && (
                                 <span className="flex items-center gap-1 font-sans text-[11px] font-semibold text-gray-500 bg-white px-2 py-1 rounded-md shadow-sm">
-                                  <Mountain size={11} className="text-gold"/> {activeRouteHover.difficulty}
+                                  <Mountain size={10} className="text-gold" /> {activeRouteHover.difficulty}
                                 </span>
                               )}
                             </div>
-
-                            <p className="font-sans text-xs text-gray-600 leading-relaxed mb-3 line-clamp-3">
-                              {activeRouteHover.short_description}
-                            </p>
-
-                            {activeRouteHover.nickname_explanation && (
-                              <div className="bg-white/80 p-2.5 rounded-lg border border-white mb-3">
-                                <p className="font-sans text-[11px] text-gray-500 leading-snug line-clamp-2">
-                                  <span className="font-semibold text-green-800">Why the nickname?</span> {activeRouteHover.nickname_explanation}
-                                </p>
-                              </div>
-                            )}
-
-                            <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
-                              <Link
-                                to="/routes"
-                                onClick={() => setActiveDropdown(null)}
-                                className="text-center font-sans text-xs font-semibold text-green-800 border border-green-800/20 bg-white hover:bg-gray-50 py-2 rounded-lg transition-colors"
-                              >
-                                View All Routes
+                            <p className="font-sans text-xs text-gray-600 leading-relaxed mb-3 line-clamp-3">{activeRouteHover.short_description}</p>
+                            <div className="grid grid-cols-2 gap-2 mt-auto">
+                              <Link to="/routes" onClick={() => setActiveDropdown(null)} className="text-center font-sans text-xs font-semibold text-green-800 border border-green-800/20 bg-white hover:bg-gray-50 py-2 rounded-lg transition-colors">
+                                All Routes
                               </Link>
-                              <Link
-                                to={`/routes/${activeRouteHover.slug}`}
-                                onClick={() => setActiveDropdown(null)}
-                                className="text-center font-sans text-xs font-semibold text-white bg-green-800 hover:bg-green-700 py-2 rounded-lg transition-colors shadow-md"
-                              >
-                                Book Now
+                              <Link to={`/routes/${activeRouteHover.slug}`} onClick={() => setActiveDropdown(null)} className="text-center font-sans text-xs font-semibold text-white bg-green-800 hover:bg-green-700 py-2 rounded-lg transition-colors shadow-sm">
+                                View Route
                               </Link>
                             </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Column 2b: Other Mountains sub-panel */}
+                      {activeKiliSubItem === 'mountains' && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="w-[200px] flex-shrink-0 bg-white border-l border-gray-100 flex flex-col"
+                        >
+                          <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 bg-beige/40">
+                            <Mountain size={12} className="text-gold" />
+                            <span className="font-sans text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Other Mountains</span>
+                          </div>
+                          <div className="py-2">
+                            <Link
+                              to="/oldoinyo-lengai"
+                              onClick={() => setActiveDropdown(null)}
+                              className="flex items-center justify-between px-4 py-2.5 font-sans text-sm text-gray-700 hover:bg-beige hover:text-green-800 transition-colors group"
+                            >
+                              <span>Oldoinyo Lengai</span>
+                              <ArrowRight size={11} className="text-gray-300 group-hover:text-gold transition-colors" />
+                            </Link>
+                            <Link
+                              to="/meru"
+                              onClick={() => setActiveDropdown(null)}
+                              className="flex items-center justify-between px-4 py-2.5 font-sans text-sm text-gray-700 hover:bg-beige hover:text-green-800 transition-colors group"
+                            >
+                              <span>Mount Meru</span>
+                              <ArrowRight size={11} className="text-gray-300 group-hover:text-gold transition-colors" />
+                            </Link>
+                          </div>
+                          <div className="p-3 border-t border-gray-100 bg-gray-50 mt-auto">
+                            <Link to="/contact" onClick={() => setActiveDropdown(null)} className="text-xs font-sans font-semibold text-green-700 hover:text-gold flex items-center justify-center gap-1 transition-colors">
+                              Enquire Now <ArrowRight size={11} />
+                            </Link>
                           </div>
                         </motion.div>
                       )}
@@ -603,45 +691,45 @@ export default function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="fixed inset-0 bg-black/60 z-[9998] lg:hidden"
+              className="fixed inset-0 bg-black/50 z-[9998] lg:hidden"
               onClick={() => setMenuOpen(false)}
             />
-            {/* Drawer */}
+            {/* Drawer — right-side panel, not full screen */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="fixed inset-0 bg-white z-[9999] lg:hidden flex flex-col"
+              transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+              className="fixed top-0 right-0 bottom-0 w-[82vw] max-w-[340px] bg-white z-[9999] lg:hidden flex flex-col shadow-2xl"
             >
               {/* Header: Logo + Close */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0 bg-white">
                 <Link to="/" onClick={() => setMenuOpen(false)}>
                   <img
-                    src="/images/logo/logo.png"
+                    src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
                     alt="Nelson Tours & Safari"
-                    className="h-[72px] w-auto object-contain"
+                    className="h-14 w-auto object-contain"
                   />
                 </Link>
                 <button
                   onClick={() => setMenuOpen(false)}
-                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                  className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors flex-shrink-0"
                 >
                   <X size={18} />
                 </button>
               </div>
 
               {/* Scrollable nav area */}
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
 
                 {/* Accordion Nav */}
-                <nav className="py-2">
+                <nav className="py-1">
 
-                  {/* HOME link */}
+                  {/* HOME */}
                   <Link
                     to="/"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors border-b border-gray-100"
+                    className="flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors border-b border-gray-100"
                   >
                     Home
                   </Link>
@@ -650,40 +738,131 @@ export default function Navbar() {
                   <div className="border-b border-gray-100">
                     <button
                       onClick={() => setMobileExpanded(mobileExpanded === 'kilimanjaro' ? null : 'kilimanjaro')}
-                      className="w-full flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors"
+                      className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Kilimanjaro</span>
-                      <ChevronRight size={16} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'kilimanjaro' ? 'rotate-90' : ''}`} />
+                      <ChevronRight size={15} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'kilimanjaro' ? 'rotate-90 text-gold' : ''}`} />
                     </button>
-                    <AnimatePresence>
+                    <AnimatePresence initial={false}>
                       {mobileExpanded === 'kilimanjaro' && (
                         <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: 'auto' }}
-                          exit={{ height: 0 }}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.22 }}
-                          className="overflow-hidden bg-gray-50"
+                          className="overflow-hidden bg-gray-50/80"
                         >
-                          <div className="px-6 pb-3 pt-1 space-y-0.5">
+                          <div className="py-1">
+                            {/* Overview */}
                             <Link
-                              to="/routes"
+                              to="/trekking"
                               onClick={() => setMenuOpen(false)}
-                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-80 transition-opacity"
+                              className="flex items-center gap-2.5 px-5 py-2.5 font-sans text-sm text-gray-700 hover:text-gold hover:bg-beige/50 transition-colors"
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
-                              All Routes Overview
+                              Kilimanjaro &amp; Trekking Overview
                             </Link>
-                            {routeList.map((route) => (
-                              <Link
-                                key={route.id}
-                                to={`/routes/${route.slug}`}
-                                onClick={() => setMenuOpen(false)}
-                                className="flex items-center gap-2.5 py-2 font-sans text-sm text-gray-700 hover:text-gold transition-colors border-b border-gray-100/70 last:border-0"
+
+                            {/* Routes sub-accordion */}
+                            <div>
+                              <button
+                                onClick={() => setMobileSub(mobileSub === 'routes' ? null : 'routes')}
+                                className="w-full flex items-center justify-between px-5 py-2.5 font-sans text-sm text-gray-700 hover:text-gold hover:bg-beige/50 transition-colors"
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-gold/50 flex-shrink-0" />
-                                {route.name}
-                              </Link>
-                            ))}
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                                  Kilimanjaro Routes
+                                </div>
+                                <ChevronRight size={13} className={`text-gray-400 transition-transform duration-200 ${mobileSub === 'routes' ? 'rotate-90 text-gold' : ''}`} />
+                              </button>
+                              <AnimatePresence initial={false}>
+                                {mobileSub === 'routes' && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.18 }}
+                                    className="overflow-hidden bg-white/60"
+                                  >
+                                    <div className="pl-9 pr-5 py-1 space-y-0.5">
+                                      {routeList.map((route) => (
+                                        <Link
+                                          key={route.id}
+                                          to={`/routes/${route.slug}`}
+                                          onClick={() => setMenuOpen(false)}
+                                          className="flex items-center gap-2 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-100/60 last:border-0"
+                                        >
+                                          <span className="w-1 h-1 rounded-full bg-gold/40 flex-shrink-0" />
+                                          {route.name}
+                                        </Link>
+                                      ))}
+                                      <Link
+                                        to="/routes"
+                                        onClick={() => setMenuOpen(false)}
+                                        className="flex items-center gap-2 py-2 font-sans text-xs font-semibold text-gold hover:opacity-75 transition-opacity"
+                                      >
+                                        <span className="w-1 h-1 rounded-full bg-gold flex-shrink-0" />
+                                        View All Routes
+                                      </Link>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+
+                            {/* Packing List */}
+                            <Link
+                              to="/trekking#packing-list"
+                              onClick={() => setMenuOpen(false)}
+                              className="flex items-center gap-2.5 px-5 py-2.5 font-sans text-sm text-gray-700 hover:text-gold hover:bg-beige/50 transition-colors"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                              Kilimanjaro Packing List
+                            </Link>
+
+                            {/* Other Mountains sub-accordion */}
+                            <div>
+                              <button
+                                onClick={() => setMobileSub(mobileSub === 'mountains' ? null : 'mountains')}
+                                className="w-full flex items-center justify-between px-5 py-2.5 font-sans text-sm text-gray-700 hover:text-gold hover:bg-beige/50 transition-colors"
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+                                  Other Mountains
+                                </div>
+                                <ChevronRight size={13} className={`text-gray-400 transition-transform duration-200 ${mobileSub === 'mountains' ? 'rotate-90 text-gold' : ''}`} />
+                              </button>
+                              <AnimatePresence initial={false}>
+                                {mobileSub === 'mountains' && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.18 }}
+                                    className="overflow-hidden bg-white/60"
+                                  >
+                                    <div className="pl-9 pr-5 py-1 space-y-0.5">
+                                      <Link
+                                        to="/oldoinyo-lengai"
+                                        onClick={() => setMenuOpen(false)}
+                                        className="flex items-center gap-2 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-100/60"
+                                      >
+                                        <span className="w-1 h-1 rounded-full bg-gold/40 flex-shrink-0" />
+                                        Oldoinyo Lengai
+                                      </Link>
+                                      <Link
+                                        to="/meru"
+                                        onClick={() => setMenuOpen(false)}
+                                        className="flex items-center gap-2 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors"
+                                      >
+                                        <span className="w-1 h-1 rounded-full bg-gold/40 flex-shrink-0" />
+                                        Mount Meru
+                                      </Link>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
                           </div>
                         </motion.div>
                       )}
@@ -694,36 +873,36 @@ export default function Navbar() {
                   <div className="border-b border-gray-100">
                     <button
                       onClick={() => setMobileExpanded(mobileExpanded === 'safari' ? null : 'safari')}
-                      className="w-full flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors"
+                      className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Safari</span>
-                      <ChevronRight size={16} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'safari' ? 'rotate-90' : ''}`} />
+                      <ChevronRight size={15} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'safari' ? 'rotate-90 text-gold' : ''}`} />
                     </button>
-                    <AnimatePresence>
+                    <AnimatePresence initial={false}>
                       {mobileExpanded === 'safari' && (
                         <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: 'auto' }}
-                          exit={{ height: 0 }}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.22 }}
-                          className="overflow-hidden bg-gray-50"
+                          className="overflow-hidden bg-gray-50/80"
                         >
-                          <div className="px-6 pb-3 pt-1 space-y-0.5">
+                          <div className="px-5 py-2 space-y-0.5">
                             {SAFARI_CATEGORIES.map((cat) => (
                               <Link
                                 key={cat}
                                 to={`/tours?category=${encodeURIComponent(cat)}`}
                                 onClick={() => setMenuOpen(false)}
-                                className="flex items-center gap-2.5 py-2.5 font-sans text-sm text-gray-700 hover:text-gold transition-colors border-b border-gray-100/70 last:border-0"
+                                className="flex items-center gap-2.5 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-100/60 last:border-0"
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-gold/50 flex-shrink-0" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-gold/40 flex-shrink-0" />
                                 {cat}
                               </Link>
                             ))}
                             <Link
                               to="/tours"
                               onClick={() => setMenuOpen(false)}
-                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-80 transition-opacity pt-1"
+                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-75 transition-opacity"
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
                               View All Safaris
@@ -738,25 +917,25 @@ export default function Navbar() {
                   <div className="border-b border-gray-100">
                     <button
                       onClick={() => setMobileExpanded(mobileExpanded === 'experiences' ? null : 'experiences')}
-                      className="w-full flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors"
+                      className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Experiences</span>
-                      <ChevronRight size={16} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'experiences' ? 'rotate-90' : ''}`} />
+                      <ChevronRight size={15} className={`text-gray-400 transition-transform duration-200 ${mobileExpanded === 'experiences' ? 'rotate-90 text-gold' : ''}`} />
                     </button>
-                    <AnimatePresence>
+                    <AnimatePresence initial={false}>
                       {mobileExpanded === 'experiences' && (
                         <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: 'auto' }}
-                          exit={{ height: 0 }}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.22 }}
-                          className="overflow-hidden bg-gray-50"
+                          className="overflow-hidden bg-gray-50/80"
                         >
-                          <div className="px-6 pb-3 pt-1 space-y-0.5">
+                          <div className="px-5 py-2 space-y-0.5">
                             <Link
                               to="/experiences"
                               onClick={() => setMenuOpen(false)}
-                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-80 transition-opacity"
+                              className="flex items-center gap-2.5 py-2 font-sans text-xs font-semibold text-gold hover:opacity-75 transition-opacity"
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
                               All Experiences
@@ -766,9 +945,9 @@ export default function Navbar() {
                                 key={exp.id}
                                 to="/experiences"
                                 onClick={() => setMenuOpen(false)}
-                                className="flex items-center gap-2.5 py-2 font-sans text-sm text-gray-700 hover:text-gold transition-colors border-b border-gray-100/70 last:border-0"
+                                className="flex items-center gap-2.5 py-2 font-sans text-sm text-gray-600 hover:text-gold transition-colors border-b border-gray-100/60 last:border-0"
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-gold/50 flex-shrink-0" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-gold/40 flex-shrink-0" />
                                 {exp.title}
                               </Link>
                             ))}
@@ -781,24 +960,22 @@ export default function Navbar() {
                   {/* Flat links */}
                   {[
                     ...(showBlog ? [{ label: 'Blog', href: '/blog' }] : []),
-                    { label: 'About',   href: '/#about' },
+                    { label: 'About',   href: '/about' },
                     { label: 'Contact', href: '/contact' },
                   ].map((link) => (
                     <Link
                       key={link.label}
                       to={link.href}
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-between px-6 py-4 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold transition-colors border-b border-gray-100"
+                      className="flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors border-b border-gray-100"
                     >
                       {link.label}
                     </Link>
                   ))}
-                </nav>
 
-                {/* Auth links */}
-                <div className="px-5 py-4 border-t border-gray-100">
-                  {user ? (
-                    <div className="space-y-2">
+                  {/* Auth links — only rendered when logged in */}
+                  {user && (
+                    <div className="px-4 pt-4 pb-2 space-y-2">
                       {user.role === 'admin' && (
                         <Link
                           to="/admin"
@@ -815,48 +992,37 @@ export default function Navbar() {
                         <LogOut size={15} /> Sign Out
                       </button>
                     </div>
-                  ) : null}
-                </div>
+                  )}
+                </nav>
               </div>
 
-              {/* Footer: CTAs + Social */}
-              <div className="flex-shrink-0 border-t border-gray-100 px-5 py-5 space-y-3">
-                {/* Book Safari CTA */}
+              {/* Footer: CTAs + Social — always pinned to bottom */}
+              <div className="flex-shrink-0 bg-white border-t border-gray-100 px-4 py-4 space-y-2.5">
                 <Link
                   to="/tours"
                   onClick={() => setMenuOpen(false)}
-                  className="block w-full text-center bg-green-950 text-white font-sans text-sm font-semibold py-3.5 rounded-2xl hover:bg-green-800 transition-colors"
+                  className="flex items-center justify-center w-full bg-green-950 text-white font-sans text-sm font-semibold py-3.5 rounded-2xl hover:bg-green-800 transition-colors shadow-sm"
                 >
                   Book a Safari
                 </Link>
-                {/* WhatsApp */}
                 <a
                   href="https://wa.me/255750005973"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2.5 w-full bg-[#25D366] text-white font-sans text-sm font-semibold py-3.5 rounded-2xl hover:bg-[#1ebe5d] transition-colors"
+                  className="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white font-sans text-sm font-semibold py-3.5 rounded-2xl hover:bg-[#1fbd5a] transition-colors"
                 >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4.5 h-4.5" width={18} height={18}>
+                  <svg viewBox="0 0 24 24" fill="currentColor" width={17} height={17}>
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
                   Chat on WhatsApp
                 </a>
-                {/* Social icons */}
                 <div className="flex items-center justify-center gap-5 pt-1">
                   {[
-                    { href: 'https://instagram.com', label: 'Instagram', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" strokeWidth={0}/></svg> },
-                    { href: 'https://facebook.com', label: 'Facebook', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg> },
-                    { href: 'https://youtube.com', label: 'YouTube', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon fill="white" points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg> },
-                    { href: 'https://linkedin.com', label: 'LinkedIn', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg> },
+                    { href: 'https://www.instagram.com/nelson_tour_and_safari?utm_source=qr&igsh=MWVscDEwcmdzYjJqNg==', label: 'Instagram', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" strokeWidth={0}/></svg> },
+                    { href: '#', label: 'Facebook', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg> },
+                    { href: '#', label: 'YouTube', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon fill="white" points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg> },
                   ].map(({ href, label, icon }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={label}
-                      className="text-gray-400 hover:text-gold transition-colors"
-                    >
+                    <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="text-gray-400 hover:text-gold transition-colors">
                       {icon}
                     </a>
                   ))}

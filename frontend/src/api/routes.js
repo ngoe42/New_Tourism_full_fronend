@@ -1,11 +1,11 @@
 import apiClient from './client'
 
 export const routesApi = {
-  list: (publishedOnly = true) =>
-    apiClient.get('/routes/', { params: { published_only: publishedOnly } }).then((r) => r.data),
+  list: (publishedOnly = true, mountain = null) =>
+    apiClient.get('/routes/', { params: { published_only: publishedOnly, ...(mountain && { mountain }) } }).then((r) => r.data),
 
-  listAll: () =>
-    apiClient.get('/routes/', { params: { published_only: false } }).then((r) => r.data),
+  listAll: (mountain = null) =>
+    apiClient.get('/routes/', { params: { published_only: false, ...(mountain && { mountain }) } }).then((r) => r.data),
 
   getBySlug: (slug) => apiClient.get(`/routes/${slug}`).then((r) => r.data),
 

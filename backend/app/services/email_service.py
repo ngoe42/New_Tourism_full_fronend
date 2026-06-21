@@ -1,32 +1,11 @@
 import asyncio
 from typing import Optional
 
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 from loguru import logger
 
 from app.core.config import settings
-
-
-async def suppress_sendgrid_email(email: str) -> bool:
-    """Add an email address to SendGrid's global suppression list.
-    Once suppressed, SendGrid will never deliver email to that address again.
-    Returns True on success, False if not configured or on error.
-    """
-    if not settings.SENDGRID_API_KEY:
-        logger.warning("[erase] SENDGRID_API_KEY not set — skipping suppression")
-        return False
-    try:
-        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
-        response = await asyncio.to_thread(
-            sg.client.asm.suppressions.global_.post,
-            request_body={"recipient_emails": [email]},
-        )
-        logger.info(f"[erase] Suppressed {email} in SendGrid — HTTP {response.status_code}")
-        return True
-    except Exception as exc:
-        logger.error(f"[erase] SendGrid suppression FAILED for {email}: {exc}")
-        return False
 
 
 def _payment_block(
@@ -161,9 +140,8 @@ def _build_html(
     <html>
       <body style="font-family: Arial, sans-serif; color: #222; background: #faf8f3; padding: 0; margin: 0;">
         <div style="max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
-          <div style="background: #0f3d2e; padding: 28px 32px;">
-            <p style="color: #c9a96e; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; margin: 0 0 4px;">Nelson Tours &amp; Safari</p>
-            <h1 style="color: #fff; font-size: 20px; margin: 0;">Message from our team</h1>
+          <div style="background: #0f3d2e; padding: 24px 32px; text-align: center;">
+            <img src="{settings.FRONTEND_URL}/images/logo/logo.png" alt="Nelson Tours &amp; Safari" style="height: 80px; width: auto; object-fit: contain; display: inline-block;" />
           </div>
           <div style="padding: 32px; white-space: pre-wrap; font-size: 15px; line-height: 1.7; color: #333;">
             {body.replace(chr(10), '<br>')}
@@ -190,14 +168,12 @@ async def send_email(
     btn_label: str = "Complete Payment",
     include_terms: bool = False,
 ) -> bool:
-    """Send email via SendGrid. Returns True on success, False if not configured or on error."""
-    if not settings.SENDGRID_API_KEY:
-        logger.warning("Email not sent: SENDGRID_API_KEY is not configured.")
+    """Send email via Amazon SES. Returns True on success, False if not configured or on error."""
+    if not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY:
+        logger.warning("Email not sent: AWS SES credentials are not configured.")
         return False
 
     logger.info(f"[email] Sending '{subject}' to {to}")
-
-    from sendgrid.helpers.mail import ReplyTo
 
     html = _build_html(body, item_name=item_name, price=price, payment_link=payment_link, btn_label=btn_label, include_terms=include_terms)
 
@@ -222,26 +198,36 @@ async def send_email(
             "  Under 30  → No refund\n"
         )
 
-    message = Mail(
-        from_email=(settings.EMAIL_FROM, "Nelson Tours & Safari"),
-        to_emails=to,
-        subject=subject,
-        html_content=html,
-        plain_text_content=plain,
-    )
-    message.reply_to = ReplyTo(settings.EMAIL_FROM, "Nelson Tours & Safari")
-
     try:
-        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
-        # sg.send() is synchronous — run in a thread pool to avoid blocking the event loop
-        response = await asyncio.to_thread(sg.send, message)
-        logger.info(f"[email] ✓ Sent '{subject}' to {to} — HTTP {response.status_code}")
+        ses = boto3.client(
+            "ses",
+            region_name=settings.AWS_REGION,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        )
+
+        response = await asyncio.to_thread(
+            ses.send_email,
+            Source=settings.SES_FROM_EMAIL or settings.EMAIL_FROM,
+            Destination={"ToAddresses": [to]},
+            Message={
+                "Subject": {"Data": subject, "Charset": "UTF-8"},
+                "Body": {
+                    "Html": {"Data": html, "Charset": "UTF-8"},
+                    "Text": {"Data": plain, "Charset": "UTF-8"},
+                },
+            },
+        )
+
+        message_id = response.get("MessageId", "unknown")
+        logger.info(f"[email] ✓ Sent '{subject}' to {to} — SES MessageId={message_id}")
         return True
+    except (BotoCoreError, ClientError) as e:
+        error_code = getattr(e, 'response', {}).get('Error', {}).get('Code', 'Unknown')
+        logger.error(f"[email] ✗ SES FAILED sending to {to}: {error_code} — {e}")
+        return False
     except Exception as e:
-        body_preview = ""
-        if hasattr(e, "body"):
-            body_preview = f" | body: {e.body}"
-        logger.error(f"[email] ✗ SendGrid FAILED sending to {to}: {type(e).__name__}: {e}{body_preview}")
+        logger.error(f"[email] ✗ Unexpected error sending to {to}: {type(e).__name__}: {e}")
         return False
 
 

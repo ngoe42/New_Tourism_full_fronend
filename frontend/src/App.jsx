@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
+import SEO from './components/SEO'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
@@ -32,10 +33,16 @@ import Experiences from './pages/Experiences'
 import Blog from './pages/Blog'
 import About from './pages/About'
 import KilimanjaroOverview from './pages/KilimanjaroOverview'
+import TrekkingOverview from './pages/TrekkingOverview'
+import MountMeruOverview from './pages/MountMeruOverview'
+import OldoinyoLengaiOverview from './pages/OldoinyoLengaiOverview'
 import TanzaniaSafariOverview from './pages/TanzaniaSafariOverview'
 import WhatsAppButton from './components/WhatsAppButton'
 import PaymentCallback from './pages/PaymentCallback'
+import BookingConfirmation from './pages/BookingConfirmation'
 import PaymentResume from './pages/PaymentResume'
+import ErrorBoundary from './components/ErrorBoundary'
+import NotFound from './pages/NotFound'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,9 +61,10 @@ function ScrollToTop() {
   return null
 }
 
-function PublicLayout({ children }) {
+function PublicLayout({ children, title, description }) {
   return (
     <>
+      <SEO title={title} description={description} />
       <Navbar />
       {children}
       <Footer />
@@ -71,26 +79,30 @@ function AppRoutes() {
       <ScrollToTop />
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
-        <Route path="/tours" element={<PublicLayout><Tours /></PublicLayout>} />
+        <Route path="/" element={<PublicLayout title="Nelson Tour and Safari — Luxury Tanzania Experiences" description="World-class luxury safari experiences in Tanzania. Crafted by local experts for unforgettable adventures."><Home /></PublicLayout>} />
+        <Route path="/tours" element={<PublicLayout title="Tours — Nelson Tour and Safari" description="Explore our curated selection of luxury safari tours and mountain trekking adventures in Tanzania."><Tours /></PublicLayout>} />
         <Route path="/tours/:id" element={<PublicLayout><TourDetail /></PublicLayout>} />
-        <Route path="/routes" element={<PublicLayout><RoutesList /></PublicLayout>} />
+        <Route path="/routes" element={<PublicLayout title="Climbing Routes — Nelson Tour and Safari" description="Discover the best climbing routes for Kilimanjaro, Meru, and other Tanzanian peaks."><RoutesList /></PublicLayout>} />
         <Route path="/routes/:slug" element={<PublicLayout><RouteDetail /></PublicLayout>} />
-        <Route path="/experiences" element={<PublicLayout><Experiences /></PublicLayout>} />
-        <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
-        <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
-        <Route path="/kilimanjaro" element={<PublicLayout><KilimanjaroOverview /></PublicLayout>} />
-        <Route path="/safari" element={<PublicLayout><TanzaniaSafariOverview /></PublicLayout>} />
-        <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
-        <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
-        <Route path="/payment/callback" element={<PaymentCallback />} />
-        <Route path="/payment/resume" element={<PaymentResume />} />
-        <Route path="/login/admin" element={<SuperAdminLogin />} />
-        <Route path="/login/admin/forgot" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/experiences" element={<PublicLayout title="Experiences — Nelson Tour and Safari" description="Curated luxury experiences across Tanzania — from wildlife safaris to cultural immersions."><Experiences /></PublicLayout>} />
+        <Route path="/blog" element={<PublicLayout title="Blog — Nelson Tour and Safari" description="Travel guides, tips, and stories from Tanzania's premier safari and trekking experts."><Blog /></PublicLayout>} />
+        <Route path="/about" element={<PublicLayout title="About Us — Nelson Tour and Safari" description="Meet the local experts behind Nelson Tour and Safari — your trusted guide to Tanzania."><About /></PublicLayout>} />
+        <Route path="/kilimanjaro" element={<PublicLayout title="Mount Kilimanjaro — Nelson Tour and Safari" description="Climb Mount Kilimanjaro with expert local guides. Choose from multiple routes for the adventure of a lifetime."><KilimanjaroOverview /></PublicLayout>} />
+        <Route path="/trekking" element={<PublicLayout title="Trekking — Nelson Tour and Safari" description="Trekking adventures across Tanzania's most breathtaking landscapes with experienced guides."><TrekkingOverview /></PublicLayout>} />
+        <Route path="/meru" element={<PublicLayout title="Mount Meru — Nelson Tour and Safari" description="Climb Mount Meru — Tanzania's second-highest peak and the perfect warm-up for Kilimanjaro."><MountMeruOverview /></PublicLayout>} />
+        <Route path="/oldoinyo-lengai" element={<PublicLayout title="Oldoinyo Lengai — Nelson Tour and Safari" description="Trek the sacred Mountain of God — an active volcanic climb in the Great Rift Valley."><OldoinyoLengaiOverview /></PublicLayout>} />
+        <Route path="/safari" element={<PublicLayout title="Tanzania Safaris — Nelson Tour and Safari" description="Luxury safari experiences in Tanzania's most iconic national parks — Serengeti, Ngorongoro, and beyond."><TanzaniaSafariOverview /></PublicLayout>} />
+        <Route path="/contact" element={<PublicLayout title="Contact Us — Nelson Tour and Safari" description="Get in touch with Nelson Tour and Safari. Plan your dream Tanzanian adventure today."><Contact /></PublicLayout>} />
+        <Route path="/login" element={<PublicLayout title="Login — Nelson Tour and Safari"><Login /></PublicLayout>} />
+        <Route path="/payment/callback" element={<><SEO title="Payment — Nelson Tour and Safari" /><PaymentCallback /></>} />
+        <Route path="/booking/:id" element={<PublicLayout title="Booking Confirmation — Nelson Tour and Safari"><BookingConfirmation /></PublicLayout>} />
+        <Route path="/payment/resume" element={<><SEO title="Resume Payment — Nelson Tour and Safari" /><PaymentResume /></>} />
+        <Route path="/login/admin" element={<><SEO title="Admin Login — Nelson Tour and Safari" /><SuperAdminLogin /></>} />
+        <Route path="/login/admin/forgot" element={<><SEO title="Forgot Password — Nelson Tour and Safari" /><ForgotPassword /></>} />
+        <Route path="/reset-password" element={<><SEO title="Reset Password — Nelson Tour and Safari" /><ResetPassword /></>} />
 
         {/* Admin routes */}
-        <Route path="/admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
+        <Route path="/admin" element={<><SEO title="Admin — Nelson Tour and Safari" noindex /><RequireAdmin><AdminLayout /></RequireAdmin></>}>
           <Route index element={<AdminDashboard />} />
           <Route path="tours" element={<AdminTours />} />
           <Route path="bookings" element={<AdminBookings />} />
@@ -103,6 +115,9 @@ function AppRoutes() {
           <Route path="roles" element={<RequireSuperAdmin><AdminRoles /></RequireSuperAdmin>} />
           <Route path="profile" element={<AdminProfile />} />
         </Route>
+
+        {/* 404 catch-all */}
+        <Route path="*" element={<PublicLayout title="Page Not Found — Nelson Tour and Safari"><NotFound /></PublicLayout>} />
       </Routes>
     </>
   )
@@ -113,7 +128,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
-          <AppRoutes />
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
         </AuthProvider>
       </Router>
     </QueryClientProvider>

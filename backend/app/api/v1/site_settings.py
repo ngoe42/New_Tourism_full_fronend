@@ -1,4 +1,5 @@
-import io
+import asyncio
+import tempfile
 import uuid
 from pathlib import Path
 
@@ -31,10 +32,18 @@ async def _get_or_create(db: AsyncSession) -> SiteSettings:
     result = await db.execute(select(SiteSettings).limit(1))
     row = result.scalar_one_or_none()
     if row is None:
-        row = SiteSettings(show_prices=False)
-        db.add(row)
-        await db.commit()
-        await db.refresh(row)
+        from sqlalchemy import text
+        # Acquire a named advisory lock so that two concurrent requests which
+        # both saw row=None can't both INSERT — the second one re-reads under
+        # the lock and finds the row already created by the first.
+        await db.execute(text("SELECT pg_advisory_xact_lock(20241001)"))
+        result = await db.execute(select(SiteSettings).limit(1))
+        row = result.scalar_one_or_none()
+        if row is None:
+            row = SiteSettings(show_prices=False)
+            db.add(row)
+            await db.commit()
+            await db.refresh(row)
     return row
 
 
@@ -96,21 +105,40 @@ async def upload_hero_video(
             detail=f"Invalid file type. Allowed: mp4, webm, mov.",
         )
 
-    contents = await file.read()
-    if len(contents) > MAX_VIDEO_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Video exceeds 150 MB limit.",
-        )
+    # Stream upload into a spooled temp file (stays in RAM up to 50 MB, then
+    # spills to disk).  This avoids holding 2× the file size in RAM that the
+    # previous bytearray + bytes(contents) conversion caused.
+    total_size = 0
+    tmp = tempfile.SpooledTemporaryFile(max_size=50 * 1024 * 1024)
+    try:
+        while True:
+            chunk = await file.read(1024 * 1024)  # 1 MB chunks
+            if not chunk:
+                break
+            total_size += len(chunk)
+            if total_size > MAX_VIDEO_SIZE:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Video exceeds 150 MB limit.",
+                )
+            tmp.write(chunk)
+        tmp.seek(0)
+        video_url = await _store_video(tmp, file.filename, file.content_type)
+    finally:
+        tmp.close()
 
-    video_url = await _store_video(contents, file.filename, file.content_type)
-
-    row = await _get_or_create(db)
-    row.hero_video_url = video_url
-    await db.commit()
-    await db.refresh(row)
-    await _invalidate_settings()
-    return row
+    # Persist the URL; if the DB write fails, delete the already-uploaded
+    # cloud/local asset so no orphan files are left behind.
+    try:
+        row = await _get_or_create(db)
+        row.hero_video_url = video_url
+        await db.commit()
+        await db.refresh(row)
+        await _invalidate_settings()
+        return row
+    except Exception:
+        await _remove_video(video_url)
+        raise
 
 
 @router.delete("/hero-video", response_model=SiteSettingsResponse, dependencies=[Depends(require_admin)])
@@ -128,8 +156,8 @@ async def delete_hero_video(db: AsyncSession = Depends(get_db)):
 async def _remove_video(url: str) -> None:
     if url.startswith("/uploads/"):
         local_path = Path(__file__).resolve().parents[3] / "static" / url.lstrip("/")
-        if local_path.exists():
-            local_path.unlink()
+        if await asyncio.to_thread(local_path.exists):
+            await asyncio.to_thread(local_path.unlink)
 
     elif "amazonaws.com" in url and app_settings.AWS_BUCKET_NAME and app_settings.AWS_ACCESS_KEY_ID:
         import boto3
@@ -140,7 +168,7 @@ async def _remove_video(url: str) -> None:
             aws_secret_access_key=app_settings.AWS_SECRET_ACCESS_KEY,
             region_name=app_settings.AWS_REGION,
         )
-        s3.delete_object(Bucket=app_settings.AWS_BUCKET_NAME, Key=key)
+        await asyncio.to_thread(s3.delete_object, Bucket=app_settings.AWS_BUCKET_NAME, Key=key)
 
     elif "cloudinary.com" in url and app_settings.CLOUDINARY_CLOUD_NAME:
         import cloudinary.uploader
@@ -152,10 +180,14 @@ async def _remove_video(url: str) -> None:
         )
         parts = url.split("/upload/")[1].split(".")
         public_id = parts[0]
-        cloudinary.uploader.destroy(public_id, resource_type="video")
+        await asyncio.to_thread(cloudinary.uploader.destroy, public_id, resource_type="video")
 
 
-async def _store_video(contents: bytes, filename: str, content_type: str) -> str:
+async def _store_video(fileobj, filename: str, content_type: str) -> str:
+    """Upload a video file-like object to the configured storage provider.
+    Accepts any seekable file-like object (SpooledTemporaryFile, BytesIO, etc.).
+    The caller is responsible for seek(0) before calling this function.
+    """
     if app_settings.AWS_BUCKET_NAME and app_settings.AWS_ACCESS_KEY_ID:
         import boto3
         s3 = boto3.client(
@@ -165,11 +197,14 @@ async def _store_video(contents: bytes, filename: str, content_type: str) -> str
             region_name=app_settings.AWS_REGION,
         )
         key = f"karibu_safari/videos/{uuid.uuid4()}_{filename}"
-        s3.put_object(
-            Bucket=app_settings.AWS_BUCKET_NAME,
-            Key=key,
-            Body=contents,
-            ContentType=content_type,
+        # upload_fileobj streams multipart and works with any file-like object;
+        # put_object(Body=bytes) required a full in-memory copy.
+        await asyncio.to_thread(
+            s3.upload_fileobj,
+            fileobj,
+            app_settings.AWS_BUCKET_NAME,
+            key,
+            ExtraArgs={"ContentType": content_type},
         )
         return f"https://{app_settings.AWS_BUCKET_NAME}.s3.{app_settings.AWS_REGION}.amazonaws.com/{key}"
 
@@ -181,12 +216,14 @@ async def _store_video(contents: bytes, filename: str, content_type: str) -> str
             api_key=app_settings.CLOUDINARY_API_KEY,
             api_secret=app_settings.CLOUDINARY_API_SECRET,
         )
-        result = cloudinary.uploader.upload(
-            io.BytesIO(contents),
-            resource_type="video",
-            folder="karibu_safari/videos",
-            public_id=f"hero_{uuid.uuid4().hex}",
-        )
+        def _do_upload():
+            return cloudinary.uploader.upload(
+                fileobj,
+                resource_type="video",
+                folder="karibu_safari/videos",
+                public_id=f"hero_{uuid.uuid4().hex}",
+            )
+        result = await asyncio.to_thread(_do_upload)
         return result["secure_url"]
 
     else:
@@ -194,5 +231,13 @@ async def _store_video(contents: bytes, filename: str, content_type: str) -> str
         upload_dir.mkdir(parents=True, exist_ok=True)
         ext = Path(filename).suffix or ".mp4"
         unique_name = f"hero_{uuid.uuid4().hex}{ext}"
-        (upload_dir / unique_name).write_bytes(contents)
+        dest = upload_dir / unique_name
+        def _write_chunks():
+            with open(dest, "wb") as out:
+                while True:
+                    chunk = fileobj.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+        await asyncio.to_thread(_write_chunks)
         return f"/uploads/videos/{unique_name}"

@@ -3,6 +3,7 @@ import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, MessageCircle, Clock
 import { useQuery } from '@tanstack/react-query'
 import { experiencesApi } from '../api/experiences'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 const navLinks = [
   { label: 'Safari Tours', href: '/tours' },
@@ -14,7 +15,7 @@ const navLinks = [
 ]
 
 const socials = [
-  { icon: Instagram, label: 'Instagram', href: '#' },
+  { icon: Instagram, label: 'Instagram', href: 'https://www.instagram.com/nelson_tour_and_safari?utm_source=qr&igsh=MWVscDEwcmdzYjJqNg==' },
   { icon: Facebook, label: 'Facebook', href: '#' },
   { icon: Youtube, label: 'YouTube', href: '#' },
 ]
@@ -27,7 +28,7 @@ const bookingPoints = [
 ]
 
 export default function Footer() {
-  const { showBlog } = useSiteSettings()
+  const { showBlog, logoUrl } = useSiteSettings()
   const visibleNavLinks = navLinks.filter((l) => l.href !== '/blog' || showBlog)
   const { data } = useQuery({
     queryKey: ['experiences-footer'],
@@ -43,7 +44,11 @@ export default function Footer() {
         {/* Brand */}
         <div>
           <Link to="/" aria-label="Home">
-            <img src="/images/logo/logo.png" alt="Nelson Tours & Safari" className="h-24 w-auto object-contain drop-shadow mb-3" />
+            <img
+              src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
+              alt="Nelson Tours & Safari"
+              className="h-24 w-auto object-contain drop-shadow mb-3"
+            />
           </Link>
           <p className="font-sans text-white/50 text-xs leading-relaxed mb-4 max-w-[220px]">
             Crafting world-class safari experiences in Tanzania. Born local, built for the world.
@@ -145,8 +150,17 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex items-center justify-center">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-1.5">
           <p className="font-sans text-xs text-white/20">Licensed by TATO & TTB · Arusha, Tanzania</p>
+          <p className="font-sans text-[11px] text-white/60">
+            Designed &amp; Built by{' '}
+            <a
+              href="mailto:ngoekenedy@gmail.com"
+              className="text-gold hover:text-gold/80 transition-colors underline underline-offset-2"
+            >
+              Kenedy Ngoe
+            </a>
+          </p>
         </div>
       </div>
     </footer>

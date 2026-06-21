@@ -1,11 +1,12 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.limiter import limiter
 from app.dependencies.auth import require_admin
 from app.schemas.dashboard import DashboardStats
 from app.schemas.inquiry import InquiryUpdate
@@ -35,7 +36,9 @@ class SendEmailRequest(BaseModel):
 
 
 @router.post("/send-email", dependencies=[Depends(require_admin)])
+@limiter.limit("20/hour")
 async def send_reply_email(
+    request: Request,
     data: SendEmailRequest,
     db: AsyncSession = Depends(get_db),
 ):

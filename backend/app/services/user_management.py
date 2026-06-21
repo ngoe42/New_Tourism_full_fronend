@@ -196,17 +196,13 @@ class UserManagementService:
 
     async def erase_customer_data(self, user_id: int, current_user_id: int) -> dict:
         """Full GDPR erasure:
-        1. Collect original email for SendGrid suppression.
-        2. Anonymise the user record (replace PII with placeholders).
-        3. Hard-delete all bookings and inquiries tied to this user/email.
-        4. Add email to SendGrid global suppression list.
+        1. Anonymise the user record (replace PII with placeholders).
+        2. Hard-delete all bookings and inquiries tied to this user/email.
         Returns a summary of what was erased.
         """
         from sqlalchemy import delete as sql_delete, select
         from app.models.booking import Booking
         from app.models.inquiry import Inquiry
-        from app.services.email_service import suppress_sendgrid_email
-
         if user_id == current_user_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -245,21 +241,17 @@ class UserManagementService:
             "hashed_password": get_password_hash(f"ERASED-{user_id}-{original_email}"),
             "is_active": False,
         })
-        await self.db.commit()
 
-        # 5 — Suppress in SendGrid (non-blocking; failure logged but does not abort)
-        suppressed = await suppress_sendgrid_email(original_email)
+        await self.db.commit()
 
         logger.info(
             f"[erase] Done: user #{user_id} anonymised, "
-            f"{bookings_count} bookings deleted, {inquiries_count} inquiries deleted, "
-            f"SendGrid suppression={'ok' if suppressed else 'failed/skipped'}"
+            f"{bookings_count} bookings deleted, {inquiries_count} inquiries deleted"
         )
         return {
             "user_id": user_id,
             "bookings_deleted": bookings_count,
             "inquiries_deleted": inquiries_count,
-            "sendgrid_suppressed": suppressed,
         }
 
     # ── Seeding ───────────────────────────────────────────────────────────────

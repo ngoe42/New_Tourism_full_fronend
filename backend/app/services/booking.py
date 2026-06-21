@@ -1,17 +1,24 @@
+import asyncio
 import re
 import uuid
+from typing import Set
 
 from fastapi import HTTPException, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# Track background tasks to prevent silent GC and lost exceptions
+_background_tasks: Set[asyncio.Task] = set()
+
 from app.core.config import settings
 from app.models.booking import Booking, BookingStatus
+from app.models.payment_attempt import PaymentAttempt
 from app.models.user import User
 from app.repositories.booking import BookingRepository
+from app.repositories.payment_attempt import PaymentAttemptRepository
 from app.repositories.tour import TourRepository
 from app.schemas.booking import BookingCreate, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
-from app.services.email_service import send_email, send_booking_admin_notification
+from app.services.email_service import send_email, send_booking_admin_notification, send_payment_success_email
 from app.services.pesapal import PesapalService
 
 
@@ -22,7 +29,7 @@ def _parse_duration_days(duration: str) -> int:
 
 
 async def send_booking_confirmation_email(
-    booking: "Booking",
+    booking_id: int,
     tour_title: str,
     contact_name: str,
     contact_email: str,
@@ -35,7 +42,7 @@ async def send_booking_confirmation_email(
     tour_included: list | None = None,
 ) -> None:
     """Send booking confirmation email. Re-usable from create_booking & initiate_payment."""
-    logger.info(f"[email] Preparing booking confirmation for #{booking.id} → {contact_email}")
+    logger.info(f"[email] Preparing booking confirmation for #{booking_id} → {contact_email}")
     try:
         name = contact_name.split()[0]
 
@@ -70,7 +77,7 @@ async def send_booking_confirmation_email(
             f"Your booking request has been received. {payment_instruction}\n\n"
             f"Booking Summary\n"
             f"{'=' * 40}\n"
-            f"Booking Reference : #{booking.id}\n"
+            f"Booking Reference : #{booking_id}\n"
             f"Tour              : {tour_title}\n"
             + location_line
             + duration_line
@@ -93,7 +100,50 @@ async def send_booking_confirmation_email(
             include_terms=True,
         )
     except Exception as exc:
-        logger.error(f"[email] Booking confirmation FAILED for #{booking.id}: {type(exc).__name__}: {exc}")
+        logger.error(f"[email] Booking confirmation FAILED for #{booking_id}: {type(exc).__name__}: {exc}")
+
+
+async def _send_booking_emails_background(
+    booking_id: int,
+    tour_title: str,
+    contact_name: str,
+    contact_email: str,
+    contact_phone: str | None,
+    travel_date,
+    guests: int,
+    total_price: float,
+    payment_link: str | None,
+    tour_location: str = "",
+    tour_duration: str = "",
+    tour_included: list | None = None,
+) -> None:
+    """Background task: send confirmation + admin notification emails."""
+    await send_booking_confirmation_email(
+        booking_id=booking_id,
+        tour_title=tour_title,
+        contact_name=contact_name,
+        contact_email=contact_email,
+        travel_date=travel_date,
+        guests=guests,
+        total_price=total_price,
+        payment_link=payment_link,
+        tour_location=tour_location,
+        tour_duration=tour_duration,
+        tour_included=tour_included,
+    )
+    try:
+        await send_booking_admin_notification(
+            booking_id=booking_id,
+            tour_title=tour_title,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            travel_date=travel_date,
+            guests=guests,
+            total_price=total_price,
+        )
+    except Exception as exc:
+        logger.error(f"Admin booking notification failed for #{booking_id}: {exc}")
 
 
 class BookingService:
@@ -101,11 +151,15 @@ class BookingService:
         self.db = db
         self.booking_repo = BookingRepository(db)
         self.tour_repo = TourRepository(db)
+        self.attempt_repo = PaymentAttemptRepository(db)
 
     async def create_booking(self, data: BookingCreate, user: User | None) -> Booking:
         tour = await self.tour_repo.get(data.tour_id)
         if not tour or not tour.is_published:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tour not found")
+
+        # Serialize concurrent bookings for the same tour+date to prevent double-booking
+        await self.booking_repo.acquire_booking_lock(data.tour_id, data.travel_date)
 
         duration_days = _parse_duration_days(tour.duration)
         if await self.booking_repo.has_confirmed_overlap(tour.id, data.travel_date, duration_days):
@@ -115,6 +169,14 @@ class BookingService:
             )
 
         total_price = tour.price * data.guests
+
+        # Snapshot tour scalars needed after the commit.  SQLAlchemy expires all ORM
+        # objects on commit; accessing tour.title etc. afterwards would trigger a
+        # lazy-load that raises MissingGreenlet in async context.
+        tour_title = tour.title
+        tour_location = tour.location or ""
+        tour_duration = tour.duration or ""
+        tour_included = list(tour.included or [])
 
         booking = Booking(
             user_id=user.id if user else None,
@@ -130,6 +192,14 @@ class BookingService:
         )
         booking = await self.booking_repo.create(booking)
 
+        # ── First commit: persist booking row and release the advisory lock. ────
+        # pg_advisory_xact_lock is transaction-scoped.  Committing here unblocks
+        # concurrent booking attempts for the same tour+date before we make the
+        # external Pesapal API call (which can hold a DB connection open for up to
+        # 20 s under load, exhausting the connection pool).
+        await self.db.commit()
+        booking_id = booking.id     # capture before the object is expired by commit
+
         payment_link: str | None = None
 
         if settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET:
@@ -138,13 +208,13 @@ class BookingService:
                 ipn_id = settings.PESAPAL_IPN_ID or await pesapal.register_ipn(
                     f"{settings.BACKEND_URL}/api/v1/payments/ipn"
                 )
-                merchant_ref = f"NTS-{booking.id}-{uuid.uuid4().hex[:8].upper()}"
+                merchant_ref = f"NTS-{booking_id}-{uuid.uuid4().hex[:8].upper()}"
                 name_parts = data.contact_name.split(" ", 1)
                 result = await pesapal.submit_order(
                     merchant_reference=merchant_ref,
                     amount=total_price,
                     currency="USD",
-                    description=f"Safari booking #{booking.id} — {tour.title}",
+                    description=f"Safari booking #{booking_id} — {tour_title}",
                     callback_url=f"{settings.FRONTEND_URL}/payment/callback",
                     ipn_id=ipn_id,
                     email=data.contact_email,
@@ -153,53 +223,54 @@ class BookingService:
                     last_name=name_parts[1] if len(name_parts) > 1 else ".",
                 )
                 payment_link = result["redirect_url"]
+                # ── Second commit: persist Pesapal tracking fields + attempt row. ─
+                booking = await self.booking_repo.get(booking_id)
                 await self.booking_repo.update(booking, {
                     "pesapal_order_tracking_id": result["order_tracking_id"],
                     "pesapal_merchant_reference": merchant_ref,
                     "payment_status": "PENDING",
                     "payment_redirect_url": payment_link,
                 })
+                await self.attempt_repo.create(PaymentAttempt(
+                    booking_id=booking_id,
+                    order_tracking_id=result["order_tracking_id"],
+                    merchant_reference=merchant_ref,
+                    redirect_url=payment_link,
+                    status="PENDING",
+                ))
+                await self.db.commit()
             except Exception as exc:
-                logger.error(f"Pesapal init failed for booking #{booking.id}: {exc}")
+                logger.error(f"Pesapal init failed for booking #{booking_id}: {exc}")
+                await self.db.rollback()
 
-        # Always send confirmation email immediately after booking is created.
-        # If Pesapal succeeded, payment_link contains the redirect URL.
-        # If Pesapal failed or is not configured, payment_link is None and
-        # send_booking_confirmation_email will fall back to a contact link.
+        # Fire-and-forget email tasks so the user isn't blocked by SES latency.
         email_payment_link = (
-            f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
+            f"{settings.FRONTEND_URL}/payment/resume?id={booking_id}"
             if payment_link else None
         )
-        logger.info(f"Booking #{booking.id} created — sending confirmation to {data.contact_email} (payment_link={'set' if payment_link else 'none'})")
-        await send_booking_confirmation_email(
-            booking=booking,
-            tour_title=tour.title,
-            contact_name=data.contact_name,
-            contact_email=data.contact_email,
-            travel_date=data.travel_date,
-            guests=data.guests,
-            total_price=total_price,
-            payment_link=email_payment_link,
-            tour_location=tour.location or "",
-            tour_duration=tour.duration or "",
-            tour_included=tour.included or [],
-        )
+        logger.info(f"Booking #{booking_id} created — queueing emails for {data.contact_email} (payment_link={'set' if payment_link else 'none'})")
 
-        try:
-            await send_booking_admin_notification(
-                booking_id=booking.id,
-                tour_title=tour.title,
+        task = asyncio.create_task(
+            _send_booking_emails_background(
+                booking_id=booking_id,
+                tour_title=tour_title,
                 contact_name=data.contact_name,
                 contact_email=data.contact_email,
                 contact_phone=data.contact_phone,
                 travel_date=data.travel_date,
                 guests=data.guests,
                 total_price=total_price,
+                payment_link=email_payment_link,
+                tour_location=tour_location,
+                tour_duration=tour_duration,
+                tour_included=tour_included,
             )
-        except Exception as exc:
-            logger.error(f"Admin booking notification failed for #{booking.id}: {exc}")
+        )
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
-        return booking
+        # Re-fetch so the returned object is fully loaded and not in an expired state.
+        return await self.booking_repo.get(booking_id)
 
     async def get_booking(self, booking_id: int, user: User) -> Booking:
         booking = await self.booking_repo.get(booking_id)
@@ -233,20 +304,65 @@ class BookingService:
             pages=max(1, -(-total // per_page)),
         )
 
+    # Valid booking status transitions
+    _VALID_TRANSITIONS: dict[BookingStatus, set[BookingStatus]] = {
+        BookingStatus.pending: {BookingStatus.confirmed, BookingStatus.cancelled},
+        BookingStatus.confirmed: {BookingStatus.completed, BookingStatus.cancelled},
+        BookingStatus.cancelled: {BookingStatus.pending},
+        BookingStatus.completed: set(),
+    }
+
     async def update_status(self, booking_id: int, data: BookingStatusUpdate) -> Booking:
         booking = await self.booking_repo.get(booking_id)
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+        allowed = self._VALID_TRANSITIONS.get(booking.status, set())
+        if data.status not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot transition from '{booking.status.value}' to '{data.status.value}'",
+            )
+        was_pending = booking.status != BookingStatus.confirmed
         update_data = {"status": data.status}
         if data.notes:
             update_data["notes"] = data.notes
-        return await self.booking_repo.update(booking, update_data)
+        updated = await self.booking_repo.update(booking, update_data)
+        # Notify customer when admin manually confirms (bank transfer, etc.)
+        if data.status == BookingStatus.confirmed and was_pending:
+            tour = updated.tour
+            task = asyncio.create_task(send_payment_success_email(
+                booking_id=updated.id,
+                tour_title=tour.title if tour else f"Booking #{updated.id}",
+                contact_name=updated.contact_name,
+                contact_email=updated.contact_email,
+                travel_date=updated.travel_date,
+                guests=updated.guests,
+                total_price=updated.total_price,
+                transaction_id=updated.pesapal_order_tracking_id or "Admin-Confirmed",
+            ))
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
+        return updated
 
     async def admin_update(self, booking_id: int, data: BookingAdminUpdate) -> Booking:
         booking = await self.booking_repo.get(booking_id)
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        # Guard: financial and date fields must not be mutated on a completed booking
+        # to preserve payment audit accuracy.
+        if booking.status in (BookingStatus.confirmed, BookingStatus.completed):
+            protected = {"guests", "total_price", "travel_date"} & set(update_data)
+            if protected:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot modify {sorted(protected)} on a completed booking",
+                )
+        # Recalculate total_price when guests change without an explicit new price
+        if "guests" in update_data and "total_price" not in update_data:
+            tour = await self.tour_repo.get(booking.tour_id)
+            if tour:
+                update_data["total_price"] = tour.price * update_data["guests"]
         return await self.booking_repo.update(booking, update_data)
 
     async def delete_booking(self, booking_id: int) -> None:

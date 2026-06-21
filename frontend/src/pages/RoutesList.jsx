@@ -32,10 +32,10 @@ export default function RoutesList() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="font-serif text-4xl md:text-5xl font-bold text-white mb-4">
+            <h1 className="font-serif text-3xl md:text-4xl font-bold text-white mb-4">
               {routesHeroTitle || 'Mount Kilimanjaro Routes'}
             </h1>
-            <p className="font-sans text-lg text-white/80 max-w-2xl mx-auto">
+            <p className="font-sans text-base text-white/80 max-w-2xl mx-auto">
               {routesHeroDescription || 'Compare and choose the perfect path to the roof of Africa. Each route offers a unique experience, scenery, and acclimatization profile.'}
             </p>
           </motion.div>

@@ -1,7 +1,8 @@
 import enum
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Optional
-from sqlalchemy import String, Text, Float, Integer, Enum, DateTime, ForeignKey, JSON
+from sqlalchemy import String, Text, Float, Numeric, Integer, Enum, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -35,7 +36,7 @@ class TripPlan(Base):
         Enum(TripPlanStatus), default=TripPlanStatus.pending, nullable=False, index=True
     )
     admin_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    quoted_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    quoted_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

@@ -550,25 +550,9 @@ export default function SafariEnhancedSections() {
             <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">
               Tanzania Is Ready. <br className="hidden sm:block" />Are You?
             </h2>
-            <p className="font-sans text-white/65 text-base sm:text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
+            <p className="font-sans text-white/65 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
               The Serengeti does not wait. The lions are out there right now — stretching in the morning sun, watching wildebeest on the horizon, living their extraordinary lives with complete indifference to the world beyond the grass. Nelson Tours and Safaris will take you there. We will show you Africa in a way that stays with you for the rest of your life. All you have to do is decide that this is the year you go.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/tours"
-                className="inline-flex items-center justify-center gap-2 bg-gold hover:bg-gold/90 text-white font-sans font-semibold text-base px-8 py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-              >
-                Explore Safari Tours <ArrowRight size={16} />
-              </Link>
-              <a
-                href="https://wa.me/255750005973"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-sans font-semibold text-base px-8 py-4 rounded-full transition-all duration-300"
-              >
-                Chat with an Expert
-              </a>
-            </div>
           </motion.div>
         </div>
       </section>

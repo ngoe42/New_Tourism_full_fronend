@@ -133,6 +133,7 @@ async def update_user(user_id: int, data: AdminUserUpdate, db: AsyncSession = De
 @router.delete(
     "/users/{user_id}",
     status_code=204,
+    dependencies=[Depends(require_admin)],
 )
 async def delete_user(
     user_id: int,
@@ -152,7 +153,6 @@ async def erase_customer_data(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Full GDPR erasure: anonymise user PII, delete bookings & inquiries,
-    and suppress the email address in SendGrid so no future emails are sent."""
+    """Full GDPR erasure: anonymise user PII, delete bookings & inquiries."""
     svc = UserManagementService(db)
     return await svc.erase_customer_data(user_id, current_user.id)

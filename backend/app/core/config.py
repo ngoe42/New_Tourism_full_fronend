@@ -40,10 +40,11 @@ class Settings(BaseSettings):
     SUPER_ADMIN_PASSWORD: str = "admin@123"
     SUPER_ADMIN_NAME: str = "Kenedy"
 
-    SENDGRID_API_KEY: Optional[str] = None
-    EMAIL_FROM: str = "ngoekenedy@gmail.com"
+    SES_FROM_EMAIL: Optional[str] = None  # SES verified sender (e.g. noreply@...)
+    EMAIL_FROM: str = "ngoekenedy@gmail.com"  # Admin notification recipient
     FRONTEND_URL: str = "https://nelsontoursandsafari.com"
-    BACKEND_URL: str = "https://api.nelsontoursandsafari.com"
+    BACKEND_URL: str = "https://nelsonsafari-backend-development.up.railway.app"
+    # "https://api.nelsontoursandsafari.com"
 
     PESAPAL_CONSUMER_KEY: Optional[str] = None
     PESAPAL_CONSUMER_SECRET: Optional[str] = None
@@ -85,6 +86,15 @@ class Settings(BaseSettings):
                 "Set a strong SECRET_KEY environment variable immediately.",
                 stacklevel=2,
             )
+
+        if self.ENVIRONMENT == "production" and not self.REDIS_URL:
+            raise ValueError(
+                "REDIS_URL must be set in production.  Without Redis, the slowapi rate limiter "
+                "falls back to in-memory storage (per-process), making rate limits ineffective "
+                "under multi-worker deployments and enabling brute-force attacks on payment "
+                "and auth endpoints.  Set REDIS_URL or change ENVIRONMENT to 'development'."
+            )
+
         return self
 
     def get_allowed_origins(self) -> List[str]:

@@ -38,8 +38,11 @@ class User(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+    password_changed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
 
     assigned_role: Mapped["Role"] = relationship("Role", back_populates="users", lazy="selectin")
-    bookings: Mapped[list["Booking"]] = relationship("Booking", back_populates="user", lazy="selectin")
-    testimonials: Mapped[list["Testimonial"]] = relationship("Testimonial", back_populates="user", lazy="selectin")
-    trip_plans: Mapped[list["TripPlan"]] = relationship("TripPlan", back_populates="user", lazy="selectin")
+    bookings: Mapped[list["Booking"]] = relationship("Booking", back_populates="user", lazy="noload")
+    testimonials: Mapped[list["Testimonial"]] = relationship("Testimonial", back_populates="user", lazy="noload")
+    trip_plans: Mapped[list["TripPlan"]] = relationship("TripPlan", back_populates="user", lazy="noload")

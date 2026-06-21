@@ -37,6 +37,7 @@ class RouteBase(BaseModel):
     included: Optional[List] = None
     excluded: Optional[List] = None
     packing_list: Optional[List] = None
+    mountain: str = 'kilimanjaro'
     is_published: bool = True
 
 
@@ -66,6 +67,7 @@ class RouteUpdate(BaseModel):
     included: Optional[List] = None
     excluded: Optional[List] = None
     packing_list: Optional[List] = None
+    mountain: Optional[str] = None
     is_published: Optional[bool] = None
 
 

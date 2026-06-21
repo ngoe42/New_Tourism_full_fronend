@@ -5,7 +5,10 @@
 export function resolveImageUrl(url) {
   if (!url) return ''
   if (url.startsWith('/uploads/')) {
-    const base = (window.APP_CONFIG?.API_URL ?? '').replace('/api/v1', '')
+    let base = (window.APP_CONFIG?.API_URL ?? '').replace('/api/v1', '')
+    if (window.location.protocol === 'https:' && base.startsWith('http://')) {
+      base = base.replace('http://', 'https://')
+    }
     return `${base}${url}`
   }
   return url

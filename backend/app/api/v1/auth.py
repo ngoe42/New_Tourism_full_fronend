@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.limiter import limiter
 from app.core.security import (
     verify_password, get_password_hash,
     create_access_token, create_refresh_token,
@@ -36,14 +39,16 @@ router = APIRouter(tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
-async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def register(request: Request, data: UserCreate, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     user = await service.register(data)
     return UserResponse.from_user(user)
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login(request: Request, data: LoginRequest, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     return await service.login(data.email, data.password)
 
@@ -56,6 +61,7 @@ async def refresh(data: RefreshRequest, db: AsyncSession = Depends(get_db)):
 
 class LogoutRequest(BaseModel):
     refresh_token: str
+    access_token: str | None = None
 
 
 @router.post("/logout", status_code=200)
@@ -65,6 +71,11 @@ async def logout(data: LogoutRequest):
     payload = decode_token(data.refresh_token)
     if payload and payload.get("type") == "refresh":
         blacklist_token(payload)
+    # Also blacklist the access token so it is immediately revoked
+    if data.access_token:
+        access_payload = decode_token(data.access_token)
+        if access_payload and access_payload.get("type") == "access":
+            blacklist_token(access_payload)
     return {"message": "Logged out successfully"}
 
 
@@ -74,7 +85,8 @@ async def me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/super-login", response_model=TokenResponse)
-async def super_login(data: SuperLoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def super_login(request: Request, data: SuperLoginRequest, db: AsyncSession = Depends(get_db)):
     repo = UserRepository(db)
     user = await repo.get_superadmin_by_username(data.username)
     if not user or not verify_password(data.password, user.hashed_password):
@@ -95,33 +107,48 @@ async def super_login(data: SuperLoginRequest, db: AsyncSession = Depends(get_db
 
 
 @router.post("/forgot-password", status_code=200)
-async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/hour")
+async def forgot_password(request: Request, data: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     repo = UserRepository(db)
-    user = await repo.get_superadmin_by_email(data.email)
-    if user:
+    user = await repo.get_by_email(data.email)
+    if user and user.is_active:
         token = create_password_reset_token(user.id)
         reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
         body = (
             f"Hello {user.name},\n\n"
-            f"You requested a password reset for the Nelson Safari admin system.\n\n"
+            f"You requested a password reset for your Nelson Safari account.\n\n"
             f"Click the link below to set a new password (valid for 1 hour):\n"
             f"{reset_url}\n\n"
             f"If you did not request this, ignore this email.\n\n"
             f"Nelson Tours & Safari Team"
         )
-        await send_email(to=user.email, subject="Admin Password Reset — Nelson Tours & Safari", body=body)
+        await send_email(to=user.email, subject="Password Reset — Nelson Tours & Safari", body=body)
     return {"message": "If that email is registered, a reset link has been sent."}
 
 
 @router.post("/reset-password", status_code=200)
-async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/hour")
+async def reset_password(request: Request, data: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    from app.core.security import decode_token as _decode
+    raw_payload = _decode(data.token)
     user_id = verify_password_reset_token(data.token)
     if not user_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset token")
     repo = UserRepository(db)
     user = await repo.get(user_id)
-    if not user or not user.is_superadmin:
+    if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
-    await repo.update(user, {"hashed_password": get_password_hash(data.new_password)})
-    await db.commit()
+    # Prevent token reuse: if the password was already changed after the
+    # token was issued, reject it.
+    if raw_payload and user.updated_at:
+        token_iat = raw_payload.get("iat") or (raw_payload.get("exp", 0) - 3600)
+        if user.updated_at.timestamp() > token_iat:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This reset link has already been used",
+            )
+    await repo.update(user, {
+        "hashed_password": get_password_hash(data.new_password),
+        "password_changed_at": datetime.now(timezone.utc),
+    })
     return {"message": "Password updated successfully"}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Users, Mail, Phone, MessageSquare, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
@@ -23,6 +23,17 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
   const navigate = useNavigate()
   const [paymentUrl, setPaymentUrl] = useState(null)
   const [bookingRef, setBookingRef] = useState(null)
+  const submitting = useRef(false)
+
+  useEffect(() => {
+    if (user) {
+      setForm((prev) => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        email: prev.email || user.email || '',
+      }))
+    }
+  }, [user])
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -30,6 +41,8 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (submitting.current) return
+    submitting.current = true
     setStatus('loading')
     setErrorMsg('')
     try {
@@ -47,13 +60,7 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
         setBookingRef(booking.id)
         sessionStorage.setItem('lastBookingId', booking.id)
         sessionStorage.setItem('lastBookingEmail', form.email)
-        const hasPaymentUrl = !!(booking.payment_redirect_url)
-        if (!hasPaymentUrl) {
-          try {
-            await bookingsApi.initiatePayment(booking.id)
-          } catch {}
-        }
-        setPaymentUrl(hasPaymentUrl ? booking.payment_redirect_url : null)
+        setPaymentUrl(booking.payment_redirect_url || null)
         setStatus('success')
       } else {
         const inquiryPayload = {
@@ -76,6 +83,8 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
       setErrorMsg(
         err?.response?.data?.detail ?? 'Something went wrong. Please try again or contact us directly.'
       )
+    } finally {
+      submitting.current = false
     }
   }
 
@@ -111,7 +120,15 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
           </button>
         )}
         {bookingRef && (
-          <p className="font-sans text-[11px] text-gray-400 mb-4">Visa · Mastercard · M-Pesa · Airtel Money · Secured by Pesapal</p>
+          <p className="font-sans text-[11px] text-gray-400 mb-2">Visa · Mastercard · M-Pesa · Airtel Money · Secured by Pesapal</p>
+        )}
+        {bookingRef && (
+          <button
+            onClick={() => navigate(`/booking/${bookingRef}`)}
+            className="w-full flex items-center justify-center gap-2 px-6 py-2.5 border border-gray-200 text-gray-600 hover:border-green-900 hover:text-green-900 font-sans text-sm font-medium rounded-xl transition-colors"
+          >
+            View My Booking
+          </button>
         )}
         <button
           onClick={() => { setStatus('idle'); setPaymentUrl(null); setBookingRef(null) }}

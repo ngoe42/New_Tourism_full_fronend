@@ -1,11 +1,13 @@
 import asyncio
+import hashlib
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse, PlainTextResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.gzip import GZipMiddleware
@@ -30,15 +32,17 @@ from app.api.v1.router import api_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    if settings.SENDGRID_API_KEY:
-        logger.info(f"[email] SendGrid configured ✓ — sending from {settings.EMAIL_FROM}")
+    if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+        ses_from = settings.SES_FROM_EMAIL or settings.EMAIL_FROM
+        logger.info(f"[email] Amazon SES configured ✓ — sending from {ses_from}")
     else:
-        logger.warning("[email] SENDGRID_API_KEY is NOT set — all emails will be silently skipped!")
+        logger.warning("[email] AWS SES credentials are NOT set — all emails will be silently skipped!")
     if settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET:
         logger.info(f"[payment] Pesapal configured ✓ — environment={settings.PESAPAL_ENVIRONMENT}, IPN ID={'set' if settings.PESAPAL_IPN_ID else 'NOT SET (will auto-register)'}")
     else:
         logger.warning("[payment] PESAPAL_CONSUMER_KEY/SECRET not set — payment initiation will fail!")
     app.state.admin_seed_task = asyncio.create_task(_seed_admin_background())
+    app.state.booking_expiry_task = asyncio.create_task(_booking_expiry_loop())
     await init_redis()
     from app.core.cache import cache_delete_pattern
     for pattern in ("tours:*", "tour:*", "routes:*", "route:*", "experiences:*", "experience:*", "settings:*"):
@@ -48,6 +52,11 @@ async def lifespan(app: FastAPI):
     seed_task = getattr(app.state, "admin_seed_task", None)
     if seed_task and not seed_task.done():
         seed_task.cancel()
+    expiry_task = getattr(app.state, "booking_expiry_task", None)
+    if expiry_task and not expiry_task.done():
+        expiry_task.cancel()
+    from app.services.pesapal import close_http_client
+    await close_http_client()
     await close_redis()
     logger.info("Shutting down...")
 
@@ -110,6 +119,54 @@ async def _seed_admin_background():
         logger.exception("Admin seeding failed during startup; continuing so the app can serve health checks")
 
 
+_EXPIRY_INTERVAL_SECONDS = 900  # run every 15 minutes
+_EXPIRY_ADVISORY_KEY = int(
+    hashlib.sha256(b"booking:expiry:job").hexdigest(), 16
+) % (2**31)
+
+
+async def _booking_expiry_loop() -> None:
+    """Background task: periodically cancel abandoned pending bookings.
+
+    Distributed safety: only one worker per interval runs the cleanup.
+    Uses Redis NX lock when Redis is available; falls back to
+    pg_try_advisory_xact_lock (non-blocking, auto-released on tx end)
+    for multi-pod deployments without Redis.
+    """
+    from app.core.database import AsyncSessionLocal
+    from app.core import cache as _cache
+    from app.repositories.booking import BookingRepository
+    from sqlalchemy import text
+    while True:
+        await asyncio.sleep(_EXPIRY_INTERVAL_SECONDS)
+        try:
+            async with AsyncSessionLocal() as db:
+                redis_client = _cache._redis  # live module-attr — None if unavailable
+                if redis_client is not None:
+                    acquired = await redis_client.set(
+                        "lock:booking_expiry", "1",
+                        nx=True, ex=_EXPIRY_INTERVAL_SECONDS - 60,
+                    )
+                    if not acquired:
+                        logger.debug("[expiry] Skipped — another worker holds the Redis lock")
+                        continue
+                else:
+                    result = await db.execute(
+                        text("SELECT pg_try_advisory_xact_lock(:key)"),
+                        {"key": _EXPIRY_ADVISORY_KEY},
+                    )
+                    if not result.scalar_one():
+                        logger.debug("[expiry] Skipped — another worker holds the advisory lock")
+                        continue
+                repo = BookingRepository(db)
+                count = await repo.expire_abandoned()
+                await db.commit()
+                if count:
+                    logger.info(f"[expiry] Cancelled {count} abandoned pending booking(s)")
+        except Exception:
+            logger.exception("[expiry] Booking expiry loop error — will retry next interval")
+
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -124,28 +181,100 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
-# Global exception handler to ensure CORS headers on all errors
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.exception(f"Unhandled exception on {request.method} {request.url.path}: {exc}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "*",
-            "Access-Control-Allow-Headers": "*",
-        },
-    )
+PRODUCTION_DOMAIN = "nelsontoursandsafaris.com"
+RAILWAY_HOST_SUFFIX = ".up.railway.app"
+
+
+@app.middleware("http")
+async def canonical_redirect_middleware(request: Request, call_next):
+    host = request.headers.get("host", "").split(":")[0].lower()
+    path = request.url.path
+    query = request.url.query
+
+    # Railway staging → production
+    if RAILWAY_HOST_SUFFIX in host:
+        redirect_url = f"https://{PRODUCTION_DOMAIN}{path}"
+        if query:
+            redirect_url += f"?{query}"
+        return RedirectResponse(url=redirect_url, status_code=301)
+
+    target_host = PRODUCTION_DOMAIN
+    # www → non-www
+    if host == f"www.{PRODUCTION_DOMAIN}":
+        target_host = PRODUCTION_DOMAIN
+
+    # Normalize path: lowercase, no trailing slash (except root)
+    normalized = path.lower()
+    if len(normalized) > 1 and normalized.endswith("/"):
+        normalized = normalized.rstrip("/")
+
+    if host != target_host or normalized != path:
+        redirect_url = f"https://{target_host}{normalized}"
+        if query:
+            redirect_url += f"?{query}"
+        return RedirectResponse(url=redirect_url, status_code=301)
+
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    import uuid as _uuid
+    request_id = request.headers.get("X-Request-ID", _uuid.uuid4().hex[:12])
+    with logger.contextualize(request_id=request_id):
+        response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if not request.url.path.startswith("/api/v1/payments"):
+        response.headers["X-Frame-Options"] = "DENY"
+    return response
+
+
+# Compute allowed origins once so both the CORS middleware and the exception
+# handler (which runs outside the middleware stack) use the same policy.
+if settings.ENVIRONMENT == "production":
+    _cors_origins = [
+        o.strip()
+        for o in (settings.ALLOWED_ORIGINS or "").split(",")
+        if o.strip()
+    ]
+    if not _cors_origins:
+        logger.critical(
+            "ALLOWED_ORIGINS is not set — CORS will block all cross-origin requests "
+            "in production.  Set ALLOWED_ORIGINS to your frontend domain(s)."
+        )
+else:
+    _cors_origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+
+# Global exception handler to ensure CORS headers on all errors.
+# CORSMiddleware does not run on unhandled 500s, so we add the header here.
+# We reflect the request Origin only when it is explicitly in _cors_origins;
+# a wildcard (*) is never emitted in production to prevent CORS bypass.
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception(f"Unhandled exception on {request.method} {request.url.path}: {exc}")
+    origin = request.headers.get("origin", "")
+    response_headers: dict = {}
+    if origin and ("*" in _cors_origins or origin in _cors_origins):
+        response_headers["Access-Control-Allow-Origin"] = origin
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+        headers=response_headers,
+    )
 
 app.include_router(api_router)
 
@@ -157,6 +286,7 @@ app.mount("/uploads", CachedStaticFiles(directory=str(_uploads_dir)), name="uplo
 @app.get("/health", tags=["Health"])
 async def health_check():
     from app.core.cache import _redis
+    from app.core.database import AsyncSessionLocal
     redis_status = "disabled"
     if _redis is not None:
         try:
@@ -164,9 +294,101 @@ async def health_check():
             redis_status = "connected"
         except Exception:
             redis_status = "error"
+    db_status = "unknown"
+    try:
+        async with AsyncSessionLocal() as session:
+            from sqlalchemy import text
+            await session.execute(text("SELECT 1"))
+            db_status = "connected"
+    except Exception:
+        db_status = "error"
+    overall = "ok" if db_status == "connected" else "degraded"
     return {
-        "status": "ok",
+        "status": overall,
         "version": settings.APP_VERSION,
         "app": settings.APP_NAME,
         "redis": redis_status,
+        "database": db_status,
     }
+
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt(request: Request):
+    host = request.headers.get("host", "")
+    if RAILWAY_HOST_SUFFIX in host:
+        return PlainTextResponse(
+            "User-agent: *\nDisallow: /\n"
+        )
+    return PlainTextResponse(
+        "User-agent: *\nAllow: /\n\n"
+        f"Sitemap: https://{PRODUCTION_DOMAIN}/sitemap.xml\n"
+    )
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml(request: Request):
+    from app.core.database import AsyncSessionLocal
+    from sqlalchemy import text
+
+    static_pages = [
+        ("/", "2026-06-21", "weekly", "1.0"),
+        ("/tours", "2026-06-21", "daily", "0.9"),
+        ("/routes", "2026-06-21", "weekly", "0.8"),
+        ("/experiences", "2026-06-21", "weekly", "0.8"),
+        ("/blog", "2026-06-21", "weekly", "0.7"),
+        ("/about", "2026-06-21", "monthly", "0.7"),
+        ("/kilimanjaro", "2026-06-21", "weekly", "0.9"),
+        ("/trekking", "2026-06-21", "weekly", "0.8"),
+        ("/meru", "2026-06-21", "weekly", "0.8"),
+        ("/oldoinyo-lengai", "2026-06-21", "weekly", "0.8"),
+        ("/safari", "2026-06-21", "weekly", "0.9"),
+        ("/contact", "2026-06-21", "monthly", "0.6"),
+    ]
+
+    urls = []
+    for path, lastmod, changefreq, priority in static_pages:
+        urls.append(f"""  <url>
+    <loc>https://{PRODUCTION_DOMAIN}{path}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>{changefreq}</changefreq>
+    <priority>{priority}</priority>
+  </url>""")
+
+    try:
+        async with AsyncSessionLocal() as db:
+            tours = await db.execute(
+                text("SELECT slug, updated_at FROM tours WHERE is_published = TRUE AND slug !~ '^[0-9]+$' ORDER BY updated_at DESC")
+            )
+            for row in tours.fetchall():
+                slug, updated = row
+                lastmod = (updated.strftime("%Y-%m-%d") if updated else "2026-06-21")
+                urls.append(f"""  <url>
+    <loc>https://{PRODUCTION_DOMAIN}/tours/{slug}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>""")
+
+            routes = await db.execute(
+                text("SELECT slug, updated_at FROM routes WHERE is_published = TRUE ORDER BY updated_at DESC")
+            )
+            for row in routes.fetchall():
+                slug, updated = row
+                lastmod = (updated.strftime("%Y-%m-%d") if updated else "2026-06-21")
+                urls.append(f"""  <url>
+    <loc>https://{PRODUCTION_DOMAIN}/routes/{slug}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>""")
+    except Exception:
+        logger.warning("Failed to fetch dynamic routes for sitemap — using static pages only")
+
+    content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+{chr(10).join(urls)}
+</urlset>"""
+    return Response(content=content, media_type="application/xml")
