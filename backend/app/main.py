@@ -202,9 +202,11 @@ async def canonical_redirect_middleware(request: Request, call_next):
             redirect_url += f"?{query}"
         return RedirectResponse(url=redirect_url, status_code=301)
 
+    # Determine target host: www → non-www, api → keep, everything else → production
     target_host = PRODUCTION_DOMAIN
-    # www → non-www
-    if host == f"www.{PRODUCTION_DOMAIN}":
+    if host == f"api.{PRODUCTION_DOMAIN}":
+        target_host = host
+    elif host == f"www.{PRODUCTION_DOMAIN}":
         target_host = PRODUCTION_DOMAIN
 
     # Normalize path: lowercase, no trailing slash (except root)
