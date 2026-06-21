@@ -119,7 +119,7 @@ const server = createServer((req, res) => {
 
   // Proxy sitemap and robots to the backend (includes dynamic tour/route pages)
   if (path === '/sitemap.xml' || path === '/robots.txt') {
-    const backendPath = `/api/v1${path}`
+    const backendPath = `${path}`
     const opts = {
       hostname: API_HOST,
       port: 443,
