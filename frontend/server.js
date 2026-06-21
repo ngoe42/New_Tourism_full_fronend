@@ -1,5 +1,6 @@
-import { createServer } from 'http'
-import { readFileSync, existsSync } from 'fs'
+import { createServer, request as httpRequest } from 'http'
+import { request as httpsRequest } from 'https'
+import { readFileSync } from 'fs'
 import { extname, join, resolve } from 'path'
 
 const PORT = process.env.PORT || 3000
@@ -7,6 +8,14 @@ const DIST = resolve('dist')
 const PRODUCTION_DOMAIN = 'nelsontoursandsafaris.com'
 const INDEX = join(DIST, 'index.html')
 const NOT_FOUND = join(DIST, '404.html')
+
+// Backend API base — derive from VITE_API_URL or default to api subdomain
+const API_HOST = (process.env.VITE_API_URL || 'https://api.nelsontoursandsafaris.com/api/v1')
+  .replace(/^https?:\/\//, '')
+  .split('/')[0]
+  .split(':')[0]
+const API_PROTOCOL = (process.env.VITE_API_URL || 'https://api.nelsontoursandsafaris.com/api/v1')
+  .startsWith('http://') ? 'http' : 'https'
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -66,6 +75,10 @@ function stripTrackingParams(query) {
   return clean ? `?${clean}` : ''
 }
 
+function fallbackStatic(path, res) {
+  serveFile(res, join(DIST, path), 200)
+}
+
 const server = createServer((req, res) => {
   const host = (req.headers.host || '').split(':')[0].toLowerCase()
   const [pathPart, rawQuery] = req.url.split('?')
@@ -101,6 +114,25 @@ const server = createServer((req, res) => {
     redirectUrl += queryString
     res.writeHead(301, { Location: redirectUrl })
     res.end()
+    return
+  }
+
+  // Proxy sitemap and robots to the backend (includes dynamic tour/route pages)
+  if (path === '/sitemap.xml' || path === '/robots.txt') {
+    const backendPath = `/api/v1${path}`
+    const opts = {
+      hostname: API_HOST,
+      port: 443,
+      path: backendPath,
+      method: req.method,
+      headers: { ...req.headers, host: API_HOST },
+    }
+    const proxyReq = (API_PROTOCOL === 'http' ? httpRequest : httpsRequest)(opts, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers)
+      proxyRes.pipe(res)
+    })
+    proxyReq.on('error', () => fallbackStatic(path, res))
+    proxyReq.end()
     return
   }
 
