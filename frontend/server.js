@@ -53,8 +53,11 @@ function hasFileExtension(urlPath) {
 }
 
 const server = createServer((req, res) => {
-  const host = req.headers.host || ''
+  const host = (req.headers.host || '').split(':')[0].toLowerCase()
+  const [pathPart, queryString] = req.url.split('?')
+  let path = pathPart
 
+  // Railway staging → production
   if (host.includes('.up.railway.app')) {
     const url = `https://${PRODUCTION_DOMAIN}${req.url}`
     res.writeHead(301, { Location: url })
@@ -62,7 +65,32 @@ const server = createServer((req, res) => {
     return
   }
 
-  let path = req.url.split('?')[0]
+  let redirectUrl = null
+
+  // www → non-www
+  if (host === `www.${PRODUCTION_DOMAIN}`) {
+    redirectUrl = `https://${PRODUCTION_DOMAIN}${path}`
+  }
+
+  // Force lowercase path
+  if (!redirectUrl && path !== path.toLowerCase()) {
+    redirectUrl = `https://${host}${path.toLowerCase()}`
+  }
+
+  // Remove trailing slash (except root)
+  if (!redirectUrl && path.length > 1 && path.endsWith('/')) {
+    redirectUrl = `https://${host}${path.replace(/\/+$/, '')}`
+  }
+
+  if (redirectUrl) {
+    if (queryString) redirectUrl += `?${queryString}`
+    res.writeHead(301, { Location: redirectUrl })
+    res.end()
+    return
+  }
+
+  // Normalize path for file lookup
+  path = path || '/'
   const filePath = join(DIST, path === '/' ? 'index.html' : path)
 
   if (serveFile(res, filePath)) return
@@ -75,8 +103,19 @@ const server = createServer((req, res) => {
     return
   }
 
-  // SPA fallback for navigation-style paths
-  serveFile(res, INDEX, 200)
+  // SPA fallback for navigation-style paths — inject canonical tag for SEO
+  try {
+    const indexContent = readFileSync(INDEX, 'utf-8')
+    const canonicalUrl = `https://${PRODUCTION_DOMAIN}${path}${queryString ? '?' + queryString : ''}`
+    const modified = indexContent.replace(
+      '</head>',
+      `  <link rel="canonical" href="${canonicalUrl}" />\n</head>`
+    )
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end(modified)
+  } catch {
+    serveFile(res, INDEX, 200)
+  }
 })
 
 server.listen(PORT, () => {
