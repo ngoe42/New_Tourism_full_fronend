@@ -41,7 +41,7 @@ const server = createServer((req, res) => {
   const host = req.headers.host || ''
 
   // 301 redirect if accessing via Railway staging domain
-  if (host.includes('railway.app')) {
+  if (host.includes('.up.railway.app')) {
     const url = `https://${PRODUCTION_DOMAIN}${req.url}`
     res.writeHead(301, { Location: url })
     res.end()

@@ -181,7 +181,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 PRODUCTION_DOMAIN = "nelsontoursandsafaris.com"
-RAILWAY_HOST_SUFFIX = "railway.app"
+RAILWAY_HOST_SUFFIX = ".up.railway.app"
 
 
 @app.middleware("http")
