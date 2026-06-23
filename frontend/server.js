@@ -79,6 +79,52 @@ function fallbackStatic(path, res) {
   serveFile(res, join(DIST, path), 200)
 }
 
+// Route metadata for SEO (mirrors App.jsx routes)
+const ROUTE_META = {
+  '/':                        { title: 'Nelson Tour and Safari — Luxury Tanzania Experiences',          description: 'World-class luxury safari experiences in Tanzania. Crafted by local experts for unforgettable adventures.' },
+  '/tours':                   { title: 'Tours — Nelson Tour and Safari',                               description: 'Explore our curated selection of luxury safari tours and mountain trekking adventures in Tanzania.' },
+  '/routes':                  { title: 'Climbing Routes — Nelson Tour and Safari',                     description: 'Discover the best climbing routes for Kilimanjaro, Meru, and other Tanzanian peaks.' },
+  '/experiences':             { title: 'Experiences — Nelson Tour and Safari',                         description: 'Curated luxury experiences across Tanzania — from wildlife safaris to cultural immersions.' },
+  '/blog':                    { title: 'Blog — Nelson Tour and Safari',                                description: 'Travel guides, tips, and stories from Tanzania\'s premier safari and trekking experts.' },
+  '/about':                   { title: 'About Us — Nelson Tour and Safari',                            description: 'Meet the local experts behind Nelson Tour and Safari — your trusted guide to Tanzania.' },
+  '/kilimanjaro':             { title: 'Mount Kilimanjaro — Nelson Tour and Safari',                   description: 'Climb Mount Kilimanjaro with expert local guides. Choose from multiple routes for the adventure of a lifetime.' },
+  '/trekking':                { title: 'Trekking — Nelson Tour and Safari',                            description: 'Trekking adventures across Tanzania\'s most breathtaking landscapes with experienced guides.' },
+  '/meru':                    { title: 'Mount Meru — Nelson Tour and Safari',                          description: 'Climb Mount Meru — Tanzania\'s second-highest peak and the perfect warm-up for Kilimanjaro.' },
+  '/oldoinyo-lengai':         { title: 'Oldoinyo Lengai — Nelson Tour and Safari',                     description: 'Trek the sacred Mountain of God — an active volcanic climb in the Great Rift Valley.' },
+  '/safari':                  { title: 'Tanzania Safaris — Nelson Tour and Safari',                    description: 'Luxury safari experiences in Tanzania\'s most iconic national parks — Serengeti, Ngorongoro, and beyond.' },
+  '/contact':                 { title: 'Contact Us — Nelson Tour and Safari',                          description: 'Get in touch with Nelson Tour and Safari. Plan your dream Tanzanian adventure today.' },
+  '/login':                   { title: 'Login — Nelson Tour and Safari',                               description: '' },
+  '/login/admin':             { title: 'Admin Login — Nelson Tour and Safari',                          description: '' },
+  '/login/admin/forgot':      { title: 'Forgot Password — Nelson Tour and Safari',                      description: '' },
+  '/payment/callback':        { title: 'Payment — Nelson Tour and Safari',                              description: '' },
+  '/payment/resume':          { title: 'Resume Payment — Nelson Tour and Safari',                        description: '' },
+  '/reset-password':          { title: 'Reset Password — Nelson Tour and Safari',                        description: '' },
+  // Specific tour pages (in order of priority for Google indexing)
+  '/tours/1-day-arusha-to-arusha-national-park':
+                              { title: '1-Day Arusha National Park Tour — Nelson Tour and Safari',        description: 'Experience Arusha National Park in one day. Game drives, canopy walk, and stunning views of Mount Meru with expert guides.' },
+  '/tours/tarangire-national-park-day-trip':
+                              { title: 'Tarangire National Park Day Trip — Nelson Tour and Safari',       description: 'Day trip to Tarangire National Park. Witness massive elephant herds, baobab trees, and incredible birdlife just hours from Arusha.' },
+  '/tours/5-day-exclusive-mafia-island-experience':
+                              { title: '5-Day Mafia Island Luxury Experience — Nelson Tour and Safari',   description: 'Escape to Mafia Island for 5 days of pristine beaches, world-class snorkeling, whale sharks, and luxury coastal relaxation in Tanzania.' },
+}
+
+const SITE_LOGO_URL = 'https://nelsontoursandsafaris.com/favicon.png'
+
+function seoMetaForPath(path) {
+  if (ROUTE_META[path]) return ROUTE_META[path]
+  if (path.startsWith('/tours/')) return { title: 'Tour Details — Nelson Tour and Safari', description: 'Explore this luxury safari tour in Tanzania.' }
+  if (path.startsWith('/routes/')) return { title: 'Climbing Route — Nelson Tour and Safari', description: 'Detailed information about this Kilimanjaro climbing route.' }
+  if (path.startsWith('/booking/')) return { title: 'Booking Confirmation — Nelson Tour and Safari', description: '' }
+  return null
+}
+
+function h1ForPath(path) {
+  if (path === '/') return 'Nelson Tour and Safari'
+  const meta = seoMetaForPath(path)
+  if (meta) return meta.title.replace(/ —.*$/, '')
+  return 'Nelson Tour and Safari'
+}
+
 const server = createServer((req, res) => {
   const host = (req.headers.host || '').split(':')[0].toLowerCase()
   const [pathPart, rawQuery] = req.url.split('?')
@@ -136,18 +182,65 @@ const server = createServer((req, res) => {
     return
   }
 
-  // SPA — serve index.html with canonical tag injected for SEO
+  // SPA — serve index.html with full SEO metadata injected for Google's Wave 1 crawl
   const isSPARoute = path === '/' || !hasFileExtension(path)
   if (isSPARoute) {
     try {
-      const indexContent = readFileSync(INDEX, 'utf-8')
+      let indexContent = readFileSync(INDEX, 'utf-8')
       const canonicalUrl = `https://${PRODUCTION_DOMAIN}${path}${queryString}`
-      const modified = indexContent.replace(
-        '</head>',
-        `  <link rel="canonical" href="${canonicalUrl}" />\n</head>`
+      const meta = seoMetaForPath(path)
+      const title = meta ? meta.title : 'Nelson Tour and Safari'
+      const description = meta ? meta.description : ''
+
+      const safe = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+      // Replace SEO marker placeholders
+      indexContent = indexContent.replace('<!--SEO:title-->', safe(title))
+      indexContent = indexContent.replace('<!--SEO:description-->', safe(description))
+
+      // Inject canonical + Open Graph + Twitter Card tags
+      const seoHead = [
+        `  <link rel="canonical" href="${canonicalUrl}" />`,
+        `  <meta property="og:type" content="website" />`,
+        `  <meta property="og:url" content="${safe(canonicalUrl)}" />`,
+        `  <meta property="og:title" content="${safe(title)}" />`,
+        `  <meta property="og:description" content="${safe(description)}" />`,
+        `  <meta property="og:image" content="${SITE_LOGO_URL}" />`,
+        `  <meta name="twitter:card" content="summary_large_image" />`,
+        `  <meta name="twitter:title" content="${safe(title)}" />`,
+        `  <meta name="twitter:description" content="${safe(description)}" />`,
+        `  <meta name="twitter:image" content="${SITE_LOGO_URL}" />`,
+      ].join('\n')
+      indexContent = indexContent.replace('</head>', seoHead + '\n</head>')
+
+      // Inject JSON-LD structured data for homepage (TravelAgency schema)
+      if (path === '/') {
+        const jsonLd = JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'TravelAgency',
+          name: 'Nelson Tour and Safari',
+          url: 'https://nelsontoursandsafaris.com',
+          logo: SITE_LOGO_URL,
+          description: 'World-class luxury safari experiences in Tanzania.',
+          image: SITE_LOGO_URL,
+          address: { '@type': 'PostalAddress', addressCountry: 'TZ' },
+          sameAs: [],
+        })
+        indexContent = indexContent.replace(
+          '</head>',
+          `  <script type="application/ld+json">${jsonLd}</script>\n</head>`
+        )
+      }
+
+      // Inject a visible H1 inside #root so Google's first wave sees real content
+      const h1Text = h1ForPath(path)
+      indexContent = indexContent.replace(
+        '<div id="root"></div>',
+        `<div id="root"><h1 style="position:absolute;clip:rect(1px,1px,1px,1px);overflow:hidden;height:1px;width:1px">${safe(h1Text)}</h1></div>`
       )
+
       res.writeHead(200, { 'Content-Type': 'text/html' })
-      res.end(modified)
+      res.end(indexContent)
       return
     } catch {
       serveFile(res, INDEX, 200)
