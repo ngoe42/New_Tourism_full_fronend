@@ -131,10 +131,13 @@ const server = createServer((req, res) => {
   let path = pathPart
   const queryString = stripTrackingParams(rawQuery)
 
-  // Railway staging → production
+  // Railway staging → production (noindex to prevent staging from becoming canonical)
   if (host.includes('.up.railway.app')) {
     const url = `https://${PRODUCTION_DOMAIN}${path}${queryString}`
-    res.writeHead(301, { Location: url })
+    res.writeHead(301, {
+      'Location': url,
+      'X-Robots-Tag': 'noindex, nofollow',
+    })
     res.end()
     return
   }
@@ -194,6 +197,15 @@ const server = createServer((req, res) => {
 
       const safe = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
+      // Add noindex for Railway staging (fallback if 301 redirect is not followed)
+      const isStaging = host.includes('.up.railway.app')
+      if (isStaging) {
+        indexContent = indexContent.replace(
+          '</head>',
+          '  <meta name="robots" content="noindex, nofollow" />\n</head>'
+        )
+      }
+
       // Replace SEO marker placeholders
       indexContent = indexContent.replace('<!--SEO:title-->', safe(title))
       indexContent = indexContent.replace('<!--SEO:description-->', safe(description))
@@ -224,7 +236,12 @@ const server = createServer((req, res) => {
           description: 'World-class luxury safari experiences in Tanzania.',
           image: SITE_LOGO_URL,
           address: { '@type': 'PostalAddress', addressCountry: 'TZ' },
-          sameAs: [],
+          sameAs: [
+            'https://facebook.com/nelsonsafari',
+            'https://www.instagram.com/nelson_tour_and_safari',
+            'https://twitter.com/nelsonsafari',
+            'https://youtube.com/@nelsonsafari',
+          ],
         })
         indexContent = indexContent.replace(
           '</head>',
@@ -239,7 +256,7 @@ const server = createServer((req, res) => {
         `<div id="root"><h1 style="position:absolute;clip:rect(1px,1px,1px,1px);overflow:hidden;height:1px;width:1px">${safe(h1Text)}</h1></div>`
       )
 
-      res.writeHead(200, { 'Content-Type': 'text/html' })
+      res.writeHead(200, { 'Content-Type': 'text/html', 'Link': `<${canonicalUrl}>; rel="canonical"` })
       res.end(indexContent)
       return
     } catch {
