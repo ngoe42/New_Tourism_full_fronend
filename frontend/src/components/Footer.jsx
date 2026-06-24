@@ -16,7 +16,7 @@ const navLinks = [
 
 const socials = [
   { icon: Instagram, label: 'Instagram', href: 'https://www.instagram.com/nelson_tour_and_safari?utm_source=qr&igsh=MWVscDEwcmdzYjJqNg==' },
-  { icon: Facebook, label: 'Facebook', href: '#' },
+  { icon: Facebook, label: 'Facebook', href: 'https://www.facebook.com/nelson.michael.39' },
   { icon: Youtube, label: 'YouTube', href: '#' },
 ]
 

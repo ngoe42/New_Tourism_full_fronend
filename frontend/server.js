@@ -237,7 +237,7 @@ const server = createServer((req, res) => {
           image: SITE_LOGO_URL,
           address: { '@type': 'PostalAddress', addressCountry: 'TZ' },
           sameAs: [
-            'https://facebook.com/nelsonsafari',
+            'https://www.facebook.com/nelson.michael.39',
             'https://www.instagram.com/nelson_tour_and_safari',
             'https://twitter.com/nelsonsafari',
             'https://youtube.com/@nelsonsafari',
