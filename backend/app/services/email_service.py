@@ -1,11 +1,11 @@
-import asyncio
 from typing import Optional
 
-import boto3
-from botocore.exceptions import BotoCoreError, ClientError
+import resend
 from loguru import logger
 
 from app.core.config import settings
+
+resend.api_key = settings.RESEND_API_KEY
 
 
 def _payment_block(
@@ -168,9 +168,9 @@ async def send_email(
     btn_label: str = "Complete Payment",
     include_terms: bool = False,
 ) -> bool:
-    """Send email via Amazon SES. Returns True on success, False if not configured or on error."""
-    if not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY:
-        logger.warning("Email not sent: AWS SES credentials are not configured.")
+    """Send email via Resend. Returns True on success, False if not configured or on error."""
+    if not settings.RESEND_API_KEY:
+        logger.warning("Email not sent: RESEND_API_KEY is not configured.")
         return False
 
     logger.info(f"[email] Sending '{subject}' to {to}")
@@ -199,32 +199,19 @@ async def send_email(
         )
 
     try:
-        ses = boto3.client(
-            "ses",
-            region_name=settings.AWS_REGION,
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        )
+        response = await resend.Emails.send_async({
+            "from": settings.RESEND_FROM_EMAIL,
+            "to": [to],
+            "subject": subject,
+            "html": html,
+            "text": plain,
+        })
 
-        response = await asyncio.to_thread(
-            ses.send_email,
-            Source=settings.SES_FROM_EMAIL or settings.EMAIL_FROM,
-            Destination={"ToAddresses": [to]},
-            Message={
-                "Subject": {"Data": subject, "Charset": "UTF-8"},
-                "Body": {
-                    "Html": {"Data": html, "Charset": "UTF-8"},
-                    "Text": {"Data": plain, "Charset": "UTF-8"},
-                },
-            },
-        )
-
-        message_id = response.get("MessageId", "unknown")
-        logger.info(f"[email] ✓ Sent '{subject}' to {to} — SES MessageId={message_id}")
+        email_id = response.get("id", "unknown")
+        logger.info(f"[email] ✓ Sent '{subject}' to {to} — Resend EmailId={email_id}")
         return True
-    except (BotoCoreError, ClientError) as e:
-        error_code = getattr(e, 'response', {}).get('Error', {}).get('Code', 'Unknown')
-        logger.error(f"[email] ✗ SES FAILED sending to {to}: {error_code} — {e}")
+    except resend.exceptions.ResendError as e:
+        logger.error(f"[email] ✗ Resend FAILED sending to {to}: {e}")
         return False
     except Exception as e:
         logger.error(f"[email] ✗ Unexpected error sending to {to}: {type(e).__name__}: {e}")

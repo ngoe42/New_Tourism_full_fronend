@@ -40,11 +40,12 @@ class Settings(BaseSettings):
     SUPER_ADMIN_PASSWORD: str = "admin@123"
     SUPER_ADMIN_NAME: str = "Kenedy"
 
-    SES_FROM_EMAIL: Optional[str] = None  # SES verified sender (e.g. noreply@...)
+    RESEND_API_KEY: Optional[str] = None
+    RESEND_FROM_EMAIL: str = "Nelson Tours & Safari <info@nelsontoursandsafaris.com>"
     EMAIL_FROM: str = "ngoekenedy@gmail.com"  # Admin notification recipient
     FRONTEND_URL: str = "https://nelsontoursandsafari.com"
-    BACKEND_URL: str = "https://nelsonsafari-backend-development.up.railway.app"
-    # "https://api.nelsontoursandsafari.com"
+    BACKEND_URL: str = "https://api.nelsontoursandsafari.com"
+    # Old Railway fallback: "https://nelsonsafari-backend-development.up.railway.app"
 
     PESAPAL_CONSUMER_KEY: Optional[str] = None
     PESAPAL_CONSUMER_SECRET: Optional[str] = None
