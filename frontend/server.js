@@ -130,17 +130,7 @@ const server = createServer((req, res) => {
   const [pathPart, rawQuery] = req.url.split('?')
   let path = pathPart
   const queryString = stripTrackingParams(rawQuery)
-
-  // Railway staging → production (noindex to prevent staging from becoming canonical)
-  if (host.includes('.up.railway.app')) {
-    const url = `https://${PRODUCTION_DOMAIN}${path}${queryString}`
-    res.writeHead(301, {
-      'Location': url,
-      'X-Robots-Tag': 'noindex, nofollow',
-    })
-    res.end()
-    return
-  }
+  const isStaging = host.includes('.up.railway.app')
 
   let redirectUrl = null
 
@@ -197,9 +187,9 @@ const server = createServer((req, res) => {
 
       const safe = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-      // Add noindex for Railway staging (fallback if 301 redirect is not followed)
-      const isStaging = host.includes('.up.railway.app')
+      // Add noindex for Railway staging (Google ignores X-Robots-Tag on 3xx, so serve 200 with noindex)
       if (isStaging) {
+        res.setHeader('X-Robots-Tag', 'noindex, nofollow')
         indexContent = indexContent.replace(
           '</head>',
           '  <meta name="robots" content="noindex, nofollow" />\n</head>'
