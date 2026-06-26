@@ -239,14 +239,31 @@ const server = createServer((req, res) => {
         )
       }
 
-      // Inject a visible H1 inside #root so Google's first wave sees real content
-      const h1Text = h1ForPath(path)
-      indexContent = indexContent.replace(
-        '<div id="root"></div>',
-        `<div id="root"><h1 style="position:absolute;clip:rect(1px,1px,1px,1px);overflow:hidden;height:1px;width:1px">${safe(h1Text)}</h1></div>`
-      )
+      // Inject visible content inside #root so Google's first wave sees real content
+      // React will replace this when JS loads, but Google reads it during wave-1 crawl
+      if (path === '/') {
+        const heroHtml = [
+          '<div style="max-width:1200px;margin:0 auto;padding:100px 24px;color:#1a1a2e">',
+          '  <h1 style="font-size:2.5rem;font-weight:700;margin-bottom:1rem">Explore Tanzania Like Never Before</h1>',
+          '  <p style="font-size:1.125rem;line-height:1.6;margin-bottom:1.5rem;max-width:600px">Designed by local experts to create unforgettable journeys, from the wild beauty of the Serengeti National Park to the majestic heights of Mount Kilimanjaro.</p>',
+          '  <p><a href="/tours" style="display:inline-block;padding:10px 28px;background:#c8a97e;color:#fff;text-decoration:none;border-radius:4px">Explore Tours</a></p>',
+          '  <p style="margin-top:2rem;font-size:0.875rem;color:#666">Nelson Tour and Safari — World-class luxury safari experiences in Tanzania. Crafted by local experts for unforgettable adventures.</p>',
+          '</div>',
+        ].join('\n')
+        indexContent = indexContent.replace(
+          '<div id="root"></div>',
+          `<div id="root">${heroHtml}</div>`
+        )
+      } else {
+        const heading = h1ForPath(path)
+        indexContent = indexContent.replace(
+          '<div id="root"></div>',
+          `<div id="root"><h1>${safe(heading)}</h1></div>`
+        )
+      }
 
-      res.writeHead(200, { 'Content-Type': 'text/html', 'Link': `<${canonicalUrl}>; rel="canonical"` })
+      const cacheControl = isStaging ? 'no-cache, no-store, must-revalidate' : 'public, max-age=3600'
+      res.writeHead(200, { 'Content-Type': 'text/html', 'Cache-Control': cacheControl, 'Link': `<${canonicalUrl}>; rel="canonical"` })
       res.end(indexContent)
       return
     } catch {
