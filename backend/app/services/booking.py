@@ -46,20 +46,6 @@ async def send_booking_confirmation_email(
     try:
         name = contact_name.split()[0]
 
-        email_payment_link = payment_link or f"{settings.FRONTEND_URL}/contact"
-        has_pesapal = payment_link is not None
-
-        if has_pesapal:
-            payment_instruction = (
-                "Please complete your deposit payment using the button below "
-                "to secure your reservation."
-            )
-        else:
-            payment_instruction = (
-                "To complete your payment and secure this reservation, "
-                "please contact our team — we will send you a secure payment link within the hour."
-            )
-
         location_line = f"Location          : {tour_location}\n" if tour_location else ""
         duration_line = f"Duration          : {tour_duration}\n" if tour_duration else ""
 
@@ -71,10 +57,19 @@ async def send_booking_confirmation_email(
                 included_block += f"\n   ... and {len(tour_included) - 8} more items"
             included_block += "\n"
 
+        contact_block = (
+            "\nContact Us\n"
+            f"{'=' * 40}\n"
+            f"Phone  : +255 750 005 973\n"
+            f"Email  : hello@nelsontoursandsafari.com\n"
+            f"WhatsApp: https://wa.me/255750005973\n"
+            f"{'=' * 40}\n"
+        )
+
         body = (
             f"Dear {name},\n\n"
             f"Thank you for choosing Nelson Tours & Safari!\n\n"
-            f"Your booking request has been received. {payment_instruction}\n\n"
+            f"Your booking request has been received. Our team will contact you shortly to confirm your reservation.\n\n"
             f"Booking Summary\n"
             f"{'=' * 40}\n"
             f"Booking Reference : #{booking_id}\n"
@@ -85,18 +80,15 @@ async def send_booking_confirmation_email(
             f"Number of Guests  : {guests} {'Guest' if guests == 1 else 'Guests'}\n"
             f"{'=' * 40}\n"
             + included_block
+            + contact_block
             + f"\nOur team will be in touch within 24 hours to assist with any questions.\n\n"
             f"We look forward to crafting an unforgettable safari experience for you.\n\n"
-            f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
+            f"Warm regards,\nNelson Tours & Safari Team"
         )
         await send_email(
             to=contact_email,
             subject=f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
             body=body,
-            item_name=f"{tour_title} · {guests} {'Guest' if guests == 1 else 'Guests'}",
-            price=total_price,
-            payment_link=email_payment_link,
-            btn_label="Complete Payment" if has_pesapal else "Contact Us to Pay",
             include_terms=True,
         )
     except Exception as exc:
