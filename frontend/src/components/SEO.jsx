@@ -29,7 +29,7 @@ export default function SEO({ title, description, canonicalPath, noindex, image 
 
   const path = normalizePath(canonicalPath || pathname)
   const url = `${PRODUCTION_URL}${path}${queryString}`
-  const ogImage = image || `${PRODUCTION_URL}/favicon.png`
+  const ogImage = image || `${PRODUCTION_URL}/images/logo/logo.png`
 
   return (
     <Helmet>

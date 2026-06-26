@@ -108,7 +108,7 @@ const ROUTE_META = {
                               { title: '5-Day Mafia Island Luxury Experience — Nelson Tour and Safari',   description: 'Escape to Mafia Island for 5 days of pristine beaches, world-class snorkeling, whale sharks, and luxury coastal relaxation in Tanzania.' },
 }
 
-const SITE_LOGO_URL = 'https://nelsontoursandsafaris.com/favicon.png'
+const SITE_LOGO_URL = 'https://nelsontoursandsafaris.com/images/logo/logo.png'
 
 function seoMetaForPath(path) {
   if (ROUTE_META[path]) return ROUTE_META[path]
