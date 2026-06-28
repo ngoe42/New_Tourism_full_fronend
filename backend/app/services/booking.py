@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 _background_tasks: Set[asyncio.Task] = set()
 
 from app.core.config import settings
+from app.core.database import AsyncSessionLocal
 from app.models.booking import Booking, BookingStatus
 from app.models.payment_attempt import PaymentAttempt
 from app.models.user import User
@@ -20,6 +21,7 @@ from app.repositories.tour import TourRepository
 from app.schemas.booking import BookingCreate, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
 from app.services.email_service import send_email, send_booking_admin_notification, send_payment_success_email
 from app.services.pesapal import PesapalService
+from app.services.rate_limit_service import RateLimitService
 
 
 def _parse_duration_days(duration: str) -> int:
@@ -89,8 +91,12 @@ async def send_booking_confirmation_email(
             to=contact_email,
             subject=f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
             body=body,
-            include_terms=True,
         )
+        # Record successful email send for rate limiting
+        async with AsyncSessionLocal() as rate_db:
+            rate_svc = RateLimitService(rate_db)
+            await rate_svc.record_email_send(contact_email, action_type="booking_confirmation")
+            await rate_db.commit()
     except Exception as exc:
         logger.error(f"[email] Booking confirmation FAILED for #{booking_id}: {type(exc).__name__}: {exc}")
 
@@ -150,15 +156,14 @@ class BookingService:
         if not tour or not tour.is_published:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tour not found")
 
+        # Check email rate limit before proceeding with booking
+        rate_limiter = RateLimitService(self.db)
+        can_send, error_msg = await rate_limiter.can_send_email(data.contact_email)
+        if not can_send:
+            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=error_msg)
+
         # Serialize concurrent bookings for the same tour+date to prevent double-booking
         await self.booking_repo.acquire_booking_lock(data.tour_id, data.travel_date)
-
-        duration_days = _parse_duration_days(tour.duration)
-        if await self.booking_repo.has_confirmed_overlap(tour.id, data.travel_date, duration_days):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="This tour is already booked and confirmed for the selected dates. Please choose different dates.",
-            )
 
         total_price = tour.price * data.guests
 
