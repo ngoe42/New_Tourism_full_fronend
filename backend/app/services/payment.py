@@ -378,7 +378,6 @@ class PaymentService:
                         f"Warm regards,\nNelson Tours & Safari Team"
                     ),
                 )
-                )
                 _log_id = booking.id
                 await self.db.commit()  # release FOR UPDATE lock before I/O
                 _t = asyncio.create_task(_send_email(**_email_kw))
