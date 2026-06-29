@@ -243,15 +243,7 @@ export default function BookingConfirmation() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-1.5 text-[#c9a96e]">
-                <DollarSign size={14} />
-                <span className="font-sans text-[10px] uppercase tracking-widest text-gray-400">Total Price</span>
-              </div>
-              <p className="font-sans text-sm font-semibold text-gray-800">
-                USD {Number(booking.total_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-            </div>
+
 
             {booking.tour?.duration && (
               <div className="flex flex-col gap-1">
