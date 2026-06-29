@@ -210,4 +210,3 @@ export default function Contact() {
     </main>
   )
 }
-inbound-smtp.us-east-1.amazonaws.com.
