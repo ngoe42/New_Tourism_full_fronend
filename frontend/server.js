@@ -271,7 +271,7 @@ const server = createServer((req, res) => {
         )
       }
 
-      const cacheControl = isStaging ? 'no-cache, no-store, must-revalidate' : 'public, max-age=3600'
+      const cacheControl = 'no-cache, no-store, must-revalidate'
       res.writeHead(200, { 'Content-Type': 'text/html', 'Cache-Control': cacheControl, 'Link': `<${canonicalUrl}>; rel="canonical"` })
       res.end(indexContent)
       return
