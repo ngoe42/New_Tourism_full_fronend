@@ -72,7 +72,7 @@ export default function Hero() {
               />
             </AnimatePresence>
           </div>
-        ) : (
+        ) : shouldUseVideo ? (
           <video
             key={videoSrc}
             src={videoSrc}
@@ -85,7 +85,7 @@ export default function Hero() {
             style={{ transform: 'translateZ(0)' }}
             onError={() => setVideoFailed(true)}
           />
-        )}
+        ) : null}
         {/* Multi-layer gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-[#1a5c43]/55 pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent pointer-events-none" />
