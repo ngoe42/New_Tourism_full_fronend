@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     RESEND_API_KEY: Optional[str] = None
     RESEND_FROM_EMAIL: str = "Nelson Tours & Safari <info@nelsontoursandsafaris.com>"
     EMAIL_FROM: str = "ngoekenedy@gmail.com"  # Admin notification recipient
-    FRONTEND_URL: str = "https://nelsontoursandsafari.com"
-    BACKEND_URL: str = "https://api.nelsontoursandsafari.com"
+    FRONTEND_URL: str = "https://nelsontoursandsafaris.com"
+    BACKEND_URL: str = "https://api.nelsontoursandsafaris.com"
     # Old Railway fallback: "https://nelsonsafari-backend-development.up.railway.app"
 
     PESAPAL_CONSUMER_KEY: Optional[str] = None

@@ -12,7 +12,7 @@ import datetime
 router = APIRouter(prefix="/diagnostic", tags=["Diagnostic"])
 
 PRODUCTION_URL = "https://nelsontoursandsafaris.com"
-STAGING_URL = "https://nelsonsafari-frontend-development.up.railway.app"
+STAGING_URL = "https://nelsontoursandsafaris.com"
 
 
 async def fetch(url: str, follow_redirects: bool = True, timeout: int = 15):
