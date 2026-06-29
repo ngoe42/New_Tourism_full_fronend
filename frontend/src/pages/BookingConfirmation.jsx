@@ -7,6 +7,7 @@ import {
   Mail, Phone, ArrowRight, CreditCard, FileText,
 } from 'lucide-react'
 import { bookingsApi } from '../api/bookings'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 const STATUS_CONFIG = {
   pending:   { label: 'Pending Confirmation', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: Clock },
@@ -162,7 +163,8 @@ export default function BookingConfirmation() {
   const StatusIcon = statusCfg.icon
   const PayIcon = paymentCfg?.icon
 
-  const needsPayment = booking.payment_status?.toUpperCase() === 'PENDING'
+  const { sendPaymentEmail } = useSiteSettings()
+  const needsPayment = booking.payment_status?.toUpperCase() === 'PENDING' && sendPaymentEmail
   const isPaid = booking.payment_status?.toUpperCase() === 'COMPLETED' || booking.status === 'confirmed' || booking.status === 'completed'
 
   return (
