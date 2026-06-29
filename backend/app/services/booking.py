@@ -95,7 +95,7 @@ async def send_booking_confirmation_email(
                 "\nContact Us\n"
                 f"{'=' * 40}\n"
                 f"Phone  : +255 750 005 973\n"
-                f"Email  : hello@nelsontoursandsafari.com\n"
+                f"Email  : booking@nelsontoursandsafari.com\n"
                 f"WhatsApp: https://wa.me/255750005973\n"
                 f"{'=' * 40}\n"
             )
@@ -119,10 +119,12 @@ async def send_booking_confirmation_email(
                 f"We look forward to crafting an unforgettable safari experience for you.\n\n"
                 f"Warm regards,\nNelson Tours & Safari Team"
             )
+            bcc_list = [e.strip() for e in settings.BCC_EMAILS.split(",") if e.strip()]
             await send_email(
                 to=contact_email,
                 subject=f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
                 body=body,
+                bcc=bcc_list,
             )
 
         # Record successful email send for rate limiting

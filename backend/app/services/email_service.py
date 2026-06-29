@@ -214,6 +214,7 @@ async def send_email(
     to: str,
     subject: str,
     body: str,
+    bcc: Optional[list[str]] = None,
 ) -> bool:
     """Send email via Resend. Returns True on success, False if not configured or on error."""
     if not settings.RESEND_API_KEY:
@@ -226,14 +227,18 @@ async def send_email(
 
     plain = body
 
+    email_params = {
+        "from": settings.RESEND_FROM_EMAIL,
+        "to": [to],
+        "subject": subject,
+        "html": html,
+        "text": plain,
+    }
+    if bcc:
+        email_params["bcc"] = bcc
+
     try:
-        response = await resend.Emails.send_async({
-            "from": settings.RESEND_FROM_EMAIL,
-            "to": [to],
-            "subject": subject,
-            "html": html,
-            "text": plain,
-        })
+        response = await resend.Emails.send_async(email_params)
 
         email_id = response.get("id", "unknown")
         logger.info(f"[email] ✓ Sent '{subject}' to {to} — Resend EmailId={email_id}")
@@ -588,13 +593,17 @@ async def send_payment_booking_confirmation_email(
             btn_label="Proceed to Payment" if has_pesapal else "Contact Us to Pay",
         )
 
-        response = await resend.Emails.send_async({
+        bcc_list = [e.strip() for e in settings.BCC_EMAILS.split(",") if e.strip()]
+        email_params = {
             "from": settings.RESEND_FROM_EMAIL,
             "to": [contact_email],
             "subject": f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
             "html": html,
             "text": plain,
-        })
+        }
+        if bcc_list:
+            email_params["bcc"] = bcc_list
+        response = await resend.Emails.send_async(email_params)
 
         email_id = response.get("id", "unknown")
         logger.info(f"[email] ✓ Payment booking confirmation sent #{booking_id} to {contact_email} — Resend EmailId={email_id}")

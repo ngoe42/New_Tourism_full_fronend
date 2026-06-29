@@ -5,8 +5,8 @@ import BookingForm from '../components/BookingForm'
 const contactInfo = [
   { icon: Phone, label: 'Call Us', value: '+255 750 005 973', sub: 'Mon–Fri, 8am–6pm EAT', href: 'tel:+255750005973' },
   { icon: MessageCircle, label: 'WhatsApp', value: '+255 750 005 973', sub: 'Chat with us instantly', href: 'https://wa.me/255750005973' },
-  { icon: Mail, label: 'Email Us', value: 'hello@nelsontoursandsafari.com', sub: 'Response within 24 hours', href: 'mailto:hello@nelsontoursandsafari.com' },
-  { icon: MapPin, label: 'Visit Us', value: 'Sokoine Road, Arusha', sub: 'Tanzania, East Africa', href: '#' },
+  { icon: Mail, label: 'Email Us', value: 'booking@nelsontoursandsafari.com', sub: 'Response within 24 hours', href: 'mailto:booking@nelsontoursandsafari.com' },
+  { icon: MapPin, label: 'Visit Us', value: 'Arusha Tanzania', sub: 'Tanzania, East Africa', href: '#' },
   { icon: Clock, label: 'Office Hours', value: 'Mon–Fri: 8am–6pm', sub: 'Sat: 9am–2pm EAT', href: '#' },
 ]
 
@@ -210,3 +210,4 @@ export default function Contact() {
     </main>
   )
 }
+inbound-smtp.us-east-1.amazonaws.com.
