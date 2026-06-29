@@ -134,19 +134,28 @@ const server = createServer((req, res) => {
 
   let redirectUrl = null
 
+  // Normalise path first (lowercase, strip trailing slash)
+  let normalised = path
+  if (!hasFileExtension(normalised)) {
+    normalised = normalised.toLowerCase()
+  }
+  if (normalised.length > 1 && normalised.endsWith('/')) {
+    normalised = normalised.replace(/\/+$/, '')
+  }
+
   // www → non-www
   if (host === `www.${PRODUCTION_DOMAIN}`) {
-    redirectUrl = `https://${PRODUCTION_DOMAIN}${path}`
+    redirectUrl = `https://${PRODUCTION_DOMAIN}${normalised}`
   }
 
-  // Force lowercase path (only for SPA routes, not static assets with hashed filenames)
-  if (!redirectUrl && !hasFileExtension(path) && path !== path.toLowerCase()) {
-    redirectUrl = `https://${host}${path.toLowerCase()}`
+  // Railway staging → production (server-side 301 for Googlebot)
+  if (!redirectUrl && isStaging) {
+    redirectUrl = `https://${PRODUCTION_DOMAIN}${normalised}`
   }
 
-  // Remove trailing slash (except root)
-  if (!redirectUrl && path.length > 1 && path.endsWith('/')) {
-    redirectUrl = `https://${host}${path.replace(/\/+$/, '')}`
+  // Path normalisation (only if no other redirect already set)
+  if (!redirectUrl && normalised !== path) {
+    redirectUrl = `https://${host}${normalised}`
   }
 
   if (redirectUrl) {
