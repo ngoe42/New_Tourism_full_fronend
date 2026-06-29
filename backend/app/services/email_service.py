@@ -156,8 +156,10 @@ def _payment_terms_block() -> str:
 
 def _build_html(
     body: str,
+    *,
+    include_cancellation: bool = True,
 ) -> str:
-    cancellation_section = _cancellation_policy_block()
+    cancellation_section = _cancellation_policy_block() if include_cancellation else ""
     return f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #222; background: #faf8f3; padding: 0; margin: 0;">
@@ -215,6 +217,8 @@ async def send_email(
     subject: str,
     body: str,
     bcc: Optional[list[str]] = None,
+    *,
+    include_cancellation: bool = True,
 ) -> bool:
     """Send email via Resend. Returns True on success, False if not configured or on error."""
     if not settings.RESEND_API_KEY:
@@ -223,7 +227,7 @@ async def send_email(
 
     logger.info(f"[email] Sending '{subject}' to {to}")
 
-    html = _build_html(body)
+    html = _build_html(body, include_cancellation=include_cancellation)
 
     plain = body
 

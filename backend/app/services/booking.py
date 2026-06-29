@@ -125,6 +125,7 @@ async def send_booking_confirmation_email(
                 subject=f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
                 body=body,
                 bcc=bcc_list,
+                include_cancellation=False,
             )
 
         # Record successful email send for rate limiting
