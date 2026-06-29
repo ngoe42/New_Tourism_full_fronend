@@ -14,14 +14,16 @@ from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.models.booking import Booking, BookingStatus
 from app.models.payment_attempt import PaymentAttempt
+from app.models.site_settings import SiteSettings
 from app.models.user import User
 from app.repositories.booking import BookingRepository
 from app.repositories.payment_attempt import PaymentAttemptRepository
 from app.repositories.tour import TourRepository
 from app.schemas.booking import BookingCreate, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
-from app.services.email_service import send_email, send_booking_admin_notification, send_payment_success_email
+from app.services.email_service import send_email, send_booking_admin_notification, send_payment_success_email, send_payment_booking_confirmation_email
 from app.services.pesapal import PesapalService
 from app.services.rate_limit_service import RateLimitService
+from sqlalchemy import select
 
 
 def _parse_duration_days(duration: str) -> int:
@@ -43,60 +45,93 @@ async def send_booking_confirmation_email(
     tour_duration: str = "",
     tour_included: list | None = None,
 ) -> None:
-    """Send booking confirmation email. Re-usable from create_booking & initiate_payment."""
+    """Send booking confirmation email. Re-usable from create_booking & initiate_payment.
+    
+    Checks the admin 'send_payment_email' setting to determine which email version to send:
+    - ENABLED  → sends old template with payment details, terms, and 'Proceed to Payment' button
+    - DISABLED → sends current template with contact details only (no payment info)
+    """
     logger.info(f"[email] Preparing booking confirmation for #{booking_id} → {contact_email}")
     try:
-        name = contact_name.split()[0]
+        # Check admin toggle for payment email
+        send_payment_version = False
+        async with AsyncSessionLocal() as settings_db:
+            result = await settings_db.execute(select(SiteSettings).limit(1))
+            site_settings = result.scalar_one_or_none()
+            if site_settings and site_settings.send_payment_email:
+                send_payment_version = True
 
-        location_line = f"Location          : {tour_location}\n" if tour_location else ""
-        duration_line = f"Duration          : {tour_duration}\n" if tour_duration else ""
+        if send_payment_version:
+            logger.info(f"[email] Using PAYMENT email template for #{booking_id} (admin toggle ENABLED)")
+            await send_payment_booking_confirmation_email(
+                booking_id=booking_id,
+                tour_title=tour_title,
+                contact_name=contact_name,
+                contact_email=contact_email,
+                travel_date=travel_date,
+                guests=guests,
+                total_price=total_price,
+                payment_link=payment_link,
+                tour_location=tour_location,
+                tour_duration=tour_duration,
+                tour_included=tour_included,
+            )
+        else:
+            logger.info(f"[email] Using CONTACT-ONLY email template for #{booking_id} (admin toggle DISABLED)")
+            name = contact_name.split()[0]
 
-        included_block = ""
-        if tour_included:
-            included_block = "\nWhat's Included\n" + "-" * 30 + "\n"
-            included_block += "\n".join(f"✓  {item}" for item in tour_included[:8])
-            if len(tour_included) > 8:
-                included_block += f"\n   ... and {len(tour_included) - 8} more items"
-            included_block += "\n"
+            location_line = f"Location          : {tour_location}\n" if tour_location else ""
+            duration_line = f"Duration          : {tour_duration}\n" if tour_duration else ""
 
-        contact_block = (
-            "\nContact Us\n"
-            f"{'=' * 40}\n"
-            f"Phone  : +255 750 005 973\n"
-            f"Email  : hello@nelsontoursandsafari.com\n"
-            f"WhatsApp: https://wa.me/255750005973\n"
-            f"{'=' * 40}\n"
-        )
+            included_block = ""
+            if tour_included:
+                included_block = "\nWhat's Included\n" + "-" * 30 + "\n"
+                included_block += "\n".join(f"✓  {item}" for item in tour_included[:8])
+                if len(tour_included) > 8:
+                    included_block += f"\n   ... and {len(tour_included) - 8} more items"
+                included_block += "\n"
 
-        body = (
-            f"Dear {name},\n\n"
-            f"Thank you for choosing Nelson Tours & Safari!\n\n"
-            f"Your booking request has been received. Our team will contact you shortly to confirm your reservation.\n\n"
-            f"Booking Summary\n"
-            f"{'=' * 40}\n"
-            f"Booking Reference : #{booking_id}\n"
-            f"Tour              : {tour_title}\n"
-            + location_line
-            + duration_line
-            + f"Travel Date       : {travel_date.strftime('%B %d, %Y')}\n"
-            f"Number of Guests  : {guests} {'Guest' if guests == 1 else 'Guests'}\n"
-            f"{'=' * 40}\n"
-            + included_block
-            + contact_block
-            + f"\nOur team will be in touch within 24 hours to assist with any questions.\n\n"
-            f"We look forward to crafting an unforgettable safari experience for you.\n\n"
-            f"Warm regards,\nNelson Tours & Safari Team"
-        )
-        await send_email(
-            to=contact_email,
-            subject=f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
-            body=body,
-        )
+            contact_block = (
+                "\nContact Us\n"
+                f"{'=' * 40}\n"
+                f"Phone  : +255 750 005 973\n"
+                f"Email  : hello@nelsontoursandsafari.com\n"
+                f"WhatsApp: https://wa.me/255750005973\n"
+                f"{'=' * 40}\n"
+            )
+
+            body = (
+                f"Dear {name},\n\n"
+                f"Thank you for choosing Nelson Tours & Safari!\n\n"
+                f"Your booking request has been received. Our team will contact you shortly to confirm your reservation.\n\n"
+                f"Booking Summary\n"
+                f"{'=' * 40}\n"
+                f"Booking Reference : #{booking_id}\n"
+                f"Tour              : {tour_title}\n"
+                + location_line
+                + duration_line
+                + f"Travel Date       : {travel_date.strftime('%B %d, %Y')}\n"
+                f"Number of Guests  : {guests} {'Guest' if guests == 1 else 'Guests'}\n"
+                f"{'=' * 40}\n"
+                + included_block
+                + contact_block
+                + f"\nOur team will be in touch within 24 hours to assist with any questions.\n\n"
+                f"We look forward to crafting an unforgettable safari experience for you.\n\n"
+                f"Warm regards,\nNelson Tours & Safari Team"
+            )
+            await send_email(
+                to=contact_email,
+                subject=f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
+                body=body,
+            )
+
         # Record successful email send for rate limiting
         async with AsyncSessionLocal() as rate_db:
             rate_svc = RateLimitService(rate_db)
             await rate_svc.record_email_send(contact_email, action_type="booking_confirmation")
             await rate_db.commit()
+
+        logger.info(f"[email] Booking confirmation {'PAYMENT' if send_payment_version else 'CONTACT'} email sent for #{booking_id}")
     except Exception as exc:
         logger.error(f"[email] Booking confirmation FAILED for #{booking_id}: {type(exc).__name__}: {exc}")
 

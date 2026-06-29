@@ -333,6 +333,11 @@ export default function AdminSettings() {
     onSuccess: invalidate,
   })
 
+  const paymentEmailMutation = useMutation({
+    mutationFn: (send_payment_email) => settingsApi.update({ send_payment_email }),
+    onSuccess: invalidate,
+  })
+
   const fileRef = useRef(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -358,11 +363,12 @@ export default function AdminSettings() {
     onSuccess: invalidate,
   })
 
-  const showPrices   = settings?.show_prices     ?? false
-  const showBlog     = settings?.show_blog        ?? true
-  const currentVideo = settings?.hero_video_url  ?? null
-  const heroMode     = settings?.hero_mode        ?? 'video'
-  const heroImages   = settings?.hero_images      ?? []
+  const showPrices       = settings?.show_prices          ?? false
+  const showBlog         = settings?.show_blog             ?? true
+  const sendPaymentEmail = settings?.send_payment_email    ?? false
+  const currentVideo     = settings?.hero_video_url       ?? null
+  const heroMode         = settings?.hero_mode             ?? 'video'
+  const heroImages       = settings?.hero_images           ?? []
 
   return (
     <div className="space-y-8 max-w-2xl">
@@ -453,6 +459,38 @@ export default function AdminSettings() {
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
                 showBlog ? 'translate-x-6' : 'translate-x-0'
+              }`} />
+            </button>
+          </div>
+
+          {/* Payment Email Toggle */}
+          <div className="flex items-start justify-between gap-6 p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                <DollarSign size={18} className="text-red-500" />
+              </div>
+              <div>
+                <h3 className="font-sans text-sm font-semibold text-gray-900">Send Payment Email</h3>
+                <p className="font-sans text-xs text-gray-400 mt-0.5 leading-relaxed">
+                  When enabled, booking confirmation emails include payment details, terms, and a <span className="font-medium text-gray-600">"Proceed to Payment"</span> button. When disabled, only contact details are sent.
+                </p>
+                <div className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-full font-sans text-[11px] font-semibold ${
+                  sendPaymentEmail ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {sendPaymentEmail ? <Eye size={11} /> : <EyeOff size={11} />}
+                  {sendPaymentEmail ? 'Payment email active' : 'Contact-only email'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => paymentEmailMutation.mutate(!sendPaymentEmail)}
+              disabled={isLoading || paymentEmailMutation.isPending}
+              className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-60 ${
+                sendPaymentEmail ? 'bg-green-600' : 'bg-gray-300'
+              }`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                sendPaymentEmail ? 'translate-x-6' : 'translate-x-0'
               }`} />
             </button>
           </div>

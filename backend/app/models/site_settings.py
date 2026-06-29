@@ -31,6 +31,7 @@ class SiteSettings(Base):
     about_team_3_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     wonders_kilimanjaro_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     wonders_safari_image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    send_payment_email: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
