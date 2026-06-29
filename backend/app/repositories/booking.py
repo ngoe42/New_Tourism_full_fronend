@@ -2,8 +2,9 @@ import hashlib
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import and_, or_, select, func, text
+from sqlalchemy import and_, or_, select, func, text as sa_text
 from sqlalchemy.orm import selectinload
 from app.models.booking import Booking, BookingStatus
 from app.repositories.base import BaseRepository
@@ -33,9 +34,23 @@ class BookingRepository(BaseRepository[Booking]):
         return result.scalar_one()
 
     async def update(self, obj: Booking, data: dict) -> Booking:
+        current_version = obj.version
+        data["version"] = current_version + 1
         for key, value in data.items():
             if hasattr(obj, key):
                 setattr(obj, key, value)
+        # Optimistic lock: version must match; only succeeds if no concurrent write
+        result = await self.db.execute(
+            sa_text(
+                "UPDATE bookings SET version = :new_version WHERE id = :id AND version = :old_version"
+            ),
+            {"new_version": current_version + 1, "id": obj.id, "old_version": current_version},
+        )
+        if result.rowcount == 0:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Booking was modified by another request. Retry.",
+            )
         await self.db.flush()
         result = await self.db.execute(
             self._eager(select(Booking).where(Booking.id == obj.id))
@@ -91,7 +106,17 @@ class BookingRepository(BaseRepository[Booking]):
         """Return True if a confirmed booking, or a fresh pending booking (< 24 h old),
         already covers the date range.  Abandoned pending bookings older than 24 hours are
         excluded so they no longer permanently block a tour date after payment abandonment.
+
+        Cached for 30 seconds — the same availability is checked repeatedly as users
+        browse tour pages.  Cache is invalidated when a booking for this tour+date is created.
         """
+        from app.core.cache import cache_get, cache_set
+
+        cache_key = f"availability:{tour_id}:{travel_date.isoformat()}"
+        cached = await cache_get(cache_key)
+        if cached is not None:
+            return cached
+
         window = timedelta(days=max(duration_days - 1, 0))
         range_start = travel_date - window
         range_end = travel_date + window
@@ -117,7 +142,10 @@ class BookingRepository(BaseRepository[Booking]):
             stmt = stmt.where(Booking.id != exclude_booking_id)
 
         result = await self.db.execute(stmt)
-        return result.scalar_one() > 0
+        overlap = result.scalar_one() > 0
+
+        await cache_set(cache_key, overlap, ttl=30)
+        return overlap
 
     async def get_total_revenue(self) -> Decimal:
         result = await self.db.execute(
@@ -133,7 +161,7 @@ class BookingRepository(BaseRepository[Booking]):
         lock_key = int(
             hashlib.sha256(f"booking:{tour_id}:{travel_date}".encode()).hexdigest(), 16
         ) % (2**31)
-        await self.db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_key})
+        await self.db.execute(sa_text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_key})
 
     async def get_for_update(self, id: int) -> Optional[Booking]:
         """SELECT ... FOR UPDATE to prevent concurrent modifications."""

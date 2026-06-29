@@ -60,7 +60,29 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
         setBookingRef(booking.id)
         sessionStorage.setItem('lastBookingId', booking.id)
         sessionStorage.setItem('lastBookingEmail', form.email)
-        setPaymentUrl(booking.payment_redirect_url || null)
+        // Payment link is generated asynchronously — poll until ready
+        if (booking.payment_redirect_url) {
+          setPaymentUrl(booking.payment_redirect_url)
+        } else {
+          ;(async function pollPaymentLink() {
+            for (let i = 0; i < 60; i++) {
+              await new Promise((r) => setTimeout(r, 2000))
+              try {
+                const b = await bookingsApi.getById(booking.id)
+                if (b.payment_redirect_url) {
+                  setPaymentUrl(b.payment_redirect_url)
+                  return
+                }
+                if (b.payment_status === 'FAILED') {
+                  setPaymentUrl(null)
+                  return
+                }
+              } catch {
+                // transient — keep polling
+              }
+            }
+          })()
+        }
         setStatus('success')
       } else {
         const inquiryPayload = {

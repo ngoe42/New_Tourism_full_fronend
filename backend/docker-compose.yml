@@ -1,38 +1,79 @@
-version: "3.9"
-
 services:
   api:
     build: .
     container_name: karibu_api
+    restart: unless-stopped
     ports:
       - "8002:8000"
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/karibu_safari
-      - DATABASE_URL_SYNC=postgresql://postgres:password@db:5432/karibu_safari
-      - REDIS_URL=redis://redis:6379/0
     env_file:
       - .env
+      - .env.secret   # secrets — chmod 600, not committed to git
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:${DB_PASSWORD:?err}@db:5432/karibu_safari
+      - DATABASE_URL_SYNC=postgresql://postgres:${DB_PASSWORD:?err}@db:5432/karibu_safari
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
-      - .:/app
+      # ── production: remove the `.:/app` bind mount below ──
+      #     It was useful for hot-reload during development but in
+      #     production the compiled image already has the code at /app.
+      #     Left commented for clarity:
+      # - .:/app
       - uploads_data:/app/static/uploads
-    command: sh ./start.sh
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: "2.5G"
+        reservations:
+          cpus: "2"
+          memory: "1.5G"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request, sys; urllib.request.urlopen('http://localhost:8000/api/v1/health'); sys.exit(0)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   db:
     image: postgres:15-alpine
     container_name: karibu_db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?err}
       POSTGRES_DB: karibu_safari
     ports:
       - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=2GB"
+      - "-c"
+      - "work_mem=32MB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: "4G"
+        reservations:
+          cpus: "2"
+          memory: "2G"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -42,10 +83,19 @@ services:
   redis:
     image: redis:7-alpine
     container_name: karibu_redis
+    restart: unless-stopped
     ports:
       - "6381:6379"
     volumes:
       - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: "512M"
+        reservations:
+          cpus: "0.5"
+          memory: "256M"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

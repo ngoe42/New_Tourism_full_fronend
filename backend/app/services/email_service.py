@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 
 import resend
@@ -6,6 +7,41 @@ from loguru import logger
 from app.core.config import settings
 
 resend.api_key = settings.RESEND_API_KEY
+
+_RESEND_TIMEOUT = 15.0
+
+
+async def _send_email_with_retry(email_params: dict, max_attempts: int = 3) -> dict:
+    """Call resend.Emails.send_async with timeout and retry on transient errors."""
+    last_exc = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            response = await asyncio.wait_for(
+                resend.Emails.send_async(email_params),
+                timeout=_RESEND_TIMEOUT,
+            )
+            return response
+        except (asyncio.TimeoutError, resend.exceptions.ResendError) as exc:
+            last_exc = exc
+            if attempt < max_attempts:
+                wait = 0.5 * (2 ** (attempt - 1))
+                logger.warning(
+                    f"Resend attempt {attempt}/{max_attempts} failed ({type(exc).__name__})"
+                    f" — retrying in {wait:.1f}s"
+                )
+                await asyncio.sleep(wait)
+                continue
+        except Exception as exc:
+            last_exc = exc
+            if attempt < max_attempts:
+                wait = 0.5 * (2 ** (attempt - 1))
+                logger.warning(
+                    f"Resend attempt {attempt}/{max_attempts} failed ({type(exc).__name__})"
+                    f" — retrying in {wait:.1f}s"
+                )
+                await asyncio.sleep(wait)
+                continue
+    raise last_exc  # type: ignore[misc]
 
 
 def _cancellation_policy_block() -> str:
@@ -242,7 +278,7 @@ async def send_email(
         email_params["bcc"] = bcc
 
     try:
-        response = await resend.Emails.send_async(email_params)
+        response = await _send_email_with_retry(email_params)
 
         email_id = response.get("id", "unknown")
         logger.info(f"[email] ✓ Sent '{subject}' to {to} — Resend EmailId={email_id}")
@@ -607,7 +643,7 @@ async def send_payment_booking_confirmation_email(
         }
         if bcc_list:
             email_params["bcc"] = bcc_list
-        response = await resend.Emails.send_async(email_params)
+        response = await _send_email_with_retry(email_params)
 
         email_id = response.get("id", "unknown")
         logger.info(f"[email] ✓ Payment booking confirmation sent #{booking_id} to {contact_email} — Resend EmailId={email_id}")

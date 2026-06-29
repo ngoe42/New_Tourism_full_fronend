@@ -31,6 +31,17 @@ from app.api.v1.router import api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # ── Logging: remove default stderr handler, send structured JSON to stdout ──
+    logger.remove()
+    logger.add(
+        sink=lambda msg: print(msg, end=""),
+        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<7} | {name}:{function}:{line} | {message}",
+        level=settings.LOG_LEVEL.upper() if hasattr(settings, 'LOG_LEVEL') else "INFO",
+        serialize=False,       # set True if shipping to CloudWatch / Loki / ELK
+        colorize=False,
+        backtrace=False,       # expensive — dev only
+        diagnose=False,        # expensive — dev only
+    )
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     if settings.RESEND_API_KEY:
         logger.info(f"[email] Resend configured ✓ — sending from {settings.RESEND_FROM_EMAIL}")

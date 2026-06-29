@@ -1,6 +1,6 @@
-from datetime import datetime, date
+from datetime import date, datetime, timezone
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.models.booking import BookingStatus
 
 
@@ -8,10 +8,17 @@ class BookingCreate(BaseModel):
     tour_id: int
     travel_date: date
     guests: int = Field(..., ge=1, le=50)
-    special_requests: Optional[str] = None
+    special_requests: Optional[str] = Field(None, max_length=5000)
     contact_name: str = Field(..., min_length=2, max_length=255)
     contact_email: EmailStr
     contact_phone: Optional[str] = Field(None, max_length=50)
+
+    @field_validator("travel_date")
+    @classmethod
+    def must_be_future(cls, v: date) -> date:
+        if v <= date.today():
+            raise ValueError("travel_date must be in the future")
+        return v
 
 
 class BookingStatusUpdate(BaseModel):
@@ -24,7 +31,7 @@ class BookingAdminUpdate(BaseModel):
     guests: Optional[int] = Field(None, ge=1, le=50)
     total_price: Optional[float] = Field(None, gt=0)
     notes: Optional[str] = None
-    special_requests: Optional[str] = None
+    special_requests: Optional[str] = Field(None, max_length=5000)
 
 
 class BookingTourInfo(BaseModel):

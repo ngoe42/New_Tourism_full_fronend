@@ -37,6 +37,8 @@ class Booking(Base):
     payment_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     payment_redirect_url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
 
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

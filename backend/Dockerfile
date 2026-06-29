@@ -29,12 +29,15 @@ COPY --from=builder /install /usr/local
 COPY . .
 
 RUN sed -i 's/\r$//' start.sh && chmod +x start.sh && \
-    mkdir -p /app/static/uploads && \
+    mkdir -p /app/static/uploads /var/log && \
     addgroup --system app && adduser --system --ingroup app app && \
-    chown -R app:app /app
+    chown -R app:app /app /var/log
 
 USER app
 
 EXPOSE 8000
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health'); exit(0)"
 
 CMD ["sh", "./start.sh"]

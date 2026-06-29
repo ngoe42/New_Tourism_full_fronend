@@ -1,10 +1,6 @@
 from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, field_validator, model_validator
+from pydantic import field_validator, model_validator
 from typing import List, Optional
-import warnings
-
-_DEV_SECRET_KEY = "dev-only-insecure-key-change-this-in-production-karibu-safari"
-
 
 class Settings(BaseSettings):
     APP_NAME: str = "Nelson Tour and Safari API"
@@ -12,7 +8,8 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     ENVIRONMENT: str = "production"
 
-    SECRET_KEY: str = _DEV_SECRET_KEY
+    SECRET_KEY: str = ""  # REQUIRED in production — raise ValueError if empty
+    LOG_LEVEL: str = "INFO"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -82,20 +79,19 @@ class Settings(BaseSettings):
         else:
             self.DATABASE_URL_SYNC = _to_psycopg2(self.DATABASE_URL_SYNC)
 
-        if self.SECRET_KEY == _DEV_SECRET_KEY and self.ENVIRONMENT == "production":
-            warnings.warn(
-                "SECRET_KEY is using the insecure development default in a production environment! "
-                "Set a strong SECRET_KEY environment variable immediately.",
-                stacklevel=2,
-            )
-
-        if self.ENVIRONMENT == "production" and not self.REDIS_URL:
-            raise ValueError(
-                "REDIS_URL must be set in production.  Without Redis, the slowapi rate limiter "
-                "falls back to in-memory storage (per-process), making rate limits ineffective "
-                "under multi-worker deployments and enabling brute-force attacks on payment "
-                "and auth endpoints.  Set REDIS_URL or change ENVIRONMENT to 'development'."
-            )
+        if self.ENVIRONMENT == "production":
+            if not self.SECRET_KEY:
+                raise ValueError(
+                    "SECRET_KEY must be set in production. Generate one with:\n"
+                    "  python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+                )
+            if not self.REDIS_URL:
+                raise ValueError(
+                    "REDIS_URL must be set in production.  Without Redis, the slowapi rate limiter "
+                    "falls back to in-memory storage (per-process), making rate limits ineffective "
+                    "under multi-worker deployments and enabling brute-force attacks on payment "
+                    "and auth endpoints.  Set REDIS_URL or change ENVIRONMENT to 'development'."
+                )
 
         return self
 
