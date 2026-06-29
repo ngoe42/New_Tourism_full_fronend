@@ -373,13 +373,10 @@ class PaymentService:
                     subject=f"Your Payment Link — {tour_title} | Nelson Tours & Safari",
                     body=(
                         f"Dear {first},\n\nHere is your payment link for booking "
-                        f"#{booking.id} — {tour_title}.\n\nClick the button below to complete "
-                        f"your secure payment.\n\nWarm regards,\nNelson Tours & Safari Team"
+                        f"#{booking.id} — {tour_title}.\n\nPlease complete your secure payment "
+                        f"at: {settings.FRONTEND_URL}/payment/resume?id={booking.id}\n\n"
+                        f"Warm regards,\nNelson Tours & Safari Team"
                     ),
-                    item_name=f"{tour_title} · {booking.guests} {'Guest' if booking.guests == 1 else 'Guests'}",
-                    price=booking.total_price,
-                    payment_link=f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}",
-                    btn_label="Complete Payment",
                 )
                 _log_id = booking.id
                 await self.db.commit()  # release FOR UPDATE lock before I/O
@@ -428,22 +425,18 @@ class PaymentService:
             return
 
         first = booking.contact_name.split()[0]
+        resume_link = f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
         body = (
             f"Dear {first},\n\n"
             f"Here is your payment link for booking #{booking.id} — {tour_title}.\n\n"
-            f"Click the button below to complete your secure payment. "
+            f"Please complete your secure payment at: {resume_link}\n\n"
             f"If the link has expired, please contact us and we will send you a new one.\n\n"
             f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
         )
-        resume_link = f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
         _email_kw = dict(
             to=booking.contact_email,
             subject=f"Your Payment Link — {tour_title} | Nelson Tours & Safari",
             body=body,
-            item_name=f"{tour_title} · {booking.guests} {'Guest' if booking.guests == 1 else 'Guests'}",
-            price=booking.total_price,
-            payment_link=resume_link,
-            btn_label="Complete Payment",
         )
         _log_id = booking.id
         await self.db.commit()  # release FOR UPDATE lock before I/O

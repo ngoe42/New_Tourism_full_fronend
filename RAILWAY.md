@@ -43,10 +43,8 @@ Railway Project
 | `FIRST_ADMIN_PASSWORD` | *(choose a strong password)* |
 | `ALLOWED_ORIGINS` | *(leave blank for now — fill in Step 5)* |
 | `REDIS_URL` | *(optional — add Redis plugin if needed)* |
-| `AWS_ACCESS_KEY_ID` | *(your AWS IAM access key with ses:SendEmail permission)* |
-| `AWS_SECRET_ACCESS_KEY` | *(your AWS IAM secret key)* |
-| `AWS_REGION` | `us-east-1` *(or your SES region)* |
-| `SES_FROM_EMAIL` | `noreply@nelsontoursandsafaris.com` *(verified SES sender)* |
+| `RESEND_API_KEY` | `re_...` *(from Resend dashboard — API Keys → Create API Key)* |
+| `RESEND_FROM_EMAIL` | `Nelson Tours & Safari <info@nelsontoursandsafaris.com>` *(verified sender in Resend)* |
 | `EMAIL_FROM` | *(admin notification recipient — defaults to your email)* |
 | `BACKEND_URL` | `https://YOUR-BACKEND-URL.railway.app` *(fill after Step 3)* |
 | `FRONTEND_URL` | `https://YOUR-FRONTEND-URL.railway.app` *(fill after Step 4)* |
@@ -139,11 +137,9 @@ ALLOWED_ORIGINS=https://frontend-xxx.railway.app
 FIRST_ADMIN_EMAIL=admin@nelsontoursandsafari.com
 FIRST_ADMIN_PASSWORD=YourSecurePassword123!
 
-# Email — Amazon SES
-AWS_ACCESS_KEY_ID=your_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-AWS_REGION=us-east-1
-SES_FROM_EMAIL=noreply@nelsontoursandsafaris.com
+# Email — Resend
+RESEND_API_KEY=re_xxxxxxxxxxxx
+RESEND_FROM_EMAIL=Nelson Tours & Safari <info@nelsontoursandsafaris.com>
 EMAIL_FROM=admin@nelsontoursandsafaris.com
 
 # URLs (use your actual Railway service URLs)

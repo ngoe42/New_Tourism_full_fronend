@@ -1,20 +1,49 @@
-import asyncio
 from typing import Optional
 
-import boto3
-from botocore.exceptions import BotoCoreError, ClientError
+import resend
 from loguru import logger
 
 from app.core.config import settings
+
+resend.api_key = settings.RESEND_API_KEY
+
+
+def _cancellation_policy_block() -> str:
+    """Returns an HTML Cancellation Policy section (non-payment terms)."""
+    return """
+    <div style="margin:20px 32px 0; border:1px solid #e8e0d0; border-radius:10px; overflow:hidden;">
+      <div style="background:#f5f0e8; padding:12px 20px; border-bottom:1px solid #e8e0d0;">
+        <p style="margin:0; color:#0f3d2e; font-size:11px; text-transform:uppercase; letter-spacing:2px; font-weight:700;">
+          Cancellation Policy
+        </p>
+      </div>
+      <div style="padding:16px 20px;">
+        <table style="width:100%; border-collapse:collapse;">
+          <tr>
+            <td style="padding:4px 0; color:#555; font-size:13px;">60+ days before travel</td>
+            <td style="padding:4px 0; color:#333; font-size:13px; text-align:right;">Deposit non-refundable; balance fully refunded</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0; color:#555; font-size:13px;">30\u201359 days before travel</td>
+            <td style="padding:4px 0; color:#333; font-size:13px; text-align:right;">50% of total amount refunded</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0; color:#555; font-size:13px;">Under 30 days</td>
+            <td style="padding:4px 0; color:#333; font-size:13px; text-align:right;">No refund</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    """
 
 
 def _payment_block(
     item_name: Optional[str],
     price: Optional[float],
     payment_link: Optional[str],
-    btn_label: str = "Complete Payment",
+    btn_label: str = "Proceed to Payment",
 ) -> str:
-    """Returns an HTML payment-details section, or empty string if nothing to show."""
+    """Returns an HTML payment-details section with payment button."""
     if not price and not payment_link:
         return ""
 
@@ -111,7 +140,7 @@ def _payment_terms_block() -> str:
             <td style="padding:4px 0; color:#333; font-size:13px; text-align:right;">Deposit non-refundable; balance fully refunded</td>
           </tr>
           <tr>
-            <td style="padding:4px 0; color:#555; font-size:13px;">30–59 days before travel</td>
+            <td style="padding:4px 0; color:#555; font-size:13px;">30\u201359 days before travel</td>
             <td style="padding:4px 0; color:#333; font-size:13px; text-align:right;">50% of total amount refunded</td>
           </tr>
           <tr>
@@ -127,15 +156,39 @@ def _payment_terms_block() -> str:
 
 def _build_html(
     body: str,
+) -> str:
+    cancellation_section = _cancellation_policy_block()
+    return f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #222; background: #faf8f3; padding: 0; margin: 0;">
+        <div style="max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+          <div style="background: #0f3d2e; padding: 24px 32px; text-align: center;">
+            <img src="{settings.FRONTEND_URL}/images/logo/logo.png" alt="Nelson Tours &amp; Safari" style="height: 80px; width: auto; object-fit: contain; display: inline-block;" />
+          </div>
+          <div style="padding: 32px; white-space: pre-wrap; font-size: 15px; line-height: 1.7; color: #333;">
+            {body.replace(chr(10), '<br>')}
+          </div>
+          {cancellation_section}
+          <div style="background: #f5f5f0; padding: 20px 32px; margin-top: 24px; font-size: 12px; color: #888; border-top: 1px solid #eee;">
+            Nelson Tours &amp; Safari · Sokoine Road, Arusha, Tanzania · +255 750 005 973
+          </div>
+        </div>
+      </body>
+    </html>
+    """
+
+
+def _build_payment_html(
+    body: str,
     *,
     item_name: Optional[str] = None,
     price: Optional[float] = None,
     payment_link: Optional[str] = None,
-    btn_label: str = "Complete Payment",
-    include_terms: bool = False,
+    btn_label: str = "Proceed to Payment",
 ) -> str:
+    """Build full HTML email with payment block and payment terms."""
     payment_section = _payment_block(item_name, price, payment_link, btn_label)
-    terms_section = _payment_terms_block() if include_terms else ""
+    terms_section = _payment_terms_block()
     return f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #222; background: #faf8f3; padding: 0; margin: 0;">
@@ -161,70 +214,32 @@ async def send_email(
     to: str,
     subject: str,
     body: str,
-    *,
-    item_name: Optional[str] = None,
-    price: Optional[float] = None,
-    payment_link: Optional[str] = None,
-    btn_label: str = "Complete Payment",
-    include_terms: bool = False,
 ) -> bool:
-    """Send email via Amazon SES. Returns True on success, False if not configured or on error."""
-    if not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY:
-        logger.warning("Email not sent: AWS SES credentials are not configured.")
+    """Send email via Resend. Returns True on success, False if not configured or on error."""
+    if not settings.RESEND_API_KEY:
+        logger.warning("Email not sent: RESEND_API_KEY is not configured.")
         return False
 
     logger.info(f"[email] Sending '{subject}' to {to}")
 
-    html = _build_html(body, item_name=item_name, price=price, payment_link=payment_link, btn_label=btn_label, include_terms=include_terms)
+    html = _build_html(body)
 
     plain = body
-    if price:
-        plain += f"\n\n--- Payment Details ---\n"
-        if item_name:
-            plain += f"Package : {item_name}\n"
-        plain += f"Total   : USD {price:,.2f}\n"
-    if payment_link:
-        plain += f"Pay Now : {payment_link}\n"
-    if include_terms:
-        plain += (
-            "\n\n--- Payment Terms ---\n"
-            "Deposit (30%)  : Required to confirm your reservation\n"
-            "Balance (70%)  : Due 60 days before travel date\n"
-            "Late bookings  : Full payment required if booking within 60 days\n"
-            "Methods        : Visa · Mastercard · M-Pesa · Airtel Money (via Pesapal, in USD)\n"
-            "\nCancellation Policy:\n"
-            "  60+ days  → Deposit non-refundable; balance fully refunded\n"
-            "  30–59 days → 50% of total amount refunded\n"
-            "  Under 30  → No refund\n"
-        )
 
     try:
-        ses = boto3.client(
-            "ses",
-            region_name=settings.AWS_REGION,
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        )
+        response = await resend.Emails.send_async({
+            "from": settings.RESEND_FROM_EMAIL,
+            "to": [to],
+            "subject": subject,
+            "html": html,
+            "text": plain,
+        })
 
-        response = await asyncio.to_thread(
-            ses.send_email,
-            Source=settings.SES_FROM_EMAIL or settings.EMAIL_FROM,
-            Destination={"ToAddresses": [to]},
-            Message={
-                "Subject": {"Data": subject, "Charset": "UTF-8"},
-                "Body": {
-                    "Html": {"Data": html, "Charset": "UTF-8"},
-                    "Text": {"Data": plain, "Charset": "UTF-8"},
-                },
-            },
-        )
-
-        message_id = response.get("MessageId", "unknown")
-        logger.info(f"[email] ✓ Sent '{subject}' to {to} — SES MessageId={message_id}")
+        email_id = response.get("id", "unknown")
+        logger.info(f"[email] ✓ Sent '{subject}' to {to} — Resend EmailId={email_id}")
         return True
-    except (BotoCoreError, ClientError) as e:
-        error_code = getattr(e, 'response', {}).get('Error', {}).get('Code', 'Unknown')
-        logger.error(f"[email] ✗ SES FAILED sending to {to}: {error_code} — {e}")
+    except resend.exceptions.ResendError as e:
+        logger.error(f"[email] ✗ Resend FAILED sending to {to}: {e}")
         return False
     except Exception as e:
         logger.error(f"[email] ✗ Unexpected error sending to {to}: {type(e).__name__}: {e}")
@@ -349,9 +364,6 @@ async def send_route_booking_email(
         to=email,
         subject=f"Kilimanjaro Booking Request — {route_name} | Nelson Tours & Safari",
         body=body,
-        item_name=f"{route_name} · {guests} {'Guest' if guests == 1 else 'Guests'}",
-        price=total,
-        include_terms=True,
     )
 
     admin_body = (
@@ -453,9 +465,6 @@ async def send_payment_success_email(
         to=contact_email,
         subject=f"Payment Confirmed — {tour_title} | Nelson Tours & Safari",
         body=customer_body,
-        item_name=f"{tour_title} · {guests} {'Guest' if guests == 1 else 'Guests'}",
-        price=total_price,
-        btn_label="View Booking Details",
     )
 
     admin_body = (
@@ -478,3 +487,116 @@ async def send_payment_success_email(
         subject=f"[Payment Received #{booking_id}] {contact_name} — {tour_title}",
         body=admin_body,
     )
+
+
+async def send_payment_booking_confirmation_email(
+    booking_id: int,
+    tour_title: str,
+    contact_name: str,
+    contact_email: str,
+    travel_date,
+    guests: int,
+    total_price: float,
+    payment_link: str | None,
+    tour_location: str = "",
+    tour_duration: str = "",
+    tour_included: list | None = None,
+) -> None:
+    """Send booking confirmation email WITH payment details, terms, and payment button.
+    
+    This is the recovered old template — includes payment details, payment terms,
+    cancellation policy, and a 'Proceed to Payment' button.
+    Used when admin has enabled the 'send_payment_email' setting.
+    Recovered from commit 738fdf1 (parent).
+    """
+    logger.info(f"[email] Preparing PAYMENT booking confirmation for #{booking_id} → {contact_email}")
+    try:
+        name = contact_name.split()[0]
+
+        email_payment_link = payment_link or f"{settings.FRONTEND_URL}/contact"
+        has_pesapal = payment_link is not None
+
+        if has_pesapal:
+            payment_instruction = (
+                "Please complete your deposit payment using the button below "
+                "to secure your reservation."
+            )
+        else:
+            payment_instruction = (
+                "To complete your payment and secure this reservation, "
+                "please contact our team — we will send you a secure payment link within the hour."
+            )
+
+        location_line = f"Location          : {tour_location}\n" if tour_location else ""
+        duration_line = f"Duration          : {tour_duration}\n" if tour_duration else ""
+
+        included_block = ""
+        if tour_included:
+            included_block = "\nWhat's Included\n" + "-" * 30 + "\n"
+            included_block += "\n".join(f"✓  {item}" for item in tour_included[:8])
+            if len(tour_included) > 8:
+                included_block += f"\n   ... and {len(tour_included) - 8} more items"
+            included_block += "\n"
+
+        body = (
+            f"Dear {name},\n\n"
+            f"Thank you for choosing Nelson Tours & Safari!\n\n"
+            f"Your booking request has been received. {payment_instruction}\n\n"
+            f"Booking Summary\n"
+            f"{'=' * 40}\n"
+            f"Booking Reference : #{booking_id}\n"
+            f"Tour              : {tour_title}\n"
+            + location_line
+            + duration_line
+            + f"Travel Date       : {travel_date.strftime('%B %d, %Y')}\n"
+            f"Number of Guests  : {guests} {'Guest' if guests == 1 else 'Guests'}\n"
+            f"{'=' * 40}\n"
+            + included_block
+            + f"\nOur team will be in touch within 24 hours to assist with any questions.\n\n"
+            f"We look forward to crafting an unforgettable safari experience for you.\n\n"
+            f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
+        )
+
+        if not settings.RESEND_API_KEY:
+            logger.warning("Payment email not sent: RESEND_API_KEY is not configured.")
+            return
+
+        plain = body
+        if total_price:
+            plain += f"\n\n--- Payment Details ---\n"
+            plain += f"Package : {tour_title} · {guests} {'Guest' if guests == 1 else 'Guests'}\n"
+            plain += f"Total   : USD {total_price:,.2f}\n"
+        if email_payment_link:
+            plain += f"Pay Now : {email_payment_link}\n"
+        plain += (
+            "\n\n--- Payment Terms ---\n"
+            "Deposit (30%)  : Required to confirm your reservation\n"
+            "Balance (70%)  : Due 60 days before travel date\n"
+            "Late bookings  : Full payment required if booking within 60 days\n"
+            "Methods        : Visa · Mastercard · M-Pesa · Airtel Money (via Pesapal, in USD)\n"
+            "\nCancellation Policy:\n"
+            "  60+ days  → Deposit non-refundable; balance fully refunded\n"
+            "  30–59 days → 50% of total amount refunded\n"
+            "  Under 30  → No refund\n"
+        )
+
+        html = _build_payment_html(
+            body,
+            item_name=f"{tour_title} · {guests} {'Guest' if guests == 1 else 'Guests'}",
+            price=total_price,
+            payment_link=email_payment_link,
+            btn_label="Proceed to Payment" if has_pesapal else "Contact Us to Pay",
+        )
+
+        response = await resend.Emails.send_async({
+            "from": settings.RESEND_FROM_EMAIL,
+            "to": [contact_email],
+            "subject": f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
+            "html": html,
+            "text": plain,
+        })
+
+        email_id = response.get("id", "unknown")
+        logger.info(f"[email] ✓ Payment booking confirmation sent #{booking_id} to {contact_email} — Resend EmailId={email_id}")
+    except Exception as exc:
+        logger.error(f"[email] Payment booking confirmation FAILED for #{booking_id}: {type(exc).__name__}: {exc}")
