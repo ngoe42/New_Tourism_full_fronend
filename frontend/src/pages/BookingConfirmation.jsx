@@ -49,6 +49,7 @@ export default function BookingConfirmation() {
   const [submitting, setSubmitting] = useState(false)
 
   const bookingId = parseInt(id, 10)
+  const { sendPaymentEmail } = useSiteSettings()
 
   useEffect(() => {
     const stored = sessionStorage.getItem('lastBookingEmail')
@@ -163,7 +164,6 @@ export default function BookingConfirmation() {
   const StatusIcon = statusCfg.icon
   const PayIcon = paymentCfg?.icon
 
-  const { sendPaymentEmail } = useSiteSettings()
   const needsPayment = booking.payment_status?.toUpperCase() === 'PENDING' && sendPaymentEmail
   const isPaid = booking.payment_status?.toUpperCase() === 'COMPLETED' || booking.status === 'confirmed' || booking.status === 'completed'
 
