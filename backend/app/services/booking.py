@@ -1,5 +1,4 @@
 import asyncio
-import re
 import uuid
 from typing import Set
 
@@ -25,12 +24,6 @@ from app.services.pesapal import PesapalService
 from app.services.rate_limit_service import RateLimitService
 from sqlalchemy import select
 from sqlalchemy import text as sa_text
-
-
-def _parse_duration_days(duration: str) -> int:
-    """Extract the number of days from a string like '3 Days', '7 days / 6 nights'."""
-    m = re.search(r'(\d+)\s*day', duration, re.IGNORECASE)
-    return int(m.group(1)) if m else 1
 
 
 async def _do_pesapal_init(
@@ -329,17 +322,6 @@ class BookingService:
         can_send, error_msg = await rate_limiter.can_send_email(data.contact_email)
         if not can_send:
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=error_msg)
-
-        # Serialize concurrent bookings for the same tour+date to prevent double-booking
-        await self.booking_repo.acquire_booking_lock(data.tour_id, data.travel_date)
-
-        # Check for overlapping confirmed/pending bookings while lock is held
-        duration_days = _parse_duration_days(tour.duration or "")
-        if await self.booking_repo.has_confirmed_overlap(data.tour_id, data.travel_date, duration_days):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="This tour is already booked for the requested dates.",
-            )
 
         total_price = tour.price * data.guests
 
