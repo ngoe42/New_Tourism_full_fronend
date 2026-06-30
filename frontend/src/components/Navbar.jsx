@@ -112,8 +112,8 @@ export default function Navbar() {
             <a href="tel:+255777123456" className="flex items-center gap-1 font-sans text-[10px] text-white/60 hover:text-white transition-colors">
               <Phone size={10} /> +255 777 123 456
             </a>
-            <a href="mailto:info@nelsontoursandsafari.com" className="flex items-center gap-1 font-sans text-[10px] text-white/60 hover:text-white transition-colors">
-              <Mail size={10} /> info@nelsontoursandsafari.com
+            <a href="mailto:info@nelsontoursandsafaris.com" className="flex items-center gap-1 font-sans text-[10px] text-white/60 hover:text-white transition-colors">
+              <Mail size={10} /> info@nelsontoursandsafaris.com
             </a>
           </div>
           <div className="flex items-center gap-3 ml-auto">

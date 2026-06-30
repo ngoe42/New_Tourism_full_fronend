@@ -30,17 +30,17 @@ class Settings(BaseSettings):
 
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
-    FIRST_ADMIN_EMAIL: str = "admin@nelsontoursandsafari.com"
+    FIRST_ADMIN_EMAIL: str = "info@nelsontoursandsafaris.com"
     FIRST_ADMIN_PASSWORD: str = "ChangeMe123!"
 
-    SUPER_ADMIN_EMAIL: str = "ngoekenedy@gmail.com"
+    SUPER_ADMIN_EMAIL: str = "info@nelsontoursandsafaris.com"
     SUPER_ADMIN_PASSWORD: str = "admin@123"
     SUPER_ADMIN_NAME: str = "Kenedy"
 
     RESEND_API_KEY: Optional[str] = None
     RESEND_FROM_EMAIL: str = "Nelson Tours & Safari <info@nelsontoursandsafaris.com>"
-    EMAIL_FROM: str = "ngoekenedy@gmail.com"  # Admin notification recipient
-    BCC_EMAILS: str = "ngoekenedy@gmail.com,admin@nelsontoursandsafaris.com"
+    EMAIL_FROM: str = "info@nelsontoursandsafaris.com"  # Admin notification recipient
+    BCC_EMAILS: str = "nelsonmichael90@gmail.com"
     FRONTEND_URL: str = "https://nelsontoursandsafaris.com"
     BACKEND_URL: str = "https://api.nelsontoursandsafaris.com"
     # Old Railway fallback: "https://nelsonsafari-backend-development.up.railway.app"

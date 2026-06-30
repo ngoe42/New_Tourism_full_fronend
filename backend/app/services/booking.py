@@ -213,7 +213,7 @@ async def send_booking_confirmation_email(
                 "\nContact Us\n"
                 f"{'=' * 40}\n"
                 f"Phone  : +255 750 005 973\n"
-                f"Email  : booking@nelsontoursandsafari.com\n"
+                f"Email  : bookings@nelsontoursandsafaris.com\n"
                 f"WhatsApp: https://wa.me/255750005973\n"
                 f"{'=' * 40}\n"
             )

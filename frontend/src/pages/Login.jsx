@@ -79,7 +79,7 @@ export default function Login() {
                   required
                   value={form.email}
                   onChange={(e) => set('email', e.target.value)}
-                  placeholder="admin@nelsontoursandsafari.com"
+                  placeholder="info@nelsontoursandsafaris.com"
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl font-sans text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
                 />
               </div>
