@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional
+from typing import Optional, Union
 
 import resend
 from loguru import logger
@@ -249,7 +249,7 @@ def _build_payment_html(
 
 
 async def send_email(
-    to: str,
+    to: Union[str, list[str]],
     subject: str,
     body: str,
     bcc: Optional[list[str]] = None,
@@ -261,7 +261,8 @@ async def send_email(
         logger.warning("Email not sent: RESEND_API_KEY is not configured.")
         return False
 
-    logger.info(f"[email] Sending '{subject}' to {to}")
+    recipients = [to] if isinstance(to, str) else to
+    logger.info(f"[email] Sending '{subject}' to {recipients}")
 
     html = _build_html(body, include_cancellation=include_cancellation)
 
@@ -269,7 +270,7 @@ async def send_email(
 
     email_params = {
         "from": settings.RESEND_FROM_EMAIL,
-        "to": [to],
+        "to": recipients,
         "subject": subject,
         "html": html,
         "text": plain,
@@ -281,13 +282,13 @@ async def send_email(
         response = await _send_email_with_retry(email_params)
 
         email_id = response.get("id", "unknown")
-        logger.info(f"[email] ✓ Sent '{subject}' to {to} — Resend EmailId={email_id}")
+        logger.info(f"[email] ✓ Sent '{subject}' to {recipients} — Resend EmailId={email_id}")
         return True
     except resend.exceptions.ResendError as e:
-        logger.error(f"[email] ✗ Resend FAILED sending to {to}: {e}")
+        logger.error(f"[email] ✗ Resend FAILED sending to {recipients}: {e}")
         return False
     except Exception as e:
-        logger.error(f"[email] ✗ Unexpected error sending to {to}: {type(e).__name__}: {e}")
+        logger.error(f"[email] ✗ Unexpected error sending to {recipients}: {type(e).__name__}: {e}")
         return False
 
 
@@ -330,8 +331,9 @@ async def send_inquiry_confirmation_email(
         + (f"Message :\n{message}\n" if message else "")
         + f"\nReply directly to {email} or log in to the admin panel."
     )
+    admin_recipients = [e.strip() for e in settings.ADMIN_NOTIFICATION_EMAILS.split(",") if e.strip()]
     await send_email(
-        to=settings.EMAIL_FROM,
+        to=admin_recipients,
         subject=f"[New Inquiry] {name} — {subject_line}",
         body=admin_body,
     )
@@ -427,8 +429,9 @@ async def send_route_booking_email(
         + (f"Notes : {special_requests}\n" if special_requests else "")
         + f"\nReply to {email} or view in the admin panel → Inquiries."
     )
+    admin_recipients = [e.strip() for e in settings.ADMIN_NOTIFICATION_EMAILS.split(",") if e.strip()]
     await send_email(
-        to=settings.EMAIL_FROM,
+        to=admin_recipients,
         subject=f"[Kilimanjaro Booking] {name} — {route_name}",
         body=admin_body,
     )
@@ -460,8 +463,9 @@ async def send_booking_admin_notification(
         + (f"Phone : {contact_phone}\n" if contact_phone else "")
         + f"\nLog in to the admin panel to review and confirm this booking."
     )
+    admin_recipients = [e.strip() for e in settings.ADMIN_NOTIFICATION_EMAILS.split(",") if e.strip()]
     await send_email(
-        to=settings.EMAIL_FROM,
+        to=admin_recipients,
         subject=f"[New Booking #{booking_id}] {contact_name} — {tour_title}",
         body=body,
     )
@@ -527,8 +531,9 @@ async def send_payment_success_email(
         f"Email : {contact_email}\n\n"
         f"Booking status has been automatically set to CONFIRMED."
     )
+    admin_recipients = [e.strip() for e in settings.ADMIN_NOTIFICATION_EMAILS.split(",") if e.strip()]
     await send_email(
-        to=settings.EMAIL_FROM,
+        to=admin_recipients,
         subject=f"[Payment Received #{booking_id}] {contact_name} — {tour_title}",
         body=admin_body,
     )

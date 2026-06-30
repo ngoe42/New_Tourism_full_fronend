@@ -39,7 +39,8 @@ class Settings(BaseSettings):
 
     RESEND_API_KEY: Optional[str] = None
     RESEND_FROM_EMAIL: str = "Nelson Tours & Safari <bookings@nelsontoursandsafaris.com>"
-    EMAIL_FROM: str = "info@nelsontoursandsafaris.com"  # Admin notification recipient
+    EMAIL_FROM: str = "info@nelsontoursandsafaris.com"  # Legacy admin notification recipient
+    ADMIN_NOTIFICATION_EMAILS: str = "admin@nelsontoursandsafaris.com,nelsonmichael90@gmail.com"
     BCC_EMAILS: str = "nelsonmichael90@gmail.com"
     FRONTEND_URL: str = "https://nelsontoursandsafaris.com"
     BACKEND_URL: str = "https://api.nelsontoursandsafaris.com"
