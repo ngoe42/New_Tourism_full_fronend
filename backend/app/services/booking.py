@@ -222,6 +222,7 @@ async def send_booking_confirmation_email(
                 f"{'=' * 40}\n"
             )
 
+            booking_link = f"{settings.FRONTEND_URL}/booking/{booking_id}"
             body = (
                 f"Dear {name},\n\n"
                 f"Thank you for choosing Nelson Tours & Safari!\n\n"
@@ -237,7 +238,8 @@ async def send_booking_confirmation_email(
                 f"{'=' * 40}\n"
                 + included_block
                 + contact_block
-                + f"\nOur team will be in touch within 24 hours to assist with any questions.\n\n"
+                + f"\nView your booking online: {booking_link}\n\n"
+                f"Our team will be in touch within 24 hours to assist with any questions.\n\n"
                 f"We look forward to crafting an unforgettable safari experience for you.\n\n"
                 f"Warm regards,\nNelson Tours & Safari Team"
             )

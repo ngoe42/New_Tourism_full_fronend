@@ -461,7 +461,8 @@ async def send_booking_admin_notification(
         f"Name  : {contact_name}\n"
         f"Email : {contact_email}\n"
         + (f"Phone : {contact_phone}\n" if contact_phone else "")
-        + f"\nLog in to the admin panel to review and confirm this booking."
+        + f"\nLog in to the admin panel to review and confirm this booking:\n"
+        f"{settings.FRONTEND_URL}/login\n"
     )
     admin_recipients = [e.strip() for e in settings.ADMIN_NOTIFICATION_EMAILS.split(",") if e.strip()]
     await send_email(
@@ -588,6 +589,7 @@ async def send_payment_booking_confirmation_email(
                 included_block += f"\n   ... and {len(tour_included) - 8} more items"
             included_block += "\n"
 
+        booking_link = f"{settings.FRONTEND_URL}/booking/{booking_id}"
         body = (
             f"Dear {name},\n\n"
             f"Thank you for choosing Nelson Tours & Safari!\n\n"
@@ -602,7 +604,8 @@ async def send_payment_booking_confirmation_email(
             f"Number of Guests  : {guests} {'Guest' if guests == 1 else 'Guests'}\n"
             f"{'=' * 40}\n"
             + included_block
-            + f"\nOur team will be in touch within 24 hours to assist with any questions.\n\n"
+            + f"\nView your booking online: {booking_link}\n\n"
+            f"Our team will be in touch within 24 hours to assist with any questions.\n\n"
             f"We look forward to crafting an unforgettable safari experience for you.\n\n"
             f"Warm regards,\nNelson Tours & Safari Team\n+255 750 005 973"
         )
