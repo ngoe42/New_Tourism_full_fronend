@@ -33,18 +33,70 @@ def _parse_duration_days(duration: str) -> int:
     return int(m.group(1)) if m else 1
 
 
-async def _init_pesapal_background(
+async def _do_pesapal_init(
+    db,
+    booking,
+    repo,
+    attempt_repo,
     booking_id: int,
     tour_title: str,
     contact_name: str,
     contact_email: str,
     contact_phone: str | None,
     total_price: float,
+) -> str:
+    """Execute Pesapal order submission and persist tracking data. Returns payment_link."""
+    pesapal = PesapalService()
+    ipn_id = settings.PESAPAL_IPN_ID or await pesapal.register_ipn(
+        f"{settings.BACKEND_URL}/api/v1/payments/ipn"
+    )
+    merchant_ref = f"NTS-{booking_id}-{uuid.uuid4().hex[:8].upper()}"
+    name_parts = contact_name.split(" ", 1)
+    result = await pesapal.submit_order(
+        merchant_reference=merchant_ref,
+        amount=total_price,
+        currency="USD",
+        description=f"Safari booking #{booking_id} — {tour_title}",
+        callback_url=f"{settings.FRONTEND_URL}/payment/callback",
+        ipn_id=ipn_id,
+        email=contact_email,
+        phone=contact_phone,
+        first_name=name_parts[0],
+        last_name=name_parts[1] if len(name_parts) > 1 else ".",
+    )
+    payment_link = result["redirect_url"]
+    await repo.update(booking, {
+        "pesapal_order_tracking_id": result["order_tracking_id"],
+        "pesapal_merchant_reference": merchant_ref,
+        "payment_status": "PENDING",
+        "payment_redirect_url": payment_link,
+    })
+    await attempt_repo.create(PaymentAttempt(
+        booking_id=booking_id,
+        order_tracking_id=result["order_tracking_id"],
+        merchant_reference=merchant_ref,
+        redirect_url=payment_link,
+        status="PENDING",
+    ))
+    await db.commit()
+    return payment_link
+
+
+async def _init_pesapal_background(
+    booking_id: int,
+    tour_title: str,
+    contact_name: str,
+    contact_email: str,
+    contact_phone: str | None,
+    travel_date,
+    guests: int,
+    total_price: float,
     send_payment_version: bool,
 ) -> None:
     """Background task: init Pesapal payment, then send confirmation email.
 
     Runs on its own DB session so the request handler never waits for Pesapal (2–20s).
+    Emails are ALWAYS sent regardless of Pesapal outcome.
     """
     payment_link: str | None = None
     try:
@@ -59,7 +111,7 @@ async def _init_pesapal_background(
 
             # Don't re-init if already completed
             if booking.payment_status == "COMPLETED":
-                logger.info(f"[bg-pesapal] Booking #{booking_id} already paid — skipping Pesapal init")
+                logger.info(f"[bg-pesapal] Booking #{booking_id} already paid — skipping")
                 return
             # Don't re-init if a fresh link already exists (< 5 min)
             if booking.payment_redirect_url and booking.updated_at:
@@ -67,41 +119,16 @@ async def _init_pesapal_background(
                 if age < timedelta(minutes=5):
                     logger.info(f"[bg-pesapal] Booking #{booking_id} has fresh link — skipping init")
                     payment_link = booking.payment_redirect_url
-                    return
-
-            pesapal = PesapalService()
-            ipn_id = settings.PESAPAL_IPN_ID or await pesapal.register_ipn(
-                f"{settings.BACKEND_URL}/api/v1/payments/ipn"
-            )
-            merchant_ref = f"NTS-{booking_id}-{uuid.uuid4().hex[:8].upper()}"
-            name_parts = contact_name.split(" ", 1)
-            result = await pesapal.submit_order(
-                merchant_reference=merchant_ref,
-                amount=total_price,
-                currency="USD",
-                description=f"Safari booking #{booking_id} — {tour_title}",
-                callback_url=f"{settings.FRONTEND_URL}/payment/callback",
-                ipn_id=ipn_id,
-                email=contact_email,
-                phone=contact_phone,
-                first_name=name_parts[0],
-                last_name=name_parts[1] if len(name_parts) > 1 else ".",
-            )
-            payment_link = result["redirect_url"]
-            await repo.update(booking, {
-                "pesapal_order_tracking_id": result["order_tracking_id"],
-                "pesapal_merchant_reference": merchant_ref,
-                "payment_status": "PENDING",
-                "payment_redirect_url": payment_link,
-            })
-            await attempt_repo.create(PaymentAttempt(
-                booking_id=booking_id,
-                order_tracking_id=result["order_tracking_id"],
-                merchant_reference=merchant_ref,
-                redirect_url=payment_link,
-                status="PENDING",
-            ))
-            await db.commit()
+                else:
+                    payment_link = await _do_pesapal_init(
+                        db, booking, repo, attempt_repo, booking_id, tour_title,
+                        contact_name, contact_email, contact_phone, total_price,
+                    )
+            else:
+                payment_link = await _do_pesapal_init(
+                    db, booking, repo, attempt_repo, booking_id, tour_title,
+                    contact_name, contact_email, contact_phone, total_price,
+                )
     except Exception as exc:
         logger.error(f"[bg-pesapal] Pesapal init failed for booking #{booking_id}: {exc}")
         # Mark booking so expiry job picks it up
@@ -114,9 +141,8 @@ async def _init_pesapal_background(
                     await db.commit()
         except Exception:
             logger.exception(f"[bg-pesapal] Failed to mark booking #{booking_id} as FAILED")
-        return
 
-    # Email: fires after Pesapal completes — no DB session shared.
+    # Email: ALWAYS fires regardless of Pesapal outcome.
     email_payment_link = (
         f"{settings.FRONTEND_URL}/payment/resume?id={booking_id}"
         if payment_link else None
@@ -127,27 +153,12 @@ async def _init_pesapal_background(
         contact_name=contact_name,
         contact_email=contact_email,
         contact_phone=contact_phone,
-        travel_date=None,  # passed separately below
-        guests=0,
+        travel_date=travel_date,
+        guests=guests,
         total_price=total_price,
         payment_link=email_payment_link,
         send_payment_version=send_payment_version,
     )
-
-    # Send admin notification
-    try:
-        await send_booking_admin_notification(
-            booking_id=booking_id,
-            tour_title=tour_title,
-            contact_name=contact_name,
-            contact_email=contact_email,
-            contact_phone=contact_phone,
-            travel_date=None,
-            guests=0,
-            total_price=total_price,
-        )
-    except Exception as exc:
-        logger.error(f"[bg-pesapal] Admin notification failed for #{booking_id}: {exc}")
 
 
 async def send_booking_confirmation_email(
@@ -377,8 +388,9 @@ class BookingService:
             logger.warning("[email] Failed to read SiteSettings toggle — using default (no payment)")
 
         logger.info(
-            f"Booking #{booking_id} created — queueing Pesapal init + emails for "
-            f"{data.contact_email} (send_payment={_send_payment})"
+            f"Booking #{booking_id} created — queueing emails for "
+            f"{data.contact_email} (send_payment={_send_payment}, "
+            f"pesapal={'yes' if settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET else 'no'})"
         )
 
         # Fire background tasks — these open their own DB sessions.
@@ -389,7 +401,28 @@ class BookingService:
                 contact_name=data.contact_name,
                 contact_email=data.contact_email,
                 contact_phone=data.contact_phone,
+                travel_date=data.travel_date,
+                guests=data.guests,
                 total_price=total_price,
+                send_payment_version=_send_payment,
+            ))
+            _background_tasks.add(_t)
+            _t.add_done_callback(_background_tasks.discard)
+        else:
+            # Pesapal not configured — send emails directly (no payment link)
+            _t = asyncio.create_task(_send_booking_emails_background(
+                booking_id=booking_id,
+                tour_title=tour_title,
+                contact_name=data.contact_name,
+                contact_email=data.contact_email,
+                contact_phone=data.contact_phone,
+                travel_date=data.travel_date,
+                guests=data.guests,
+                total_price=total_price,
+                payment_link=None,
+                tour_location=tour_location,
+                tour_duration=tour_duration,
+                tour_included=tour_included,
                 send_payment_version=_send_payment,
             ))
             _background_tasks.add(_t)
