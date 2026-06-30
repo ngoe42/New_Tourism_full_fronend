@@ -7,10 +7,14 @@ engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-    pool_timeout=30,
+    pool_size=5,        # 3 containers × 8 workers × 8 = 192 connections
+    max_overflow=3,     # keeps total per-worker under 8, all 24 workers under ~200
+    pool_timeout=15,
     pool_recycle=1800,
+    connect_args={
+        "timeout": 10,            # asyncpg connection timeout (seconds)
+        "command_timeout": 30,    # query timeout (seconds) — catches slow queries
+    },
 )
 
 AsyncSessionLocal = async_sessionmaker(

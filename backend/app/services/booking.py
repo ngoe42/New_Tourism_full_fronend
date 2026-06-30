@@ -1,5 +1,4 @@
 import asyncio
-import re
 import uuid
 from typing import Set
 
@@ -24,12 +23,135 @@ from app.services.email_service import send_email, send_booking_admin_notificati
 from app.services.pesapal import PesapalService
 from app.services.rate_limit_service import RateLimitService
 from sqlalchemy import select
+from sqlalchemy import text as sa_text
 
 
-def _parse_duration_days(duration: str) -> int:
-    """Extract the number of days from a string like '3 Days', '7 days / 6 nights'."""
-    m = re.search(r'(\d+)\s*day', duration, re.IGNORECASE)
-    return int(m.group(1)) if m else 1
+async def _do_pesapal_init(
+    db,
+    booking,
+    repo,
+    attempt_repo,
+    booking_id: int,
+    tour_title: str,
+    contact_name: str,
+    contact_email: str,
+    contact_phone: str | None,
+    total_price: float,
+) -> str:
+    """Execute Pesapal order submission and persist tracking data. Returns payment_link."""
+    pesapal = PesapalService()
+    ipn_id = settings.PESAPAL_IPN_ID or await pesapal.register_ipn(
+        f"{settings.BACKEND_URL}/api/v1/payments/ipn"
+    )
+    merchant_ref = f"NTS-{booking_id}-{uuid.uuid4().hex[:8].upper()}"
+    name_parts = contact_name.split(" ", 1)
+    result = await pesapal.submit_order(
+        merchant_reference=merchant_ref,
+        amount=total_price,
+        currency="USD",
+        description=f"Safari booking #{booking_id} — {tour_title}",
+        callback_url=f"{settings.FRONTEND_URL}/payment/callback",
+        ipn_id=ipn_id,
+        email=contact_email,
+        phone=contact_phone,
+        first_name=name_parts[0],
+        last_name=name_parts[1] if len(name_parts) > 1 else ".",
+    )
+    payment_link = result["redirect_url"]
+    await repo.update(booking, {
+        "pesapal_order_tracking_id": result["order_tracking_id"],
+        "pesapal_merchant_reference": merchant_ref,
+        "payment_status": "PENDING",
+        "payment_redirect_url": payment_link,
+    })
+    await attempt_repo.create(PaymentAttempt(
+        booking_id=booking_id,
+        order_tracking_id=result["order_tracking_id"],
+        merchant_reference=merchant_ref,
+        redirect_url=payment_link,
+        status="PENDING",
+    ))
+    await db.commit()
+    return payment_link
+
+
+async def _init_pesapal_background(
+    booking_id: int,
+    tour_title: str,
+    contact_name: str,
+    contact_email: str,
+    contact_phone: str | None,
+    travel_date,
+    guests: int,
+    total_price: float,
+    send_payment_version: bool,
+) -> None:
+    """Background task: init Pesapal payment, then send confirmation email.
+
+    Runs on its own DB session so the request handler never waits for Pesapal (2–20s).
+    Emails are ALWAYS sent regardless of Pesapal outcome.
+    """
+    payment_link: str | None = None
+    try:
+        async with AsyncSessionLocal() as db:
+            repo = BookingRepository(db)
+            attempt_repo = PaymentAttemptRepository(db)
+
+            booking = await repo.get_for_update(booking_id)
+            if not booking:
+                logger.error(f"[bg-pesapal] Booking #{booking_id} vanished")
+                return
+
+            # Don't re-init if already completed
+            if booking.payment_status == "COMPLETED":
+                logger.info(f"[bg-pesapal] Booking #{booking_id} already paid — skipping")
+                return
+            # Don't re-init if a fresh link already exists (< 5 min)
+            if booking.payment_redirect_url and booking.updated_at:
+                age = datetime.now(timezone.utc) - booking.updated_at.replace(tzinfo=timezone.utc)
+                if age < timedelta(minutes=5):
+                    logger.info(f"[bg-pesapal] Booking #{booking_id} has fresh link — skipping init")
+                    payment_link = booking.payment_redirect_url
+                else:
+                    payment_link = await _do_pesapal_init(
+                        db, booking, repo, attempt_repo, booking_id, tour_title,
+                        contact_name, contact_email, contact_phone, total_price,
+                    )
+            else:
+                payment_link = await _do_pesapal_init(
+                    db, booking, repo, attempt_repo, booking_id, tour_title,
+                    contact_name, contact_email, contact_phone, total_price,
+                )
+    except Exception as exc:
+        logger.error(f"[bg-pesapal] Pesapal init failed for booking #{booking_id}: {exc}")
+        # Mark booking so expiry job picks it up
+        try:
+            async with AsyncSessionLocal() as db:
+                repo = BookingRepository(db)
+                booking = await repo.get(booking_id)
+                if booking and not booking.pesapal_order_tracking_id:
+                    await repo.update(booking, {"payment_status": "FAILED"})
+                    await db.commit()
+        except Exception:
+            logger.exception(f"[bg-pesapal] Failed to mark booking #{booking_id} as FAILED")
+
+    # Email: ALWAYS fires regardless of Pesapal outcome.
+    email_payment_link = (
+        f"{settings.FRONTEND_URL}/payment/resume?id={booking_id}"
+        if payment_link else None
+    )
+    await _send_booking_emails_background(
+        booking_id=booking_id,
+        tour_title=tour_title,
+        contact_name=contact_name,
+        contact_email=contact_email,
+        contact_phone=contact_phone,
+        travel_date=travel_date,
+        guests=guests,
+        total_price=total_price,
+        payment_link=email_payment_link,
+        send_payment_version=send_payment_version,
+    )
 
 
 async def send_booking_confirmation_email(
@@ -44,22 +166,22 @@ async def send_booking_confirmation_email(
     tour_location: str = "",
     tour_duration: str = "",
     tour_included: list | None = None,
+    send_payment_version: bool | None = None,
 ) -> None:
-    """Send booking confirmation email. Re-usable from create_booking & initiate_payment.
-    
-    Checks the admin 'send_payment_email' setting to determine which email version to send:
-    - ENABLED  → sends old template with payment details, terms, and 'Proceed to Payment' button
-    - DISABLED → sends current template with contact details only (no payment info)
+    """Send booking confirmation email.
+
+    When send_payment_version is None (default) the admin toggle is queried from the DB.
+    Passing a bool avoids an extra DB session per email.
     """
     logger.info(f"[email] Preparing booking confirmation for #{booking_id} → {contact_email}")
     try:
-        # Check admin toggle for payment email
-        send_payment_version = False
-        async with AsyncSessionLocal() as settings_db:
-            result = await settings_db.execute(select(SiteSettings).limit(1))
-            site_settings = result.scalar_one_or_none()
-            if site_settings and site_settings.send_payment_email:
-                send_payment_version = True
+        if send_payment_version is None:
+            send_payment_version = False
+            async with AsyncSessionLocal() as settings_db:
+                result = await settings_db.execute(select(SiteSettings).limit(1))
+                site_settings = result.scalar_one_or_none()
+                if site_settings and site_settings.send_payment_email:
+                    send_payment_version = True
 
         if send_payment_version:
             logger.info(f"[email] Using PAYMENT email template for #{booking_id} (admin toggle ENABLED)")
@@ -95,7 +217,7 @@ async def send_booking_confirmation_email(
                 "\nContact Us\n"
                 f"{'=' * 40}\n"
                 f"Phone  : +255 750 005 973\n"
-                f"Email  : hello@nelsontoursandsafari.com\n"
+                f"Email  : bookings@nelsontoursandsafaris.com\n"
                 f"WhatsApp: https://wa.me/255750005973\n"
                 f"{'=' * 40}\n"
             )
@@ -119,13 +241,15 @@ async def send_booking_confirmation_email(
                 f"We look forward to crafting an unforgettable safari experience for you.\n\n"
                 f"Warm regards,\nNelson Tours & Safari Team"
             )
+            bcc_list = [e.strip() for e in settings.BCC_EMAILS.split(",") if e.strip()]
             await send_email(
                 to=contact_email,
                 subject=f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
                 body=body,
+                bcc=bcc_list,
+                include_cancellation=False,
             )
 
-        # Record successful email send for rate limiting
         async with AsyncSessionLocal() as rate_db:
             rate_svc = RateLimitService(rate_db)
             await rate_svc.record_email_send(contact_email, action_type="booking_confirmation")
@@ -149,6 +273,7 @@ async def _send_booking_emails_background(
     tour_location: str = "",
     tour_duration: str = "",
     tour_included: list | None = None,
+    send_payment_version: bool | None = None,
 ) -> None:
     """Background task: send confirmation + admin notification emails."""
     await send_booking_confirmation_email(
@@ -163,6 +288,7 @@ async def _send_booking_emails_background(
         tour_location=tour_location,
         tour_duration=tour_duration,
         tour_included=tour_included,
+        send_payment_version=send_payment_version,
     )
     try:
         await send_booking_admin_notification(
@@ -197,14 +323,9 @@ class BookingService:
         if not can_send:
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=error_msg)
 
-        # Serialize concurrent bookings for the same tour+date to prevent double-booking
-        await self.booking_repo.acquire_booking_lock(data.tour_id, data.travel_date)
-
         total_price = tour.price * data.guests
 
-        # Snapshot tour scalars needed after the commit.  SQLAlchemy expires all ORM
-        # objects on commit; accessing tour.title etc. afterwards would trigger a
-        # lazy-load that raises MissingGreenlet in async context.
+        # Snapshot tour scalars before commit expires them
         tour_title = tour.title
         tour_location = tour.location or ""
         tour_duration = tour.duration or ""
@@ -224,66 +345,39 @@ class BookingService:
         )
         booking = await self.booking_repo.create(booking)
 
-        # ── First commit: persist booking row and release the advisory lock. ────
-        # pg_advisory_xact_lock is transaction-scoped.  Committing here unblocks
-        # concurrent booking attempts for the same tour+date before we make the
-        # external Pesapal API call (which can hold a DB connection open for up to
-        # 20 s under load, exhausting the connection pool).
+        # ── Commit: persist booking row and release the advisory lock. ──────────
+        # The DB session / connection is released here.  Everything after this
+        # runs in background tasks on independent sessions, so the request handler
+        # never blocks on Pesapal (2–20s) or email (Resend API).
         await self.db.commit()
-        booking_id = booking.id     # capture before the object is expired by commit
+        booking_id = booking.id
 
-        payment_link: str | None = None
+        # Invalidate availability cache for this tour+date so subsequent
+        # overlap checks see the new booking immediately (or within 30s).
+        from app.core.cache import cache_delete
+        _ = asyncio.ensure_future(cache_delete(
+            f"availability:{data.tour_id}:{data.travel_date.isoformat()}"
+        ))
 
-        if settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET:
-            try:
-                pesapal = PesapalService()
-                ipn_id = settings.PESAPAL_IPN_ID or await pesapal.register_ipn(
-                    f"{settings.BACKEND_URL}/api/v1/payments/ipn"
-                )
-                merchant_ref = f"NTS-{booking_id}-{uuid.uuid4().hex[:8].upper()}"
-                name_parts = data.contact_name.split(" ", 1)
-                result = await pesapal.submit_order(
-                    merchant_reference=merchant_ref,
-                    amount=total_price,
-                    currency="USD",
-                    description=f"Safari booking #{booking_id} — {tour_title}",
-                    callback_url=f"{settings.FRONTEND_URL}/payment/callback",
-                    ipn_id=ipn_id,
-                    email=data.contact_email,
-                    phone=data.contact_phone,
-                    first_name=name_parts[0],
-                    last_name=name_parts[1] if len(name_parts) > 1 else ".",
-                )
-                payment_link = result["redirect_url"]
-                # ── Second commit: persist Pesapal tracking fields + attempt row. ─
-                booking = await self.booking_repo.get(booking_id)
-                await self.booking_repo.update(booking, {
-                    "pesapal_order_tracking_id": result["order_tracking_id"],
-                    "pesapal_merchant_reference": merchant_ref,
-                    "payment_status": "PENDING",
-                    "payment_redirect_url": payment_link,
-                })
-                await self.attempt_repo.create(PaymentAttempt(
-                    booking_id=booking_id,
-                    order_tracking_id=result["order_tracking_id"],
-                    merchant_reference=merchant_ref,
-                    redirect_url=payment_link,
-                    status="PENDING",
-                ))
-                await self.db.commit()
-            except Exception as exc:
-                logger.error(f"Pesapal init failed for booking #{booking_id}: {exc}")
-                await self.db.rollback()
+        # Look up send_payment_email toggle (on the already-committed session — fast)
+        _send_payment = False
+        try:
+            _result = await self.db.execute(select(SiteSettings).limit(1))
+            _settings = _result.scalar_one_or_none()
+            if _settings and _settings.send_payment_email:
+                _send_payment = True
+        except Exception:
+            logger.warning("[email] Failed to read SiteSettings toggle — using default (no payment)")
 
-        # Fire-and-forget email tasks so the user isn't blocked by SES latency.
-        email_payment_link = (
-            f"{settings.FRONTEND_URL}/payment/resume?id={booking_id}"
-            if payment_link else None
+        logger.info(
+            f"Booking #{booking_id} created — queueing emails for "
+            f"{data.contact_email} (send_payment={_send_payment}, "
+            f"pesapal={'yes' if settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET else 'no'})"
         )
-        logger.info(f"Booking #{booking_id} created — queueing emails for {data.contact_email} (payment_link={'set' if payment_link else 'none'})")
 
-        task = asyncio.create_task(
-            _send_booking_emails_background(
+        # Fire background tasks — these open their own DB sessions.
+        if settings.PESAPAL_CONSUMER_KEY and settings.PESAPAL_CONSUMER_SECRET:
+            _t = asyncio.create_task(_init_pesapal_background(
                 booking_id=booking_id,
                 tour_title=tour_title,
                 contact_name=data.contact_name,
@@ -292,14 +386,29 @@ class BookingService:
                 travel_date=data.travel_date,
                 guests=data.guests,
                 total_price=total_price,
-                payment_link=email_payment_link,
+                send_payment_version=_send_payment,
+            ))
+            _background_tasks.add(_t)
+            _t.add_done_callback(_background_tasks.discard)
+        else:
+            # Pesapal not configured — send emails directly (no payment link)
+            _t = asyncio.create_task(_send_booking_emails_background(
+                booking_id=booking_id,
+                tour_title=tour_title,
+                contact_name=data.contact_name,
+                contact_email=data.contact_email,
+                contact_phone=data.contact_phone,
+                travel_date=data.travel_date,
+                guests=data.guests,
+                total_price=total_price,
+                payment_link=None,
                 tour_location=tour_location,
                 tour_duration=tour_duration,
                 tour_included=tour_included,
-            )
-        )
-        _background_tasks.add(task)
-        task.add_done_callback(_background_tasks.discard)
+                send_payment_version=_send_payment,
+            ))
+            _background_tasks.add(_t)
+            _t.add_done_callback(_background_tasks.discard)
 
         # Re-fetch so the returned object is fully loaded and not in an expired state.
         return await self.booking_repo.get(booking_id)

@@ -1,8 +1,15 @@
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from app.api.v1 import auth, users, tours, bookings, inquiries, trip_plans, media, testimonials, admin, experiences, routes, site_settings, payments, user_management, diagnostic
 
 api_router = APIRouter(prefix="/api/v1")
+
+
+@api_router.get("/health", include_in_schema=False)
+async def health():
+    """Used by Docker HEALTHCHECK — no DB dependency so it never cascades failures."""
+    return JSONResponse({"status": "ok", "app": "karibu-api"})
 
 api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
 api_router.include_router(users.router, prefix="/users", tags=["Users"])

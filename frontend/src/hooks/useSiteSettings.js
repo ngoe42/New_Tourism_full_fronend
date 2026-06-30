@@ -30,6 +30,7 @@ export function useSiteSettings() {
     aboutTeam3Image:  data?.about_team_3_image ?? null,
     wondersKilimanjaroImage: data?.wonders_kilimanjaro_image ?? null,
     wondersSafariImage:      data?.wonders_safari_image      ?? null,
+    sendPaymentEmail:        data?.send_payment_email        ?? false,
     settings: data,
   }
 }

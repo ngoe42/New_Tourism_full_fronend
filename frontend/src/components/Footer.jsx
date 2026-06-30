@@ -123,9 +123,9 @@ export default function Footer() {
               <Phone size={13} className="text-gold flex-shrink-0" />
               <span className="font-sans text-xs text-white/60 group-hover:text-gold transition-colors">+255 750 005 973</span>
             </a>
-            <a href="mailto:contact@nelsontoursandsafari.com" className="flex items-center gap-2 group">
+            <a href="mailto:info@nelsontoursandsafaris.com" className="flex items-center gap-2 group">
               <Mail size={13} className="text-gold flex-shrink-0" />
-              <span className="font-sans text-xs text-white/60 group-hover:text-gold transition-colors break-all">contact@nelsontoursandsafari.com</span>
+              <span className="font-sans text-xs text-white/60 group-hover:text-gold transition-colors break-all">info@nelsontoursandsafaris.com</span>
             </a>
             <div className="flex items-center gap-2">
               <MapPin size={13} className="text-gold flex-shrink-0" />
@@ -154,12 +154,7 @@ export default function Footer() {
           <p className="font-sans text-xs text-white/20">Licensed by TATO & TTB · Arusha, Tanzania</p>
           <p className="font-sans text-[11px] text-white/60">
             Designed &amp; Built by{' '}
-            <a
-              href="mailto:ngoekenedy@gmail.com"
-              className="text-gold hover:text-gold/80 transition-colors underline underline-offset-2"
-            >
-              Kenedy Ngoe
-            </a>
+            <span className="text-gold underline underline-offset-2">Kenedy Ngoe</span>
           </p>
         </div>
       </div>

@@ -59,7 +59,7 @@ async def get_featured_tours(limit: int = Query(6, ge=1, le=12), db: AsyncSessio
     from app.repositories.tour import TourRepository
     repo = TourRepository(db)
     data = await repo.get_featured(limit=limit)
-    await cache_set(cache_key, jsonable_encoder(data), TTL_MEDIUM)
+    await cache_set(cache_key, jsonable_encoder(data), 300)  # 5 min
     return data
 
 

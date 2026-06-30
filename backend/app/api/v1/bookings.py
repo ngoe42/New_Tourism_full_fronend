@@ -1,6 +1,10 @@
+import hashlib
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status as http_status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.cache import cache_get, cache_set, cache_delete
 from app.core.database import get_db
 from app.core.limiter import limiter
 from app.dependencies.auth import get_current_user, get_current_user_optional, require_admin
@@ -21,7 +25,11 @@ async def create_booking(
     db: AsyncSession = Depends(get_db),
 ):
     service = BookingService(db)
-    return await service.create_booking(data, current_user)
+    booking = await service.create_booking(data, current_user)
+    if current_user:
+        from app.core.cache import cache_delete_pattern
+        await cache_delete_pattern(f"bookings:me:{current_user.id}:*")
+    return booking
 
 
 @router.get("/lookup", response_model=BookingPublicResponse)
@@ -41,18 +49,28 @@ async def lookup_booking_public(
 
 
 @router.get("/me", response_model=PaginatedBookings)
+@limiter.limit("30/minute")
 async def my_bookings(
+    request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=50),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    cache_key = f"bookings:me:{current_user.id}:{page}:{per_page}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return JSONResponse(content=cached)
     service = BookingService(db)
-    return await service.list_user_bookings(current_user, page=page, per_page=per_page)
+    data = await service.list_user_bookings(current_user, page=page, per_page=per_page)
+    await cache_set(cache_key, jsonable_encoder(data), ttl=120)
+    return data
 
 
 @router.get("/{booking_id}", response_model=BookingResponse)
+@limiter.limit("30/minute")
 async def get_booking(
+    request: Request,
     booking_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -62,7 +80,9 @@ async def get_booking(
 
 
 @router.get("", response_model=PaginatedBookings, dependencies=[Depends(require_admin)])
+@limiter.limit("60/minute")
 async def list_all_bookings(
+    request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),

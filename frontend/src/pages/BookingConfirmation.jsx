@@ -7,6 +7,7 @@ import {
   Mail, Phone, ArrowRight, CreditCard, FileText,
 } from 'lucide-react'
 import { bookingsApi } from '../api/bookings'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 const STATUS_CONFIG = {
   pending:   { label: 'Pending Confirmation', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: Clock },
@@ -48,6 +49,7 @@ export default function BookingConfirmation() {
   const [submitting, setSubmitting] = useState(false)
 
   const bookingId = parseInt(id, 10)
+  const { sendPaymentEmail } = useSiteSettings()
 
   useEffect(() => {
     const stored = sessionStorage.getItem('lastBookingEmail')
@@ -162,7 +164,7 @@ export default function BookingConfirmation() {
   const StatusIcon = statusCfg.icon
   const PayIcon = paymentCfg?.icon
 
-  const needsPayment = booking.payment_status?.toUpperCase() === 'PENDING'
+  const needsPayment = booking.payment_status?.toUpperCase() === 'PENDING' && sendPaymentEmail
   const isPaid = booking.payment_status?.toUpperCase() === 'COMPLETED' || booking.status === 'confirmed' || booking.status === 'completed'
 
   return (
@@ -241,15 +243,7 @@ export default function BookingConfirmation() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-1.5 text-[#c9a96e]">
-                <DollarSign size={14} />
-                <span className="font-sans text-[10px] uppercase tracking-widest text-gray-400">Total Price</span>
-              </div>
-              <p className="font-sans text-sm font-semibold text-gray-800">
-                USD {Number(booking.total_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-            </div>
+
 
             {booking.tour?.duration && (
               <div className="flex flex-col gap-1">

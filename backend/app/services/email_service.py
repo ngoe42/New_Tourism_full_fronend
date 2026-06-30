@@ -1,4 +1,5 @@
-from typing import Optional
+import asyncio
+from typing import Optional, Union
 
 import resend
 from loguru import logger
@@ -6,6 +7,41 @@ from loguru import logger
 from app.core.config import settings
 
 resend.api_key = settings.RESEND_API_KEY
+
+_RESEND_TIMEOUT = 15.0
+
+
+async def _send_email_with_retry(email_params: dict, max_attempts: int = 3) -> dict:
+    """Call resend.Emails.send_async with timeout and retry on transient errors."""
+    last_exc = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            response = await asyncio.wait_for(
+                resend.Emails.send_async(email_params),
+                timeout=_RESEND_TIMEOUT,
+            )
+            return response
+        except (asyncio.TimeoutError, resend.exceptions.ResendError) as exc:
+            last_exc = exc
+            if attempt < max_attempts:
+                wait = 0.5 * (2 ** (attempt - 1))
+                logger.warning(
+                    f"Resend attempt {attempt}/{max_attempts} failed ({type(exc).__name__})"
+                    f" — retrying in {wait:.1f}s"
+                )
+                await asyncio.sleep(wait)
+                continue
+        except Exception as exc:
+            last_exc = exc
+            if attempt < max_attempts:
+                wait = 0.5 * (2 ** (attempt - 1))
+                logger.warning(
+                    f"Resend attempt {attempt}/{max_attempts} failed ({type(exc).__name__})"
+                    f" — retrying in {wait:.1f}s"
+                )
+                await asyncio.sleep(wait)
+                continue
+    raise last_exc  # type: ignore[misc]
 
 
 def _cancellation_policy_block() -> str:
@@ -156,8 +192,10 @@ def _payment_terms_block() -> str:
 
 def _build_html(
     body: str,
+    *,
+    include_cancellation: bool = True,
 ) -> str:
-    cancellation_section = _cancellation_policy_block()
+    cancellation_section = _cancellation_policy_block() if include_cancellation else ""
     return f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #222; background: #faf8f3; padding: 0; margin: 0;">
@@ -211,38 +249,46 @@ def _build_payment_html(
 
 
 async def send_email(
-    to: str,
+    to: Union[str, list[str]],
     subject: str,
     body: str,
+    bcc: Optional[list[str]] = None,
+    *,
+    include_cancellation: bool = True,
 ) -> bool:
     """Send email via Resend. Returns True on success, False if not configured or on error."""
     if not settings.RESEND_API_KEY:
         logger.warning("Email not sent: RESEND_API_KEY is not configured.")
         return False
 
-    logger.info(f"[email] Sending '{subject}' to {to}")
+    recipients = [to] if isinstance(to, str) else to
+    logger.info(f"[email] Sending '{subject}' to {recipients}")
 
-    html = _build_html(body)
+    html = _build_html(body, include_cancellation=include_cancellation)
 
     plain = body
 
+    email_params = {
+        "from": settings.RESEND_FROM_EMAIL,
+        "to": recipients,
+        "subject": subject,
+        "html": html,
+        "text": plain,
+    }
+    if bcc:
+        email_params["bcc"] = bcc
+
     try:
-        response = await resend.Emails.send_async({
-            "from": settings.RESEND_FROM_EMAIL,
-            "to": [to],
-            "subject": subject,
-            "html": html,
-            "text": plain,
-        })
+        response = await _send_email_with_retry(email_params)
 
         email_id = response.get("id", "unknown")
-        logger.info(f"[email] ✓ Sent '{subject}' to {to} — Resend EmailId={email_id}")
+        logger.info(f"[email] ✓ Sent '{subject}' to {recipients} — Resend EmailId={email_id}")
         return True
     except resend.exceptions.ResendError as e:
-        logger.error(f"[email] ✗ Resend FAILED sending to {to}: {e}")
+        logger.error(f"[email] ✗ Resend FAILED sending to {recipients}: {e}")
         return False
     except Exception as e:
-        logger.error(f"[email] ✗ Unexpected error sending to {to}: {type(e).__name__}: {e}")
+        logger.error(f"[email] ✗ Unexpected error sending to {recipients}: {type(e).__name__}: {e}")
         return False
 
 
@@ -285,8 +331,9 @@ async def send_inquiry_confirmation_email(
         + (f"Message :\n{message}\n" if message else "")
         + f"\nReply directly to {email} or log in to the admin panel."
     )
+    admin_recipients = [e.strip() for e in settings.ADMIN_NOTIFICATION_EMAILS.split(",") if e.strip()]
     await send_email(
-        to=settings.EMAIL_FROM,
+        to=admin_recipients,
         subject=f"[New Inquiry] {name} — {subject_line}",
         body=admin_body,
     )
@@ -382,8 +429,9 @@ async def send_route_booking_email(
         + (f"Notes : {special_requests}\n" if special_requests else "")
         + f"\nReply to {email} or view in the admin panel → Inquiries."
     )
+    admin_recipients = [e.strip() for e in settings.ADMIN_NOTIFICATION_EMAILS.split(",") if e.strip()]
     await send_email(
-        to=settings.EMAIL_FROM,
+        to=admin_recipients,
         subject=f"[Kilimanjaro Booking] {name} — {route_name}",
         body=admin_body,
     )
@@ -415,8 +463,9 @@ async def send_booking_admin_notification(
         + (f"Phone : {contact_phone}\n" if contact_phone else "")
         + f"\nLog in to the admin panel to review and confirm this booking."
     )
+    admin_recipients = [e.strip() for e in settings.ADMIN_NOTIFICATION_EMAILS.split(",") if e.strip()]
     await send_email(
-        to=settings.EMAIL_FROM,
+        to=admin_recipients,
         subject=f"[New Booking #{booking_id}] {contact_name} — {tour_title}",
         body=body,
     )
@@ -482,8 +531,9 @@ async def send_payment_success_email(
         f"Email : {contact_email}\n\n"
         f"Booking status has been automatically set to CONFIRMED."
     )
+    admin_recipients = [e.strip() for e in settings.ADMIN_NOTIFICATION_EMAILS.split(",") if e.strip()]
     await send_email(
-        to=settings.EMAIL_FROM,
+        to=admin_recipients,
         subject=f"[Payment Received #{booking_id}] {contact_name} — {tour_title}",
         body=admin_body,
     )
@@ -588,13 +638,17 @@ async def send_payment_booking_confirmation_email(
             btn_label="Proceed to Payment" if has_pesapal else "Contact Us to Pay",
         )
 
-        response = await resend.Emails.send_async({
+        bcc_list = [e.strip() for e in settings.BCC_EMAILS.split(",") if e.strip()]
+        email_params = {
             "from": settings.RESEND_FROM_EMAIL,
             "to": [contact_email],
             "subject": f"Booking Confirmed — {tour_title} | Nelson Tours & Safari",
             "html": html,
             "text": plain,
-        })
+        }
+        if bcc_list:
+            email_params["bcc"] = bcc_list
+        response = await _send_email_with_retry(email_params)
 
         email_id = response.get("id", "unknown")
         logger.info(f"[email] ✓ Payment booking confirmation sent #{booking_id} to {contact_email} — Resend EmailId={email_id}")

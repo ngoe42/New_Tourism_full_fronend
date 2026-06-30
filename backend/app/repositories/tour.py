@@ -60,13 +60,17 @@ class TourRepository(BaseRepository[Tour]):
         if max_price is not None:
             stmt = stmt.where(Tour.price <= max_price)
 
-        count_result = await self.db.execute(
-            select(func.count()).select_from(stmt.subquery())
-        )
-        total = count_result.scalar_one()
-
-        result = await self.db.execute(stmt.offset(skip).limit(limit))
-        return list(result.scalars().all()), total
+        # Single round-trip: window function avoids separate COUNT query
+        windowed = stmt.add_columns(
+            func.count().over().label("_full_count")
+        ).offset(skip).limit(limit)
+        result = await self.db.execute(windowed)
+        rows = result.all()
+        if not rows:
+            return [], 0
+        total = rows[0]._full_count
+        tours = [r[0] for r in rows]
+        return tours, total
 
     async def slug_exists(self, slug: str, exclude_id: Optional[int] = None) -> bool:
         stmt = select(Tour.id).where(Tour.slug == slug)

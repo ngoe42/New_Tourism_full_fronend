@@ -31,5 +31,15 @@ PY
 echo "Running Alembic migrations..."
 alembic upgrade head
 
-echo "Starting Uvicorn..."
-exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --workers "${WEB_CONCURRENCY:-2}"
+echo "Starting Uvicorn via Gunicorn..."
+exec gunicorn app.main:app \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --bind "0.0.0.0:${PORT:-8000}" \
+  --workers "${WEB_CONCURRENCY:-8}" \
+  --max-requests 10000 \
+  --max-requests-jitter 1000 \
+  --timeout 120 \
+  --keep-alive 5 \
+  --access-logfile - \
+  --error-logfile - \
+  --log-level "${LOG_LEVEL:-info}"

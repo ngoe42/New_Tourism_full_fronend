@@ -1,48 +1,53 @@
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.booking import BookingStatus
-from app.repositories.booking import BookingRepository
-from app.repositories.inquiry import InquiryRepository
-from app.repositories.testimonial import TestimonialRepository
-from app.repositories.tour import TourRepository
-from app.repositories.trip_plan import TripPlanRepository
-from app.repositories.user import UserRepository
+from app.core.cache import cache_get, cache_set, TTL_SHORT
 from app.schemas.dashboard import DashboardStats
+
+_DASHBOARD_CACHE_KEY = "dashboard:stats"
+_DASHBOARD_CACHE_TTL = 30  # 30 seconds — stale dashboard is acceptable, DB load is not
 
 
 class DashboardService:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.user_repo = UserRepository(db)
-        self.tour_repo = TourRepository(db)
-        self.booking_repo = BookingRepository(db)
-        self.inquiry_repo = InquiryRepository(db)
-        self.trip_repo = TripPlanRepository(db)
-        self.testimonial_repo = TestimonialRepository(db)
 
     async def get_stats(self) -> DashboardStats:
-        # Run sequentially — all repos share a single AsyncSession which is
-        # NOT safe for concurrent use (asyncio.gather would risk InvalidRequestError).
-        total_users = await self.user_repo.count()
-        total_tours = await self.tour_repo.count()
-        total_bookings = await self.booking_repo.count()
-        total_revenue = await self.booking_repo.get_total_revenue()
-        pending_bookings = await self.booking_repo.count_by_status(BookingStatus.pending)
-        confirmed_bookings = await self.booking_repo.count_by_status(BookingStatus.confirmed)
-        pending_inquiries = await self.inquiry_repo.count_unread()
-        pending_trip_plans = await self.trip_repo.count_pending()
-        active_tours = await self.tour_repo.count_published()
-        pending_testimonials = await self.testimonial_repo.count_pending()
+        # Try cache first
+        cached = await cache_get(_DASHBOARD_CACHE_KEY)
+        if cached is not None:
+            return DashboardStats(**cached)
 
-        return DashboardStats(
-            total_users=total_users,
-            total_tours=total_tours,
-            total_bookings=total_bookings,
-            total_revenue=total_revenue,
-            pending_bookings=pending_bookings,
-            confirmed_bookings=confirmed_bookings,
-            pending_inquiries=pending_inquiries,
-            pending_trip_plans=pending_trip_plans,
-            active_tours=active_tours,
-            pending_testimonials=pending_testimonials,
+        # Single round-trip: 10 aggregates in one query
+        sql = text("""
+            SELECT
+              (SELECT count(*) FROM users)                                              AS total_users,
+              (SELECT count(*) FROM tours)                                              AS total_tours,
+              (SELECT count(*) FROM bookings)                                           AS total_bookings,
+              COALESCE((SELECT sum(total_price) FROM bookings WHERE status = 'confirmed'), 0) AS total_revenue,
+              (SELECT count(*) FROM bookings      WHERE status = 'pending')             AS pending_bookings,
+              (SELECT count(*) FROM bookings      WHERE status = 'confirmed')           AS confirmed_bookings,
+              (SELECT count(*) FROM inquiries     WHERE is_read = false)                AS pending_inquiries,
+              (SELECT count(*) FROM trip_plans    WHERE status = 'pending')             AS pending_trip_plans,
+              (SELECT count(*) FROM tours         WHERE is_published = true)            AS active_tours,
+              (SELECT count(*) FROM testimonials  WHERE is_approved = false)            AS pending_testimonials
+        """)
+        result = await self.db.execute(sql)
+        row = result.one()
+
+        stats = DashboardStats(
+            total_users=row.total_users,
+            total_tours=row.total_tours,
+            total_bookings=row.total_bookings,
+            total_revenue=float(row.total_revenue),
+            pending_bookings=row.pending_bookings,
+            confirmed_bookings=row.confirmed_bookings,
+            pending_inquiries=row.pending_inquiries,
+            pending_trip_plans=row.pending_trip_plans,
+            active_tours=row.active_tours,
+            pending_testimonials=row.pending_testimonials,
         )
+
+        # Cache for 30s — dashboard is the most-hit admin endpoint
+        await cache_set(_DASHBOARD_CACHE_KEY, stats.model_dump(), ttl=_DASHBOARD_CACHE_TTL)
+        return stats
