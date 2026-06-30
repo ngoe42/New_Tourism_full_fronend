@@ -208,7 +208,7 @@ def _build_html(
           </div>
           {cancellation_section}
           <div style="background: #f5f5f0; padding: 20px 32px; margin-top: 24px; font-size: 12px; color: #888; border-top: 1px solid #eee;">
-            Nelson Tours &amp; Safari · Sokoine Road, Arusha, Tanzania · +255 750 005 973
+            Nelson Tours &amp; Safari · Sokoine Arusha, Tanzania · +255 750 005 973
           </div>
         </div>
       </body>
@@ -240,7 +240,7 @@ def _build_payment_html(
           {payment_section}
           {terms_section}
           <div style="background: #f5f5f0; padding: 20px 32px; margin-top: 24px; font-size: 12px; color: #888; border-top: 1px solid #eee;">
-            Nelson Tours &amp; Safari · Sokoine Road, Arusha, Tanzania · +255 750 005 973
+            Nelson Tours &amp; Safari · Arusha, Tanzania · +255 750 005 973
           </div>
         </div>
       </body>
