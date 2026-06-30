@@ -5,7 +5,7 @@ import BookingForm from '../components/BookingForm'
 const contactInfo = [
   { icon: Phone, label: 'Call Us', value: '+255 750 005 973', sub: 'Mon–Fri, 8am–6pm EAT', href: 'tel:+255750005973' },
   { icon: MessageCircle, label: 'WhatsApp', value: '+255 750 005 973', sub: 'Chat with us instantly', href: 'https://wa.me/255750005973' },
-  { icon: Mail, label: 'Email Us', value: 'inquiries@nelsontoursandsafaris.com', sub: 'Response within 24 hours', href: 'mailto:inquiries@nelsontoursandsafaris.com' },
+  { icon: Mail, label: 'Email Us', value: 'info@nelsontoursandsafaris.com', sub: 'Response within 24 hours', href: 'mailto:info@nelsontoursandsafaris.com' },
   { icon: MapPin, label: 'Visit Us', value: 'Arusha Tanzania', sub: 'Tanzania, East Africa', href: '#' },
   { icon: Clock, label: 'Office Hours', value: 'Mon–Fri: 8am–6pm', sub: 'Sat: 9am–2pm EAT', href: '#' },
 ]
@@ -88,7 +88,7 @@ export default function Contact() {
                     <Icon size={20} className="text-gold" strokeWidth={1.5} />
                   </div>
                   <p className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{item.label}</p>
-                  <p className="font-sans text-sm font-semibold text-green-950">{item.value}</p>
+                  <p className="font-sans text-xs font-semibold text-green-950 break-all leading-tight">{item.value}</p>
                   <p className="font-sans text-xs text-gray-400 mt-0.5">{item.sub}</p>
                 </motion.a>
               )
