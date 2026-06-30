@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     SUPER_ADMIN_NAME: str = "Kenedy"
 
     RESEND_API_KEY: Optional[str] = None
-    RESEND_FROM_EMAIL: str = "Nelson Tours & Safari <info@nelsontoursandsafaris.com>"
+    RESEND_FROM_EMAIL: str = "Nelson Tours & Safari <bookings@nelsontoursandsafaris.com>"
     EMAIL_FROM: str = "info@nelsontoursandsafaris.com"  # Admin notification recipient
     BCC_EMAILS: str = "nelsonmichael90@gmail.com"
     FRONTEND_URL: str = "https://nelsontoursandsafaris.com"
