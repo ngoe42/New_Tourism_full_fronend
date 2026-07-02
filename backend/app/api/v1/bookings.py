@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.limiter import limiter
 from app.dependencies.auth import get_current_user, get_current_user_optional, require_admin
 from app.models.user import User
-from app.schemas.booking import BookingCreate, BookingResponse, BookingPublicResponse, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
+from app.schemas.booking import BookingCreate, BookingResponse, BookingPublicResponse, BookingStatusUpdate, BookingAdminUpdate, BulkDeleteRequest, BulkDeleteResponse, PaginatedBookings
 from app.repositories.booking import BookingRepository
 from app.services.booking import BookingService
 
@@ -118,3 +118,12 @@ async def delete_booking(
 ):
     service = BookingService(db)
     await service.delete_booking(booking_id)
+
+
+@router.post("/bulk-delete", response_model=BulkDeleteResponse, dependencies=[Depends(require_admin)])
+async def bulk_delete_bookings(
+    data: BulkDeleteRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    service = BookingService(db)
+    return await service.delete_multiple_bookings(data.ids)

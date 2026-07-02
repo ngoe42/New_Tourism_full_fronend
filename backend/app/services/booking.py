@@ -18,7 +18,7 @@ from app.models.user import User
 from app.repositories.booking import BookingRepository
 from app.repositories.payment_attempt import PaymentAttemptRepository
 from app.repositories.tour import TourRepository
-from app.schemas.booking import BookingCreate, BookingStatusUpdate, BookingAdminUpdate, PaginatedBookings
+from app.schemas.booking import BookingCreate, BookingStatusUpdate, BookingAdminUpdate, BulkDeleteResponse, PaginatedBookings
 from app.services.email_service import send_email, send_booking_admin_notification, send_payment_success_email, send_payment_booking_confirmation_email
 from app.services.pesapal import PesapalService
 from app.services.rate_limit_service import RateLimitService
@@ -467,6 +467,8 @@ class BookingService:
             )
         was_pending = booking.status != BookingStatus.confirmed
         update_data = {"status": data.status}
+        if data.status == BookingStatus.confirmed:
+            update_data["payment_status"] = "paid"
         if data.notes:
             update_data["notes"] = data.notes
         updated = await self.booking_repo.update(booking, update_data)
@@ -513,3 +515,12 @@ class BookingService:
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
         await self.booking_repo.delete(booking)
+
+    async def delete_multiple_bookings(self, booking_ids: list[int]) -> BulkDeleteResponse:
+        deleted = 0
+        for bid in booking_ids:
+            booking = await self.booking_repo.get(bid)
+            if booking:
+                await self.booking_repo.delete(booking)
+                deleted += 1
+        return BulkDeleteResponse(deleted=deleted)

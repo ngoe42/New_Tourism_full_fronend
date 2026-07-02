@@ -96,6 +96,14 @@ class BookingPublicResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class BulkDeleteRequest(BaseModel):
+    ids: list[int] = Field(..., min_length=1)
+
+
+class BulkDeleteResponse(BaseModel):
+    deleted: int
+
+
 class PaginatedBookings(BaseModel):
     items: list[BookingResponse]
     total: int

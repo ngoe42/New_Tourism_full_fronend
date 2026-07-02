@@ -153,6 +153,8 @@ export default function AdminBookings() {
   const [replyTarget, setReplyTarget] = useState(null)
   const [editTarget, setEditTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null)
   const qc = useQueryClient()
 
   const { data, isLoading } = useQuery({
@@ -165,13 +167,49 @@ export default function AdminBookings() {
     onSuccess: () => { qc.invalidateQueries(['admin-bookings']); setDeleteTarget(null) },
   })
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids) => bookingsApi.deleteMultiple(ids),
+    onSuccess: () => { qc.invalidateQueries(['admin-bookings']); setSelectedIds(new Set()); setBulkDeleteTarget(null) },
+  })
+
   const bookings = data?.items ?? []
   const total = data?.total ?? 0
   const totalPages = data?.pages ?? 1
 
+  const allSelected = bookings.length > 0 && bookings.every((b) => selectedIds.has(b.id))
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(bookings.map((b) => b.id)))
+    }
+  }
+
+  const handleBulkDelete = () => {
+    bulkDeleteMutation.mutate([...selectedIds])
+  }
+
   return (
     <div className="space-y-4">
-      <p className="font-sans text-sm text-gray-400">{total} total bookings</p>
+      <div className="flex items-center justify-between">
+        <p className="font-sans text-sm text-gray-400">{total} total bookings</p>
+        {selectedIds.size > 0 && (
+          <button onClick={() => setBulkDeleteTarget([...selectedIds])}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-sans text-xs font-semibold transition-colors">
+            <Trash2 size={13} />
+            Delete Selected ({selectedIds.size})
+          </button>
+        )}
+      </div>
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         {isLoading ? (
@@ -184,6 +222,10 @@ export default function AdminBookings() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr className="border-b border-gray-200">
+                    <th className="px-4 py-3 w-10">
+                      <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
+                        className="rounded border-gray-300 text-green-700 focus:ring-green-500/30 cursor-pointer" />
+                    </th>
                     {['#', 'Guest', 'Tour', 'Date', 'Guests', 'Total', 'Status', 'Booked', 'Actions'].map((h) => (
                       <th key={h} className="px-4 py-3 text-left font-sans text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
@@ -191,9 +233,13 @@ export default function AdminBookings() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {bookings.length === 0 ? (
-                    <tr><td colSpan={9} className="text-center py-12 font-sans text-sm text-gray-400">No bookings yet</td></tr>
+                    <tr><td colSpan={10} className="text-center py-12 font-sans text-sm text-gray-400">No bookings yet</td></tr>
                   ) : bookings.map((b) => (
-                    <tr key={b.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={b.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.has(b.id) ? 'bg-green-50/50' : ''}`}>
+                      <td className="px-4 py-3">
+                        <input type="checkbox" checked={selectedIds.has(b.id)} onChange={() => toggleSelect(b.id)}
+                          className="rounded border-gray-300 text-green-700 focus:ring-green-500/30 cursor-pointer" />
+                      </td>
                       <td className="px-4 py-3 font-sans text-xs text-gray-400">#{b.id}</td>
                       <td className="px-4 py-3">
                         <div className="font-sans text-sm font-semibold text-gray-900">{b.contact_name}</div>
@@ -264,6 +310,15 @@ export default function AdminBookings() {
           loading={deleteMutation.isPending}
           onConfirm={() => deleteMutation.mutate(deleteTarget.id)}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {bulkDeleteTarget && (
+        <DeleteConfirm
+          label={`${bulkDeleteTarget.length} selected bookings`}
+          loading={bulkDeleteMutation.isPending}
+          onConfirm={handleBulkDelete}
+          onCancel={() => setBulkDeleteTarget(null)}
         />
       )}
     </div>
