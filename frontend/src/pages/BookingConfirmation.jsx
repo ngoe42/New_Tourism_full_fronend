@@ -326,6 +326,25 @@ export default function BookingConfirmation() {
           </motion.div>
         )}
 
+        {/* ── Confirmation banner ── */}
+        {booking.status === 'confirmed' && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.14 }}
+            className="bg-green-50 border-2 border-green-200 rounded-3xl px-8 py-6 mb-4 text-center"
+          >
+            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle size={28} className="text-green-700" />
+            </div>
+            <h3 className="font-serif text-xl font-bold text-green-900 mb-1">Booking Confirmed!</h3>
+            <p className="font-sans text-sm text-green-700">
+              Your booking <span className="font-semibold">#{booking.id}</span> has been confirmed.
+              We look forward to welcoming you!
+            </p>
+          </motion.div>
+        )}
+
         {/* ── Actions ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}

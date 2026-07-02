@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, Mail, Pencil, Trash2, X, Save, Loader2 } from 'lucide-react'
+import { ChevronDown, Mail, Pencil, Trash2, X, Save, Loader2, CheckCircle } from 'lucide-react'
 import { bookingsApi } from '../../api/bookings'
 import EmailReplyModal from '../../components/EmailReplyModal'
 
@@ -21,12 +21,12 @@ function StatusBadge({ status }) {
   )
 }
 
-function StatusDropdown({ bookingId, current }) {
+function StatusDropdown({ bookingId, current, onConfirmed }) {
   const [open, setOpen] = useState(false)
   const qc = useQueryClient()
   const mutation = useMutation({
     mutationFn: ({ id, status }) => bookingsApi.updateStatus(id, status),
-    onSuccess: () => { qc.invalidateQueries(['admin-bookings']); setOpen(false) },
+    onSuccess: (data, variables) => { qc.invalidateQueries(['admin-bookings']); setOpen(false); if (variables.status === 'confirmed' && onConfirmed) onConfirmed(variables.id) },
   })
   return (
     <div className="relative">
@@ -155,6 +155,7 @@ export default function AdminBookings() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null)
+  const [toast, setToast] = useState(null)
   const qc = useQueryClient()
 
   const { data, isLoading } = useQuery({
@@ -198,8 +199,19 @@ export default function AdminBookings() {
     bulkDeleteMutation.mutate([...selectedIds])
   }
 
+  const handleConfirmed = (bookingId) => {
+    setToast({ id: bookingId, message: `Booking #${bookingId} has been confirmed!` })
+    setTimeout(() => setToast(null), 4000)
+  }
+
   return (
     <div className="space-y-4">
+      {toast && (
+        <div className="fixed top-4 right-4 z-[100] flex items-center gap-2 bg-green-700 text-white px-4 py-3 rounded-xl shadow-lg font-sans text-sm font-semibold">
+          <CheckCircle size={16} />
+          {toast.message}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <p className="font-sans text-sm text-gray-400">{total} total bookings</p>
         {selectedIds.size > 0 && (
@@ -249,7 +261,7 @@ export default function AdminBookings() {
                       <td className="px-4 py-3 font-sans text-sm text-gray-600 whitespace-nowrap">{b.travel_date}</td>
                       <td className="px-4 py-3 font-sans text-sm text-gray-600">{b.guests}</td>
                       <td className="px-4 py-3 font-sans text-sm font-semibold text-gray-900">${(b.total_price ?? 0).toLocaleString()}</td>
-                      <td className="px-4 py-3"><StatusDropdown bookingId={b.id} current={b.status} /></td>
+                      <td className="px-4 py-3"><StatusDropdown bookingId={b.id} current={b.status} onConfirmed={handleConfirmed} /></td>
                       <td className="px-4 py-3 font-sans text-xs text-gray-400 whitespace-nowrap">
                         {b.created_at ? new Date(b.created_at).toLocaleDateString() : '—'}
                       </td>
