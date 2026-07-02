@@ -21,7 +21,7 @@ class DashboardService:
         # Single round-trip: 10 aggregates in one query
         sql = text("""
             SELECT
-              (SELECT count(*) FROM users)                                              AS total_users,
+              (SELECT count(*) FROM users WHERE is_superadmin = false)                  AS total_users,
               (SELECT count(*) FROM tours)                                              AS total_tours,
               (SELECT count(*) FROM bookings)                                           AS total_bookings,
               COALESCE((SELECT sum(total_price) FROM bookings WHERE status = 'confirmed'), 0) AS total_revenue,

@@ -118,7 +118,7 @@ class UserManagementService:
         return [self._user_to_response(u) for u in users]
 
     async def get_user(self, user_id: int) -> UserWithRoleResponse:
-        user = await self.user_repo.get(user_id)
+        user = await self.user_repo.get_non_superadmin(user_id)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         return self._user_to_response(user)
@@ -152,7 +152,7 @@ class UserManagementService:
         return self._user_to_response(user)
 
     async def update_user(self, user_id: int, data: AdminUserUpdate) -> UserWithRoleResponse:
-        user = await self.user_repo.get(user_id)
+        user = await self.user_repo.get_non_superadmin(user_id)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -189,7 +189,7 @@ class UserManagementService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="You cannot delete your own account",
             )
-        user = await self.user_repo.get(user_id)
+        user = await self.user_repo.get_non_superadmin(user_id)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         await self.user_repo.update(user, {"is_active": False})
@@ -208,7 +208,7 @@ class UserManagementService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="You cannot erase your own account",
             )
-        user = await self.user_repo.get(user_id)
+        user = await self.user_repo.get_non_superadmin(user_id)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 

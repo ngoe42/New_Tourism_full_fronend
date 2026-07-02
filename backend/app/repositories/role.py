@@ -51,7 +51,7 @@ class RoleRepository(BaseRepository[Role]):
 
     async def get_user_count(self, role_id: int) -> int:
         result = await self.db.execute(
-            select(func.count()).select_from(User).where(User.role_id == role_id)
+            select(func.count()).select_from(User).where(User.role_id == role_id, User.is_superadmin == False)
         )
         return result.scalar_one()
 

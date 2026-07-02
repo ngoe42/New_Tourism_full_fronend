@@ -15,7 +15,7 @@ class UserRepository(BaseRepository[User]):
 
     async def get_active_users(self, skip: int = 0, limit: int = 20) -> list[User]:
         result = await self.db.execute(
-            select(User).where(User.is_active == True).offset(skip).limit(limit)
+            select(User).where(User.is_active == True, User.is_superadmin == False).offset(skip).limit(limit)
         )
         return list(result.scalars().all())
 
@@ -51,3 +51,16 @@ class UserRepository(BaseRepository[User]):
             select(User).where(User.is_superadmin == False).offset(skip).limit(limit)
         )
         return list(result.scalars().all())
+
+    async def count_non_superadmin(self) -> int:
+        from sqlalchemy import func
+        result = await self.db.execute(
+            select(func.count()).select_from(User).where(User.is_superadmin == False)
+        )
+        return result.scalar_one()
+
+    async def get_non_superadmin(self, user_id: int):
+        result = await self.db.execute(
+            select(User).where(User.id == user_id, User.is_superadmin == False)
+        )
+        return result.scalar_one_or_none()

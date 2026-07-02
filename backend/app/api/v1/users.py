@@ -58,7 +58,7 @@ async def list_users(
 async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
     from fastapi import HTTPException, status
     repo = UserRepository(db)
-    user = await repo.get(user_id)
+    user = await repo.get_non_superadmin(user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
@@ -72,7 +72,7 @@ async def admin_update_user(
 ):
     from fastapi import HTTPException, status
     repo = UserRepository(db)
-    user = await repo.get(user_id)
+    user = await repo.get_non_superadmin(user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return await repo.update(user, data.model_dump(exclude_none=True))
