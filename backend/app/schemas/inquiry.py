@@ -1,6 +1,11 @@
+import re
 from datetime import date, datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+
+def strip_html(v: str) -> str:
+    return re.sub(r'<[^>]*>', '', v)
 
 
 class InquiryCreate(BaseModel):
@@ -12,6 +17,13 @@ class InquiryCreate(BaseModel):
     route_id: Optional[int] = None
     travel_date: Optional[date] = None
     guests: Optional[int] = Field(None, ge=1, le=50)
+
+    @field_validator("name", "message", "tour_interest", "phone")
+    @classmethod
+    def sanitize_text(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return strip_html(v)
 
 
 class InquiryResponse(BaseModel):

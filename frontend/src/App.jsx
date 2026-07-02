@@ -1,48 +1,49 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import SEO from './components/SEO'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-import Home from './pages/Home'
-import Tours from './pages/Tours'
-import TourDetail from './pages/TourDetail'
-import RoutesList from './pages/RoutesList'
-import RouteDetail from './pages/RouteDetail'
-import Contact from './pages/Contact'
-import Login from './pages/Login'
 import RequireAdmin from './components/RequireAdmin'
-import AdminLayout from './pages/admin/AdminLayout'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import AdminTours from './pages/admin/AdminTours'
-import AdminBookings from './pages/admin/AdminBookings'
-import AdminTestimonials from './pages/admin/AdminTestimonials'
-import AdminInquiries from './pages/admin/AdminInquiries'
-import AdminExperiences from './pages/admin/AdminExperiences'
-import AdminRoutes from './pages/admin/AdminRoutes'
-import AdminSettings from './pages/admin/AdminSettings'
-import AdminUsers from './pages/admin/AdminUsers'
-import AdminRoles from './pages/admin/AdminRoles'
-import AdminProfile from './pages/admin/AdminProfile'
-import SuperAdminLogin from './pages/SuperAdminLogin'
 import RequireSuperAdmin from './components/RequireSuperAdmin'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import Experiences from './pages/Experiences'
-import Blog from './pages/Blog'
-import About from './pages/About'
-import KilimanjaroOverview from './pages/KilimanjaroOverview'
-import TrekkingOverview from './pages/TrekkingOverview'
-import MountMeruOverview from './pages/MountMeruOverview'
-import OldoinyoLengaiOverview from './pages/OldoinyoLengaiOverview'
-import TanzaniaSafariOverview from './pages/TanzaniaSafariOverview'
 import WhatsAppButton from './components/WhatsAppButton'
-import PaymentCallback from './pages/PaymentCallback'
-import BookingConfirmation from './pages/BookingConfirmation'
-import PaymentResume from './pages/PaymentResume'
 import ErrorBoundary from './components/ErrorBoundary'
-import NotFound from './pages/NotFound'
+
+const Home = lazy(() => import('./pages/Home'))
+const Tours = lazy(() => import('./pages/Tours'))
+const TourDetail = lazy(() => import('./pages/TourDetail'))
+const RoutesList = lazy(() => import('./pages/RoutesList'))
+const RouteDetail = lazy(() => import('./pages/RouteDetail'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Login = lazy(() => import('./pages/Login'))
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminTours = lazy(() => import('./pages/admin/AdminTours'))
+const AdminBookings = lazy(() => import('./pages/admin/AdminBookings'))
+const AdminTestimonials = lazy(() => import('./pages/admin/AdminTestimonials'))
+const AdminInquiries = lazy(() => import('./pages/admin/AdminInquiries'))
+const AdminExperiences = lazy(() => import('./pages/admin/AdminExperiences'))
+const AdminRoutes = lazy(() => import('./pages/admin/AdminRoutes'))
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
+const AdminRoles = lazy(() => import('./pages/admin/AdminRoles'))
+const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'))
+const SuperAdminLogin = lazy(() => import('./pages/SuperAdminLogin'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const Experiences = lazy(() => import('./pages/Experiences'))
+const Blog = lazy(() => import('./pages/Blog'))
+const About = lazy(() => import('./pages/About'))
+const KilimanjaroOverview = lazy(() => import('./pages/KilimanjaroOverview'))
+const TrekkingOverview = lazy(() => import('./pages/TrekkingOverview'))
+const MountMeruOverview = lazy(() => import('./pages/MountMeruOverview'))
+const OldoinyoLengaiOverview = lazy(() => import('./pages/OldoinyoLengaiOverview'))
+const TanzaniaSafariOverview = lazy(() => import('./pages/TanzaniaSafariOverview'))
+const PaymentCallback = lazy(() => import('./pages/PaymentCallback'))
+const BookingConfirmation = lazy(() => import('./pages/BookingConfirmation'))
+const PaymentResume = lazy(() => import('./pages/PaymentResume'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,10 +74,19 @@ function PublicLayout({ children, title, description }) {
   )
 }
 
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+}
+
 function AppRoutes() {
   return (
     <>
       <ScrollToTop />
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<PublicLayout title="Nelson Tour and Safari — Luxury Tanzania Experiences" description="World-class luxury safari experiences in Tanzania. Crafted by local experts for unforgettable adventures."><Home /></PublicLayout>} />
@@ -119,6 +129,7 @@ function AppRoutes() {
         {/* 404 catch-all */}
         <Route path="*" element={<PublicLayout title="Page Not Found — Nelson Tour and Safari"><NotFound /></PublicLayout>} />
       </Routes>
+      </Suspense>
     </>
   )
 }

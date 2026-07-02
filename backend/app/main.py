@@ -239,11 +239,11 @@ async def security_headers_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID", _uuid.uuid4().hex[:12])
     with logger.contextualize(request_id=request_id):
         response = await call_next(request)
-    response.headers["X-Request-ID"] = request_id
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.pesapal.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://*.pesapal.com; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'"
     if not request.url.path.startswith("/api/v1/payments"):
         response.headers["X-Frame-Options"] = "DENY"
     return response

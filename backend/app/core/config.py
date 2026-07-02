@@ -31,10 +31,10 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
     FIRST_ADMIN_EMAIL: str = "info@nelsontoursandsafaris.com"
-    FIRST_ADMIN_PASSWORD: str = "ChangeMe123!"
+    FIRST_ADMIN_PASSWORD: str = ""  # MUST be set via .env in production
 
     SUPER_ADMIN_EMAIL: str = "info@nelsontoursandsafaris.com"
-    SUPER_ADMIN_PASSWORD: str = "admin@123"
+    SUPER_ADMIN_PASSWORD: str = ""  # MUST be set via .env in production
     SUPER_ADMIN_NAME: str = "Kenedy"
 
     RESEND_API_KEY: Optional[str] = None
@@ -93,6 +93,10 @@ class Settings(BaseSettings):
                     "under multi-worker deployments and enabling brute-force attacks on payment "
                     "and auth endpoints.  Set REDIS_URL or change ENVIRONMENT to 'development'."
                 )
+            if not self.FIRST_ADMIN_PASSWORD:
+                raise ValueError("FIRST_ADMIN_PASSWORD must be set via .env in production")
+            if not self.SUPER_ADMIN_PASSWORD:
+                raise ValueError("SUPER_ADMIN_PASSWORD must be set via .env in production")
 
         return self
 

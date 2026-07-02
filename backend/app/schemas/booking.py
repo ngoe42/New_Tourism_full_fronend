@@ -1,7 +1,12 @@
+import re
 from datetime import date, datetime, timezone
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.models.booking import BookingStatus
+
+
+def strip_html(v: str) -> str:
+    return re.sub(r'<[^>]*>', '', v)
 
 
 class BookingCreate(BaseModel):
@@ -20,10 +25,24 @@ class BookingCreate(BaseModel):
             raise ValueError("travel_date must be in the future")
         return v
 
+    @field_validator("contact_name", "special_requests")
+    @classmethod
+    def sanitize_text(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return strip_html(v)
+
 
 class BookingStatusUpdate(BaseModel):
     status: BookingStatus
     notes: Optional[str] = None
+
+    @field_validator("notes")
+    @classmethod
+    def sanitize_notes(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return strip_html(v)
 
 
 class BookingAdminUpdate(BaseModel):
@@ -32,6 +51,13 @@ class BookingAdminUpdate(BaseModel):
     total_price: Optional[float] = Field(None, gt=0)
     notes: Optional[str] = None
     special_requests: Optional[str] = Field(None, max_length=5000)
+
+    @field_validator("notes", "special_requests")
+    @classmethod
+    def sanitize_text(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return strip_html(v)
 
 
 class BookingTourInfo(BaseModel):
