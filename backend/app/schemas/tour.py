@@ -43,14 +43,14 @@ class TourCreate(TourBase):
 
 class TourUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=3, max_length=255)
-    subtitle: Optional[str] = None
+    subtitle: Optional[str] = Field(None, max_length=500)
     description: Optional[str] = None
     price: Optional[float] = Field(None, gt=0)
-    duration: Optional[str] = None
-    location: Optional[str] = None
-    group_size: Optional[str] = None
-    category: Optional[str] = None
-    badge: Optional[str] = None
+    duration: Optional[str] = Field(None, max_length=100)
+    location: Optional[str] = Field(None, max_length=255)
+    group_size: Optional[str] = Field(None, max_length=100)
+    category: Optional[str] = Field(None, max_length=100)
+    badge: Optional[str] = Field(None, max_length=100)
     highlights: Optional[List[str]] = None
     itinerary: Optional[List[Any]] = None
     included: Optional[List[str]] = None

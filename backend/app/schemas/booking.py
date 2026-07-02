@@ -25,7 +25,7 @@ class BookingCreate(BaseModel):
             raise ValueError("travel_date must be in the future")
         return v
 
-    @field_validator("contact_name", "special_requests")
+    @field_validator("contact_name", "special_requests", "contact_phone")
     @classmethod
     def sanitize_text(cls, v: Optional[str]) -> Optional[str]:
         if v is None:

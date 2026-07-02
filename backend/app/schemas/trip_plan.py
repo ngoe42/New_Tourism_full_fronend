@@ -1,7 +1,12 @@
+import re
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.models.trip_plan import TripPlanStatus
+
+
+def strip_html(v: str) -> str:
+    return re.sub(r'<[^>]*>', '', v)
 
 
 class TripPlanCreate(BaseModel):
@@ -14,13 +19,27 @@ class TripPlanCreate(BaseModel):
     travel_dates: Optional[str] = Field(None, max_length=255)
     duration_days: Optional[int] = Field(None, ge=1, le=365)
     preferences: Optional[List[str]] = []
-    special_requirements: Optional[str] = None
+    special_requirements: Optional[str] = Field(None, max_length=5000)
+
+    @field_validator("name", "destination", "travel_dates", "phone", "special_requirements")
+    @classmethod
+    def sanitize(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return strip_html(v)
 
 
 class TripPlanAdminUpdate(BaseModel):
     status: Optional[TripPlanStatus] = None
-    admin_notes: Optional[str] = None
+    admin_notes: Optional[str] = Field(None, max_length=5000)
     quoted_price: Optional[float] = Field(None, gt=0)
+
+    @field_validator("admin_notes")
+    @classmethod
+    def sanitize(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return strip_html(v)
 
 
 class TripPlanResponse(BaseModel):

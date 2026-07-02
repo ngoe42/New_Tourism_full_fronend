@@ -1,6 +1,11 @@
+import re
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+def strip_html(v: str) -> str:
+    return re.sub(r'<[^>]*>', '', v)
 
 
 class TestimonialCreate(BaseModel):
@@ -9,6 +14,13 @@ class TestimonialCreate(BaseModel):
     rating: int = Field(..., ge=1, le=5)
     message: str = Field(..., min_length=10)
     tour_id: Optional[int] = None
+
+    @field_validator("name", "location", "message")
+    @classmethod
+    def sanitize(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return strip_html(v)
 
 
 class TestimonialAdminUpdate(BaseModel):
