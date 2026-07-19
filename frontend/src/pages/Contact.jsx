@@ -6,7 +6,7 @@ const contactInfo = [
   { icon: Phone, label: 'Call Us', value: '+255 750 005 973', sub: 'Mon–Fri, 8am–6pm EAT', href: 'tel:+255750005973' },
   { icon: MessageCircle, label: 'WhatsApp', value: '+255 750 005 973', sub: 'Chat with us instantly', href: 'https://wa.me/255750005973' },
   { icon: Mail, label: 'Email Us', value: 'info@nelsontoursandsafaris.com', sub: 'Response within 24 hours', href: 'mailto:info@nelsontoursandsafaris.com' },
-  { icon: MapPin, label: 'Visit Us', value: 'Arusha Tanzania', sub: 'Tanzania, East Africa', href: '#' },
+  { icon: MapPin, label: 'Visit Us', value: 'Hai, Kilimanjaro, Tanzania', sub: 'Tanzania, East Africa', href: '#' },
   { icon: Clock, label: 'Office Hours', value: 'Mon–Fri: 8am–6pm', sub: 'Sat: 9am–2pm EAT', href: '#' },
 ]
 
@@ -134,7 +134,7 @@ export default function Contact() {
                 <div className="absolute inset-0 bg-green-950/40 flex items-center justify-center">
                   <div className="text-center text-white">
                     <MapPin size={32} className="mx-auto mb-2 text-gold" />
-                    <p className="font-serif text-xl font-semibold">Arusha, Tanzania</p>
+                    <p className="font-serif text-xl font-semibold">Hai, Kilimanjaro, Tanzania</p>
                     <p className="font-sans text-sm text-white/70">Our home base</p>
                   </div>
                 </div>

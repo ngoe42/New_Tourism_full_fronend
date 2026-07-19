@@ -71,7 +71,7 @@ export default function About() {
             Tanzania's Most Trusted Safari & Adventure Specialists
           </motion.h1>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.22 }} className="font-sans text-base sm:text-lg text-white/75 max-w-2xl leading-relaxed mb-8">
-            Nelson Tours and Safaris is a Tanzanian-owned, Arusha-based travel company dedicated to one mission: crafting life-changing adventures across Africa's most extraordinary landscapes. We are safari planners, mountain guides, beach escape architects and cultural storytellers — united by an unshakeable love for this land and an unwavering commitment to the guests who trust us to show it to them.
+            Nelson Tours and Safaris is a Tanzanian-owned, Kilimanjaro based travel company dedicated to one mission: crafting life-changing adventures across Africa's most extraordinary landscapes. We are safari planners, mountain guides, beach escape architects and cultural storytellers — united by an unshakeable love for this land and an unwavering commitment to the guests who trust us to show it to them.
           </motion.p>
         </div>
       </section>
@@ -92,7 +92,7 @@ export default function About() {
                 Rooted in Tanzania. <br />Built on Passion.
               </h2>
               <p className="font-sans text-gray-600 leading-relaxed text-base sm:text-lg mb-4">
-                Nelson Tours and Safaris was not built in a boardroom. It was born on the red volcanic soils of Arusha, under the watchful silhouette of Mount Kilimanjaro, from a simple but powerful belief: that Tanzania is one of the most extraordinary places on Earth — and that every human being who visits it deserves to experience its full, unfiltered wonder.
+                Nelson Tours and Safaris was not built in a boardroom. It was born on the red volcanic soils of Kilimanjaro, under the watchful silhouette of Mount Kilimanjaro, from a simple but powerful belief: that Tanzania is one of the most extraordinary places on Earth — and that every human being who visits it deserves to experience its full, unfiltered wonder.
               </p>
               <p className="font-sans text-gray-600 leading-relaxed text-base sm:text-lg mb-6">
                 Our founder, Nelson, grew up listening to the rhythm of the Serengeti. He spent years as a field guide before assembling a team of equally passionate local professionals — naturalists, mountain climbers, cultural guides and hospitality specialists — each driven by the same quiet pride in Tanzania's landscapes, wildlife, and people. What began as a dream to share this land honestly and beautifully has grown into one of Tanzania's most trusted adventure companies.
