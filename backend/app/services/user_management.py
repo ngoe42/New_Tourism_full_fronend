@@ -113,12 +113,24 @@ class UserManagementService:
 
     # ── Users ─────────────────────────────────────────────────────────────────
 
-    async def list_users(self, skip: int = 0, limit: int = 50) -> list[UserWithRoleResponse]:
-        users = await self.user_repo.get_all_non_superadmin(skip=skip, limit=limit)
+    async def list_users(
+        self,
+        skip: int = 0,
+        limit: int = 50,
+        include_superadmin: bool = False,
+    ) -> list[UserWithRoleResponse]:
+        # Super Admin sees everyone; regular admins see only non-superadmin accounts.
+        if include_superadmin:
+            users = await self.user_repo.get_all(skip=skip, limit=limit)
+        else:
+            users = await self.user_repo.get_all_non_superadmin(skip=skip, limit=limit)
         return [self._user_to_response(u) for u in users]
 
-    async def get_user(self, user_id: int) -> UserWithRoleResponse:
-        user = await self.user_repo.get_non_superadmin(user_id)
+    async def get_user(self, user_id: int, include_superadmin: bool = False) -> UserWithRoleResponse:
+        if include_superadmin:
+            user = await self.user_repo.get(user_id)
+        else:
+            user = await self.user_repo.get_non_superadmin(user_id)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         return self._user_to_response(user)

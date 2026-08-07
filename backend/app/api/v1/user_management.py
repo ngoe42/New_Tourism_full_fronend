@@ -88,25 +88,30 @@ async def delete_role(role_id: int, db: AsyncSession = Depends(get_db)):
 @router.get(
     "/users",
     response_model=list[UserWithRoleResponse],
-    dependencies=[Depends(require_admin)],
 )
 async def list_users(
     skip: int = 0,
     limit: int = 50,
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
     svc = UserManagementService(db)
-    return await svc.list_users(skip=skip, limit=limit)
+    return await svc.list_users(
+        skip=skip, limit=limit, include_superadmin=current_user.is_superadmin
+    )
 
 
 @router.get(
     "/users/{user_id}",
     response_model=UserWithRoleResponse,
-    dependencies=[Depends(require_admin)],
 )
-async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
+async def get_user(
+    user_id: int,
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
     svc = UserManagementService(db)
-    return await svc.get_user(user_id)
+    return await svc.get_user(user_id, include_superadmin=current_user.is_superadmin)
 
 
 @router.post(

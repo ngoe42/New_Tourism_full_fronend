@@ -44,8 +44,18 @@ class ExperienceUpdate(BaseModel):
         return strip_html(v)
 
 
-class ExperienceResponse(ExperienceBase):
+# NOTE: Response model intentionally does NOT inherit ExperienceBase.
+# Input constraints (max_length, sanitizers) must never be applied to data
+# coming OUT of the database — legacy rows that exceed newer limits would
+# make every GET endpoint fail with a 500 (ResponseValidationError).
+class ExperienceResponse(BaseModel):
     id: int
+    title: str
+    subtitle: Optional[str] = None
+    description: Optional[str] = None
+    image_url: str
+    order: int = 0
+    is_active: bool = True
     created_at: datetime
     updated_at: datetime
 

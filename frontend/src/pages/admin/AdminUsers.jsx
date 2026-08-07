@@ -3,13 +3,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Users, Plus, Search, Edit2, Trash2, X, Shield, Check,
-  ChevronDown, UserCheck, UserX, Eye, EyeOff, ShieldOff, Loader2, AlertTriangle
+  ChevronDown, UserCheck, UserX, Eye, EyeOff, ShieldOff, Loader2, AlertTriangle,
+  Lock,
 } from 'lucide-react'
 import { userManagementApi } from '../../api/userManagement'
+import { useAuth } from '../../context/AuthContext'
 import extractError from '../../utils/extractError'
 
 export default function AdminUsers() {
   const qc = useQueryClient()
+  const { user: currentUser } = useAuth()
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editUser, setEditUser] = useState(null)
@@ -106,14 +109,21 @@ export default function AdminUsers() {
                 <tr><td colSpan={5} className="px-5 py-12 text-center font-sans text-sm text-gray-400">No users found</td></tr>
               ) : (
                 filtered.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50/60 transition-colors">
+                  <tr key={u.id} className={`hover:bg-gray-50/60 transition-colors ${u.is_superadmin ? 'bg-amber-50/40' : ''}`}>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-sans text-sm font-bold flex-shrink-0">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-sans text-sm font-bold flex-shrink-0 ${u.is_superadmin ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
                           {u.name?.[0]?.toUpperCase() ?? '?'}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-sans text-sm font-semibold text-gray-900 truncate">{u.name}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-sans text-sm font-semibold text-gray-900 truncate">{u.name}</p>
+                            {u.is_superadmin && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-sans font-bold uppercase tracking-wide flex-shrink-0">
+                                <Lock size={9} /> Super Admin
+                              </span>
+                            )}
+                          </div>
                           <p className="font-sans text-xs text-gray-500 truncate">{u.email}</p>
                         </div>
                       </div>
@@ -155,6 +165,12 @@ export default function AdminUsers() {
                       )}
                     </td>
                     <td className="px-5 py-4 text-right">
+                      {u.is_superadmin ? (
+                        /* Super Admin row — no actions available to any other admin */
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-amber-600 font-sans text-xs font-semibold">
+                          <Lock size={11} /> Protected
+                        </span>
+                      ) : (
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setEditUser(u)}
@@ -178,6 +194,7 @@ export default function AdminUsers() {
                           <ShieldOff size={14} />
                         </button>
                       </div>
+                      )}
                     </td>
                   </tr>
                 ))

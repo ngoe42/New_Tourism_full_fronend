@@ -92,6 +92,9 @@ async def get_current_user_optional(
 
 def require_role(*roles: UserRole):
     async def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        # Super Admin bypasses every role check.
+        if current_user.is_superadmin:
+            return current_user
         if current_user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -104,10 +107,24 @@ def require_role(*roles: UserRole):
 require_admin = require_role(UserRole.admin)
 
 
+async def require_superadmin(current_user: User = Depends(get_current_user)) -> User:
+    """Allow only the permanent Super Administrator.
+
+    Returns 403 without revealing why, so probing callers learn nothing
+    about the superadmin account's existence.
+    """
+    if not current_user.is_superadmin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    return current_user
+
+
 def require_permission(*codenames: str):
     """Require the user's assigned role to have at least one of the given permissions.
     Users with the legacy ``admin`` enum role always pass."""
     async def permission_checker(current_user: User = Depends(get_current_user)) -> User:
+        # Super Admin bypasses every permission check.
+        if current_user.is_superadmin:
+            return current_user
         # Legacy admin enum bypass
         if current_user.role == UserRole.admin:
             return current_user

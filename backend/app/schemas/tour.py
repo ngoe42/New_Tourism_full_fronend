@@ -59,9 +59,28 @@ class TourUpdate(BaseModel):
     is_featured: Optional[bool] = None
 
 
-class TourResponse(TourBase):
+# NOTE: Response model intentionally does NOT inherit TourBase.
+# Input constraints (max_length, gt=0, etc.) must never be applied to data
+# coming OUT of the database — legacy rows that exceed newer limits would
+# make every GET endpoint fail with a 500 (ResponseValidationError).
+class TourResponse(BaseModel):
     id: int
+    title: str
     slug: str
+    subtitle: Optional[str] = None
+    description: Optional[str] = None
+    price: float
+    duration: str
+    location: str
+    group_size: Optional[str] = None
+    category: str = "Safari"
+    badge: Optional[str] = None
+    highlights: Optional[List[str]] = []
+    itinerary: Optional[List[Any]] = []
+    included: Optional[List[str]] = []
+    excluded: Optional[List[str]] = []
+    is_published: bool = False
+    is_featured: bool = False
     rating: float
     review_count: int
     images: List[TourImageResponse] = []

@@ -33,7 +33,10 @@ class Settings(BaseSettings):
     FIRST_ADMIN_EMAIL: str = "info@nelsontoursandsafaris.com"
     FIRST_ADMIN_PASSWORD: str = ""  # MUST be set via .env in production
 
-    SUPER_ADMIN_EMAIL: str = "info@nelsontoursandsafaris.com"
+    # Permanent Super Administrator — seeded/synced automatically on startup
+    # and promoted idempotently by migration s1t2u3v4w5x6. Must differ from
+    # FIRST_ADMIN_EMAIL to avoid a unique-email conflict during seeding.
+    SUPER_ADMIN_EMAIL: str = "ngoekenedy@gmail.com"
     SUPER_ADMIN_PASSWORD: str = ""  # MUST be set via .env in production
     SUPER_ADMIN_NAME: str = "Kenedy"
 

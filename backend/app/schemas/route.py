@@ -98,8 +98,36 @@ class RouteUpdate(BaseModel):
         return strip_html(v)
 
 
-class RouteOut(RouteBase):
+# NOTE: Response model intentionally does NOT inherit RouteBase.
+# Input constraints (max_length, min_length, sanitizers) must never be
+# applied to data coming OUT of the database — legacy rows that exceed
+# newer limits would make every GET endpoint fail with a 500
+# (ResponseValidationError).
+class RouteOut(BaseModel):
     id: int
+    name: str
+    slug: str
+    nickname: Optional[str] = None
+    nickname_explanation: Optional[str] = None
+    short_description: Optional[str] = None
+    full_description: Optional[str] = None
+    duration: str
+    difficulty: Optional[str] = None
+    success_rate: Optional[str] = None
+    max_altitude: Optional[str] = None
+    distance: Optional[str] = None
+    group_size: Optional[str] = None
+    best_season: Optional[str] = None
+    requirements: Optional[str] = None
+    price: float = 0.0
+    package_details: Optional[str] = None
+    highlights: Optional[List] = None
+    itinerary: Optional[List] = None
+    included: Optional[List] = None
+    excluded: Optional[List] = None
+    packing_list: Optional[List] = None
+    mountain: str = 'kilimanjaro'
+    is_published: bool = True
     images: List[RouteImageOut] = []
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

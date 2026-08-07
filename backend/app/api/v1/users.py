@@ -44,21 +44,35 @@ async def change_password(
     })
 
 
-@router.get("", response_model=list[UserResponse], dependencies=[Depends(require_admin)])
+@router.get("", response_model=list[UserResponse])
 async def list_users(
     skip: int = 0,
     limit: int = 20,
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
     repo = UserRepository(db)
+    # Only the Super Admin may see superadmin accounts (i.e. himself);
+    # they are invisible to every other admin/manager.
+    if current_user.is_superadmin:
+        return await repo.get_all(skip=skip, limit=limit)
     return await repo.get_all_non_superadmin(skip=skip, limit=limit)
 
 
-@router.get("/{user_id}", response_model=UserResponse, dependencies=[Depends(require_admin)])
-async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(
+    user_id: int,
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
     from fastapi import HTTPException, status
     repo = UserRepository(db)
-    user = await repo.get_non_superadmin(user_id)
+    # Superadmin rows resolve only for the Super Admin himself; everyone
+    # else receives 404 so the account's existence is never revealed.
+    if current_user.is_superadmin:
+        user = await repo.get(user_id)
+    else:
+        user = await repo.get_non_superadmin(user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
