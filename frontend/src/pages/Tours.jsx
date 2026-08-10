@@ -69,7 +69,7 @@ export default function Tours() {
             src={toursHeroImage ? resolveImageUrl(toursHeroImage) : '/images/hero-bg.jpg'}
             alt=""
             className="w-full h-full object-cover"
-            loading="lazy"
+            fetchpriority="high"
             decoding="async"
           />
         </div>

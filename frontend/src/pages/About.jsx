@@ -60,7 +60,7 @@ export default function About() {
       {/* ── 1. HERO — Who We Are ──────────────────────────────────── */}
       <section className="relative min-h-[62vh] flex flex-col justify-end bg-green-950 overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroImg} alt="Tanzania safari at sunrise" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+          <img src={heroImg} alt="Tanzania safari at sunrise" className="w-full h-full object-cover" fetchpriority="high" decoding="async" />
           <div className="absolute inset-0 bg-gradient-to-t from-green-950 via-green-950/60 to-green-950/10" />
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-36 pb-20">

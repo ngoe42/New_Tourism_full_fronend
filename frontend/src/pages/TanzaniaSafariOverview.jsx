@@ -27,7 +27,7 @@ export default function TanzaniaSafariOverview() {
             src="/images/sections/parallax-serengeti.jpg"
             alt="Tanzania Serengeti wildlife safari"
             className="w-full h-full object-cover"
-            loading="lazy"
+            fetchpriority="high"
             decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-green-950/90 via-green-950/40 to-green-950/10" />

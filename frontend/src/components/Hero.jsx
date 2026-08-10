@@ -61,7 +61,7 @@ export default function Hero() {
                 key={activeSlideSrc}
                 src={activeSlideSrc}
                 alt=""
-                loading="lazy"
+                fetchpriority="high"
                 decoding="async"
                 className="absolute inset-0 w-full h-full object-cover will-change-transform"
                 initial={{ opacity: 0, scale: 1.08 }}

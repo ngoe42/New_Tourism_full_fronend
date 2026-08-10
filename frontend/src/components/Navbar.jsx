@@ -136,7 +136,7 @@ export default function Navbar() {
               className={`h-[84px] sm:h-24 lg:h-[120px] w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
                 isTransparent ? 'scale-110 sm:scale-125 translate-y-0.5 sm:translate-y-1' : 'scale-100 translate-y-0 translate-x-0'
               }`}
-              loading="lazy"
+              fetchpriority="high"
               decoding="async"
             />
           </Link>
@@ -713,7 +713,7 @@ export default function Navbar() {
                     src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
                     alt="Nelson Tours & Safari"
                     className="h-14 w-auto object-contain"
-                    loading="lazy"
+                    fetchpriority="high"
                     decoding="async"
                   />
                 </Link>

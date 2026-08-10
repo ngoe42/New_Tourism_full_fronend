@@ -23,7 +23,7 @@ export default function RoutesList() {
             src={routesHeroImage ? resolveImageUrl(routesHeroImage) : '/images/hero-bg.jpg'}
             alt=""
             className="w-full h-full object-cover"
-            loading="lazy"
+            fetchpriority="high"
             decoding="async"
           />
         </div>

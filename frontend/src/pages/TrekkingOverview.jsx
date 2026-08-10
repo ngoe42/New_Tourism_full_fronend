@@ -140,7 +140,7 @@ export default function KilimanjaroOverview() {
             src="/images/sections/parallax-kilimanjaro.jpg"
             alt="Kilimanjaro summit above clouds"
             className="w-full h-full object-cover scale-105"
-            loading="lazy"
+            fetchpriority="high"
             decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />

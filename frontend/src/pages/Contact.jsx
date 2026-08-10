@@ -39,7 +39,7 @@ export default function Contact() {
       {/* Page Hero */}
       <section className="relative pt-28 sm:pt-36 pb-14 sm:pb-20 bg-green-950 overflow-hidden">
         <div className="absolute inset-0 opacity-15">
-          <img src="/images/sections/story-luxury.jpg" alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+          <img src="/images/sections/story-luxury.jpg" alt="" className="w-full h-full object-cover" fetchpriority="high" decoding="async" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-green-950/60 to-green-950" />
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center">
