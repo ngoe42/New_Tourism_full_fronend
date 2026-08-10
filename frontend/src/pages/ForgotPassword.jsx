@@ -31,7 +31,7 @@ export default function ForgotPassword() {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-5">
             <div className="bg-white/10 rounded-2xl px-5 py-3 backdrop-blur-sm">
-              <img src="/images/logo/logo.png" alt="Nelson Tours & Safari" className="h-14 w-auto object-contain" />
+              <img src="/images/logo/logo.png" alt="Nelson Tours & Safari" className="h-14 w-auto object-contain" loading="lazy" decoding="async" />
             </div>
           </div>
           <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-green-950 border border-green-800 mb-3">

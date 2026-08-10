@@ -23,6 +23,8 @@ export default function RoutesList() {
             src={routesHeroImage ? resolveImageUrl(routesHeroImage) : '/images/hero-bg.jpg'}
             alt=""
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 to-green-950/70" />

@@ -361,6 +361,8 @@ function TourForm({ initial, onClose, onSave, saving }) {
                       alt=""
                       className="w-24 h-18 object-cover rounded-lg border border-gray-200"
                       style={{ height: '72px', width: '96px' }}
+                      loading="lazy"
+                      decoding="async"
                     />
                     {img.is_cover && (
                       <span className="absolute bottom-1 left-1 flex items-center gap-0.5 bg-amber-500 text-white text-[9px] font-bold px-1 py-0.5 rounded">
@@ -407,7 +409,7 @@ function TourForm({ initial, onClose, onSave, saving }) {
               <div className="flex gap-2 mt-3 flex-wrap">
                 {imageFiles.map((f, i) => (
                   <img key={i} src={URL.createObjectURL(f)} alt={f.name}
-                    className="w-24 object-cover rounded-lg border border-gray-200" style={{ height: '72px' }} />
+                    className="w-24 object-cover rounded-lg border border-gray-200" style={{ height: '72px' }} loading="lazy" decoding="async" />
                 ))}
               </div>
             )}
@@ -610,7 +612,7 @@ export default function AdminTours() {
                       {(() => {
                         const cover = tour.images?.find((i) => i.is_cover) ?? tour.images?.[0]
                         return cover ? (
-                          <img src={resolveImageUrl(cover.url)} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-100" />
+                          <img src={resolveImageUrl(cover.url)} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-100" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                             <ImageIcon size={14} className="text-gray-300" />

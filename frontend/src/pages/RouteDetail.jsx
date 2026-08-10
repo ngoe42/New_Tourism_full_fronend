@@ -72,7 +72,7 @@ export default function RouteDetail() {
         {/* Full background image */}
         {coverImg ? (
           <div className="absolute inset-0">
-            <img src={resolveImageUrl(coverImg.url)} alt={route.name} className="w-full h-full object-cover" />
+            <img src={resolveImageUrl(coverImg.url)} alt={route.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-t from-green-950/80 via-green-950/35 to-green-950/10" />
           </div>
         ) : (

@@ -104,7 +104,7 @@ export default function TourDetail() {
           >
             <div className="max-w-7xl mx-auto px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <img src={coverImage} alt="" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
+                <img src={coverImage} alt="" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" loading="lazy" decoding="async" />
                 <div className="min-w-0">
                   <p className="font-serif text-sm font-semibold text-green-950 truncate">{tour.title}</p>
                   <div className="flex items-center gap-1.5">
@@ -145,7 +145,7 @@ export default function TourDetail() {
           >
             {galleryImages.map((img, i) => (
               <SwiperSlide key={i}>
-                <img src={img} alt={`${tour.title} ${i + 1}`} className="w-full h-full object-cover" />
+                <img src={img} alt={`${tour.title} ${i + 1}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
               </SwiperSlide>
             ))}
           </Swiper>

@@ -121,6 +121,8 @@ export default function Blog() {
                 src={featured.image}
                 alt={featured.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                loading="lazy"
+                decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/10" />
             </div>
@@ -159,6 +161,8 @@ export default function Blog() {
                     src={post.image}
                     alt={post.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                 </div>

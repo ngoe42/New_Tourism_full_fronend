@@ -66,6 +66,8 @@ function ImageCard({ icon: Icon, iconBg, iconColor, title, description, field, c
               src={resolveImageUrl(currentUrl)}
               alt="Preview"
               className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
             <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors" />
           </div>
@@ -257,6 +259,8 @@ function HeroImagesCard({ images, onSaved }) {
                     src={resolveImageUrl(url)}
                     alt={`Hero ${idx + 1}`}
                     className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
                   />
                   <button
                     onClick={() => handleRemove(idx)}

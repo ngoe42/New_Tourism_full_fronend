@@ -140,6 +140,8 @@ export default function KilimanjaroOverview() {
             src="/images/sections/parallax-kilimanjaro.jpg"
             alt="Kilimanjaro summit above clouds"
             className="w-full h-full object-cover scale-105"
+            loading="lazy"
+            decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
           <div className="absolute inset-0 bg-gradient-to-r from-green-950/60 to-transparent" />
@@ -258,7 +260,7 @@ export default function KilimanjaroOverview() {
             {/* Image */}
             <FadeIn className="relative">
               <div className="relative rounded-3xl overflow-hidden aspect-[4/5] shadow-2xl">
-                <img src="/images/sections/parallax-kilimanjaro.jpg" alt="Mount Kilimanjaro" className="w-full h-full object-cover" />
+                <img src="/images/sections/parallax-kilimanjaro.jpg" alt="Mount Kilimanjaro" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 <div className="absolute inset-0 bg-gradient-to-t from-green-950/80 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
                   <p className="font-sans text-xs uppercase tracking-widest text-gold mb-1">Africa's Highest Summit</p>
@@ -385,7 +387,7 @@ export default function KilimanjaroOverview() {
             {/* Image — right */}
             <FadeIn delay={0.1} className="relative">
               <div className="relative rounded-3xl overflow-hidden aspect-[4/5] shadow-2xl">
-                <img src="/images/sections/parallax-kilimanjaro.jpg" alt="Mount Meru" className="w-full h-full object-cover object-right" />
+                <img src="/images/sections/parallax-kilimanjaro.jpg" alt="Mount Meru" className="w-full h-full object-cover object-right" loading="lazy" decoding="async" />
                 <div className="absolute inset-0 bg-gradient-to-t from-green-950/80 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
                   <p className="font-sans text-xs uppercase tracking-widest text-gold mb-1">Tanzania's Wild Summit</p>
@@ -485,7 +487,7 @@ export default function KilimanjaroOverview() {
       {/* ══ WHY NELSON ════════════════════════════════════════════ */}
       <section className="py-24 bg-green-950 relative overflow-hidden">
         <div className="absolute inset-0 opacity-5">
-          <img src="/images/sections/parallax-kilimanjaro.jpg" alt="" className="w-full h-full object-cover" />
+          <img src="/images/sections/parallax-kilimanjaro.jpg" alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8">
           <FadeIn className="text-center mb-14">
@@ -641,7 +643,7 @@ export default function KilimanjaroOverview() {
       {/* ══ FINAL CTA ════════════════════════════════════════════ */}
       <section className="relative py-28 bg-green-950 overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/images/sections/parallax-kilimanjaro.jpg" alt="" className="w-full h-full object-cover opacity-20" />
+          <img src="/images/sections/parallax-kilimanjaro.jpg" alt="" className="w-full h-full object-cover opacity-20" loading="lazy" decoding="async" />
           <div className="absolute inset-0 bg-gradient-to-r from-green-950/95 via-green-950/80 to-green-950/60" />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto px-6 lg:px-8 text-center">

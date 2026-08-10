@@ -103,6 +103,8 @@ export default function ExperiencesSlider() {
             src={resolveImageUrl(slide.image_url)}
             alt={slide.title}
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
             animate={{ scale: [1.0, 1.06] }}
             transition={{ duration: INTERVAL / 1000 + 1.2, ease: 'linear' }}
             onError={(e) => { e.currentTarget.style.display = 'none' }}

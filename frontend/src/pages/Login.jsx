@@ -52,6 +52,8 @@ export default function Login() {
                 src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
                 alt="Nelson Tours & Safari"
                 className="h-20 w-auto object-contain"
+                loading="lazy"
+                decoding="async"
               />
             </div>
             <h1 className="font-serif text-2xl font-bold text-green-950">Welcome Back</h1>

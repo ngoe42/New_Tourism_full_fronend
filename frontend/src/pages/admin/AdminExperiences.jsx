@@ -74,7 +74,7 @@ function ImageUploader({ imageUrl, onUploaded }) {
       >
         {imageUrl ? (
           <>
-            <img src={resolveImageUrl(imageUrl)} alt="Preview" className="w-full h-full object-cover" />
+            <img src={resolveImageUrl(imageUrl)} alt="Preview" className="w-full h-full object-cover" loading="lazy" decoding="async" />
             <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
               <span className="font-sans text-sm text-white font-semibold bg-black/50 px-4 py-2 rounded-lg">Change photo</span>
             </div>
@@ -329,7 +329,7 @@ export default function AdminExperiences() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl overflow-hidden bg-amber-50 flex-shrink-0">
                         {exp.image_url ? (
-                          <img src={resolveImageUrl(exp.image_url)} alt={exp.title} className="w-full h-full object-cover" />
+                          <img src={resolveImageUrl(exp.image_url)} alt={exp.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <ImageIcon size={16} className="text-amber-300" />

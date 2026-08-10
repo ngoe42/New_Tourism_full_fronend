@@ -430,7 +430,7 @@ export default function MeruEnhancedSections() {
       {/* ── 10. BOOKING CTA ──────────────────────────────────────────────────── */}
       <section className="relative py-20 sm:py-28 bg-green-950 text-center overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <img src="/images/sections/mount-meru-hero.jpg" alt="" className="w-full h-full object-cover" aria-hidden="true" />
+          <img src="/images/sections/mount-meru-hero.jpg" alt="" className="w-full h-full object-cover" aria-hidden="true" loading="lazy" decoding="async" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto px-6 lg:px-8">
           <motion.div {...fadeUp}>

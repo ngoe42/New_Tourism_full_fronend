@@ -28,6 +28,8 @@ export default function MountMeruOverview() {
             src="/images/sections/mount-meru-hero.jpg"
             alt="Mount Meru summit Tanzania"
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-green-950/90 via-green-950/40 to-green-950/10" />
         </div>

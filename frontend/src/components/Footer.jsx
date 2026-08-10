@@ -48,6 +48,8 @@ export default function Footer() {
               src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
               alt="Nelson Tours & Safari"
               className="h-24 w-auto object-contain drop-shadow mb-3"
+              loading="lazy"
+              decoding="async"
             />
           </Link>
           <p className="font-sans text-white/50 text-xs leading-relaxed mb-4 max-w-[220px]">

@@ -136,6 +136,8 @@ export default function Navbar() {
               className={`h-[84px] sm:h-24 lg:h-[120px] w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
                 isTransparent ? 'scale-110 sm:scale-125 translate-y-0.5 sm:translate-y-1' : 'scale-100 translate-y-0 translate-x-0'
               }`}
+              loading="lazy"
+              decoding="async"
             />
           </Link>
 
@@ -298,7 +300,7 @@ export default function Navbar() {
                             {(() => {
                               const cover = activeRouteHover.images?.find(i => i.is_cover) ?? activeRouteHover.images?.[0]
                               return cover ? (
-                                <img src={resolveImageUrl(cover.url)} alt={activeRouteHover.name} className="w-full h-full object-cover" />
+                                <img src={resolveImageUrl(cover.url)} alt={activeRouteHover.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                               ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
                                   <Mountain size={28} className="text-white/30" />
@@ -444,6 +446,8 @@ export default function Navbar() {
                                   src={resolveImageUrl(cover.url)}
                                   alt={activeTourHover.title}
                                   className="w-full h-full object-cover"
+                                  loading="lazy"
+                                  decoding="async"
                                 />
                               ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
@@ -563,7 +567,7 @@ export default function Navbar() {
                           {/* Cover image */}
                           <div className="relative h-48 flex-shrink-0 overflow-hidden">
                             {activeExpHover.image_url ? (
-                              <img src={resolveImageUrl(activeExpHover.image_url)} alt={activeExpHover.title} className="w-full h-full object-cover" />
+                              <img src={resolveImageUrl(activeExpHover.image_url)} alt={activeExpHover.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                             ) : (
                               <div className="w-full h-full bg-gradient-to-br from-green-900 to-amber-800 flex items-center justify-center">
                                 <Mountain size={32} className="text-white/30" />
@@ -709,6 +713,8 @@ export default function Navbar() {
                     src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
                     alt="Nelson Tours & Safari"
                     className="h-14 w-auto object-contain"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </Link>
                 <button

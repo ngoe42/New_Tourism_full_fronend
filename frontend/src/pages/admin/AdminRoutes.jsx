@@ -186,7 +186,7 @@ function RouteImages({ route, onRefresh }) {
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {route.images.map((img) => (
             <div key={img.id} className="relative group rounded-xl overflow-hidden aspect-square bg-gray-100">
-              <img src={resolveImageUrl(img.url)} alt={img.caption || ''} className="w-full h-full object-cover" />
+              <img src={resolveImageUrl(img.url)} alt={img.caption || ''} className="w-full h-full object-cover" loading="lazy" decoding="async" />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
                 <button onClick={() => deleteImg(img.id)}
                   className="opacity-0 group-hover:opacity-100 p-1.5 bg-red-500 text-white rounded-lg transition hover:bg-red-600">
@@ -542,7 +542,7 @@ export default function AdminRoutes() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl overflow-hidden bg-green-50 flex-shrink-0">
                         {route.images?.[0] ? (
-                          <img src={resolveImageUrl(route.images[0].url)} alt={route.name} className="w-full h-full object-cover" />
+                          <img src={resolveImageUrl(route.images[0].url)} alt={route.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Mountain size={16} className="text-green-300" />
