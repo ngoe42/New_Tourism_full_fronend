@@ -171,6 +171,7 @@ function TourForm({ initial, onClose, onSave, saving }) {
     initial?.id ? initial : { ...EMPTY_FORM, category: initial?.category ?? EMPTY_FORM.category }
   )
   const [imageFiles, setImageFiles] = useState([])
+  const [imageAlt, setImageAlt] = useState('')
   const [existingImages, setExistingImages] = useState(initial?.images ?? [])
   const [deletingImageId, setDeletingImageId] = useState(null)
   const fileRef = useRef(null)
@@ -205,7 +206,7 @@ function TourForm({ initial, onClose, onSave, saving }) {
     delete formData.id
     delete formData._isNew
     if (!formData.slug) formData.slug = slugify(formData.title)
-    onSave({ formData, imageFiles })
+    onSave({ formData, imageFiles, imageAlt })
   }
 
   return (
@@ -355,7 +356,7 @@ function TourForm({ initial, onClose, onSave, saving }) {
               </label>
               <div className="flex gap-2 flex-wrap">
                 {existingImages.map((img) => (
-                  <div key={img.id} className="relative group">
+                  <div key={img.id} className="relative group" title={img.alt_text || 'No alt text set'}>
                     <img
                       src={resolveImageUrl(img.url)}
                       alt=""
@@ -367,6 +368,11 @@ function TourForm({ initial, onClose, onSave, saving }) {
                     {img.is_cover && (
                       <span className="absolute bottom-1 left-1 flex items-center gap-0.5 bg-amber-500 text-white text-[9px] font-bold px-1 py-0.5 rounded">
                         <Star size={8} fill="currentColor" /> Cover
+                      </span>
+                    )}
+                    {!img.alt_text && (
+                      <span className="absolute top-1 left-1 bg-red-500/90 text-white text-[8px] font-bold px-1 py-0.5 rounded">
+                        No alt text
                       </span>
                     )}
                     <button
@@ -406,12 +412,24 @@ function TourForm({ initial, onClose, onSave, saving }) {
               )}
             </div>
             {imageFiles.length > 0 && (
-              <div className="flex gap-2 mt-3 flex-wrap">
-                {imageFiles.map((f, i) => (
-                  <img key={i} src={URL.createObjectURL(f)} alt={f.name}
-                    className="w-24 object-cover rounded-lg border border-gray-200" style={{ height: '72px' }} loading="lazy" decoding="async" />
-                ))}
-              </div>
+              <>
+                <input
+                  type="text"
+                  value={imageAlt}
+                  onChange={(e) => setImageAlt(e.target.value)}
+                  placeholder="Alt text for these images (e.g. Elephant herd in Serengeti National Park Tanzania)"
+                  className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-lg font-sans text-sm text-gray-700 placeholder:text-gray-400"
+                />
+                <p className="font-sans text-[11px] text-gray-400 mt-1">
+                  Describes these photos for Google Images and screen readers. Leave blank to auto-generate from the tour title.
+                </p>
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  {imageFiles.map((f, i) => (
+                    <img key={i} src={URL.createObjectURL(f)} alt={f.name}
+                      className="w-24 object-cover rounded-lg border border-gray-200" style={{ height: '72px' }} loading="lazy" decoding="async" />
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -477,10 +495,10 @@ export default function AdminTours() {
   const filtered = activeCategory === 'All' ? tours : tours.filter((t) => t.category === activeCategory)
 
   const createMutation = useMutation({
-    mutationFn: async ({ formData, imageFiles }) => {
+    mutationFn: async ({ formData, imageFiles, imageAlt }) => {
       const tour = await toursApi.create(formData)
       if (imageFiles?.length) {
-        await Promise.all(imageFiles.map((file) => toursApi.uploadImage(tour.id, file)))
+        await Promise.all(imageFiles.map((file) => toursApi.uploadImage(tour.id, file, false, imageAlt)))
       }
       return tour
     },
@@ -489,10 +507,10 @@ export default function AdminTours() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, formData, imageFiles }) => {
+    mutationFn: async ({ id, formData, imageFiles, imageAlt }) => {
       const tour = await toursApi.update(id, formData)
       if (imageFiles?.length) {
-        await Promise.all(imageFiles.map((file) => toursApi.uploadImage(id, file)))
+        await Promise.all(imageFiles.map((file) => toursApi.uploadImage(id, file, false, imageAlt)))
       }
       return tour
     },
@@ -513,11 +531,11 @@ export default function AdminTours() {
     })
   }
 
-  const handleSave = ({ formData, imageFiles }) => {
+  const handleSave = ({ formData, imageFiles, imageAlt }) => {
     if (activeForm?.id) {
-      updateMutation.mutate({ id: activeForm.id, formData, imageFiles })
+      updateMutation.mutate({ id: activeForm.id, formData, imageFiles, imageAlt })
     } else {
-      createMutation.mutate({ formData, imageFiles })
+      createMutation.mutate({ formData, imageFiles, imageAlt })
     }
   }
 

@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion'
 import { MapPin, Phone, Mail, Clock, MessageCircle, Instagram, Facebook, Youtube } from 'lucide-react'
 import BookingForm from '../components/BookingForm'
+import SEO from '../components/SEO'
+import Breadcrumbs from '../components/Breadcrumbs'
+import { SITE_URL, ORG_NAME, faqSchema } from '../utils/schema'
 
 const contactInfo = [
   { icon: Phone, label: 'Call Us', value: '+255 750 005 973', sub: 'Mon–Fri, 8am–6pm EAT', href: 'tel:+255750005973' },
@@ -34,15 +37,36 @@ const faqs = [
 ]
 
 export default function Contact() {
+  const contactJsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'ContactPage',
+      name: `Contact ${ORG_NAME}`,
+      description: 'Get in touch with Nelson Tours and Safaris to plan your Tanzania safari, Kilimanjaro trek, or Zanzibar escape.',
+      url: `${SITE_URL}/contact`,
+      mainEntity: { '@id': `${SITE_URL}/#organization` },
+    },
+    faqSchema(faqs),
+  ]
+
   return (
     <main className="min-h-screen bg-beige">
+      <SEO
+        title="Contact Nelson Tours and Safaris — Plan Your Tanzania Safari"
+        description="Speak with our Arusha-based safari specialists. Call, WhatsApp, or send an enquiry to start planning your Tanzania safari or Kilimanjaro trek — response within 24 hours."
+        canonicalPath="/contact"
+        jsonLd={contactJsonLd}
+      />
       {/* Page Hero */}
       <section className="relative pt-28 sm:pt-36 pb-14 sm:pb-20 bg-green-950 overflow-hidden">
         <div className="absolute inset-0 opacity-15">
-          <img src="/images/sections/story-luxury.jpg" alt="" className="w-full h-full object-cover" fetchpriority="high" decoding="async" />
+          <img src="/images/sections/story-luxury.jpg" alt="" className="w-full h-full object-cover" loading="eager" fetchpriority="high" decoding="async" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-green-950/60 to-green-950" />
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center">
+          <div className="flex justify-center mb-5">
+            <Breadcrumbs dark items={[{ name: 'Home', path: '/' }, { name: 'Contact', path: '/contact' }]} />
+          </div>
           <motion.span
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -127,8 +151,8 @@ export default function Contact() {
               {/* Map placeholder */}
               <div className="bg-white rounded-3xl overflow-hidden shadow-sm aspect-[4/3] relative">
                 <img
-                  src="/images/cta-bg.jpg"
-                  alt="Tanzania map"
+                  src="/images/sections/parallax-sunset.jpg"
+                  alt=""
                   className="w-full h-full object-cover opacity-80"
                   loading="lazy"
                   decoding="async"

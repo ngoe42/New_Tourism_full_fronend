@@ -224,29 +224,10 @@ const server = createServer((req, res) => {
       ].join('\n')
       indexContent = indexContent.replace('</head>', seoHead + '\n</head>')
 
-      // Inject JSON-LD structured data for homepage (TravelAgency schema)
-      if (path === '/') {
-        const jsonLd = JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'TravelAgency',
-          name: 'Nelson Tour and Safari',
-          url: 'https://nelsontoursandsafaris.com',
-          logo: SITE_LOGO_URL,
-          description: 'World-class luxury safari experiences in Tanzania.',
-          image: SITE_LOGO_URL,
-          address: { '@type': 'PostalAddress', addressCountry: 'TZ' },
-          sameAs: [
-            'https://www.facebook.com/nelson.michael.39',
-            'https://www.instagram.com/nelson_tour_and_safari',
-            'https://twitter.com/nelsonsafari',
-            'https://youtube.com/@nelsonsafari',
-          ],
-        })
-        indexContent = indexContent.replace(
-          '</head>',
-          `  <script type="application/ld+json">${jsonLd}</script>\n</head>`
-        )
-      }
+      // Organization/WebSite and per-page JSON-LD (TouristTrip, BreadcrumbList, FAQPage, etc.)
+      // are injected client-side by <SEO jsonLd={...}> via react-helmet-async on every route,
+      // using a single source of truth (src/utils/schema.js) — not duplicated here to avoid
+      // two competing structured-data blocks on the same page.
 
       // Inject visible content inside #root so Google's first wave sees real content
       // React will replace this when JS loads, but Google reads it during wave-1 crawl

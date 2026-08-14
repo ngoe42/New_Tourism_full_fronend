@@ -17,7 +17,7 @@ function normalizePath(path) {
   return normalized
 }
 
-export default function SEO({ title, description, canonicalPath, noindex, image }) {
+export default function SEO({ title, description, canonicalPath, noindex, image, jsonLd }) {
   const { pathname, search } = useLocation()
   const isStaging = typeof window !== 'undefined' && window.location.hostname.includes('.up.railway.app')
   const shouldNoindex = noindex !== undefined ? noindex : isStaging
@@ -30,6 +30,7 @@ export default function SEO({ title, description, canonicalPath, noindex, image 
   const path = normalizePath(canonicalPath || pathname)
   const url = `${PRODUCTION_URL}${path}${queryString}`
   const ogImage = image || `${PRODUCTION_URL}/images/logo/logo.png`
+  const jsonLdItems = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : []
 
   return (
     <Helmet>
@@ -46,6 +47,9 @@ export default function SEO({ title, description, canonicalPath, noindex, image 
       {description && <meta name="twitter:description" content={description} />}
       <meta name="twitter:image" content={ogImage} />
       {shouldNoindex && <meta name="robots" content="noindex, nofollow" />}
+      {jsonLdItems.map((item, i) => (
+        <script key={i} type="application/ld+json">{JSON.stringify(item)}</script>
+      ))}
     </Helmet>
   )
 }

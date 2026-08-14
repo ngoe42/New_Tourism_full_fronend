@@ -3,10 +3,13 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import SEO from '../components/SEO'
+import Breadcrumbs from '../components/Breadcrumbs'
+import DetailPageSkeleton from '../components/skeletons/DetailPageSkeleton'
+import { SITE_URL, touristTripSchema } from '../utils/schema'
 import {
   Clock, Mountain, TrendingUp, Users, Calendar, MapPin, CheckCircle,
-  XCircle, Backpack, ChevronRight, ArrowLeft, ShieldCheck, Info,
-  DollarSign, Loader2, Star, MessageCircle
+  XCircle, Backpack, ArrowLeft, ShieldCheck, Info,
+  DollarSign, Star, MessageCircle
 } from 'lucide-react'
 import { routesApi } from '../api/routes'
 import { useSiteSettings } from '../hooks/useSiteSettings'
@@ -33,13 +36,20 @@ export default function RouteDetail() {
 
   const images = route?.images ?? []
   const coverImg = images.find((i) => i.is_cover) ?? images[0]
+  const coverImageUrl = coverImg ? resolveImageUrl(coverImg.url) : undefined
+  const canonicalUrl = route ? `${SITE_URL}/routes/${route.slug}` : undefined
+  const routeJsonLd = route ? touristTripSchema({
+    name: route.name,
+    description: route.short_description || route.full_description || `Climb ${route.name} with Nelson Tours and Safaris.`,
+    image: coverImageUrl,
+    url: canonicalUrl,
+    duration: route.duration,
+    price: route.price,
+    location: `Mount ${route.mountain === 'kilimanjaro' ? 'Kilimanjaro' : route.mountain}`,
+  }) : null
 
   if (isLoading) {
-    return (
-      <div className="pt-32 min-h-screen flex items-center justify-center">
-        <Loader2 size={36} className="animate-spin text-gold" />
-      </div>
-    )
+    return <DetailPageSkeleton />
   }
 
   if (error || !route) {
@@ -64,6 +74,8 @@ export default function RouteDetail() {
         title={`${route.name} — Nelson Tour and Safari`}
         description={route.short_description || `Climb ${route.name} with expert guides. Book your Kilimanjaro trek today.`}
         canonicalPath={`/routes/${route.slug}`}
+        image={coverImageUrl}
+        jsonLd={routeJsonLd}
       />
       <div className="bg-[#faf8f3] min-h-screen">
 
@@ -72,7 +84,14 @@ export default function RouteDetail() {
         {/* Full background image */}
         {coverImg ? (
           <div className="absolute inset-0">
-            <img src={resolveImageUrl(coverImg.url)} alt={route.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+            <img
+              src={resolveImageUrl(coverImg.url)}
+              alt={coverImg.caption || `${route.name} climbing route on Mount ${route.mountain === 'kilimanjaro' ? 'Kilimanjaro' : route.mountain}, Tanzania`}
+              className="w-full h-full object-cover"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-green-950/80 via-green-950/35 to-green-950/10" />
           </div>
         ) : (
@@ -81,12 +100,8 @@ export default function RouteDetail() {
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-28 pb-16">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 font-sans text-xs text-white/50 mb-6">
-            <Link to="/" className="hover:text-white/80 transition-colors">Home</Link>
-            <ChevronRight size={12} />
-            <Link to="/routes" className="hover:text-white/80 transition-colors">Kilimanjaro Routes</Link>
-            <ChevronRight size={12} />
-            <span className="text-white/70">{route.name}</span>
+          <div className="mb-6">
+            <Breadcrumbs dark items={[{ name: 'Home', path: '/' }, { name: 'Kilimanjaro Routes', path: '/routes' }, { name: route.name, path: `/routes/${route.slug}` }]} />
           </div>
 
           <div className="max-w-3xl">

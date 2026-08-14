@@ -7,6 +7,7 @@ class TourImageResponse(BaseModel):
     id: int
     url: str
     public_id: Optional[str] = None
+    alt_text: Optional[str] = None
     is_cover: bool
     order: int
 

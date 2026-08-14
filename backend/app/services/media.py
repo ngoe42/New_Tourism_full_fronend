@@ -1,6 +1,7 @@
 import asyncio
 import io
 import os
+import re
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -15,6 +16,17 @@ from app.repositories.media import MediaRepository
 
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+def slugify_filename(filename: str) -> str:
+    """Turn an uploaded filename's stem into a short, SEO-friendly slug.
+    Preserves any descriptive naming the uploader already used (e.g.
+    "Serengeti Sunset.jpg" -> "serengeti-sunset") instead of discarding it
+    behind a random ID, while still guaranteeing a safe, unique storage key.
+    """
+    stem = Path(filename or "").stem
+    slug = re.sub(r"[^a-z0-9]+", "-", stem.lower()).strip("-")
+    return slug[:60] or "image"
 
 
 class MediaService:
@@ -70,8 +82,7 @@ class MediaService:
             api_key=settings.CLOUDINARY_API_KEY,
             api_secret=settings.CLOUDINARY_API_SECRET,
         )
-        stem = filename.rsplit(".", 1)[0]
-        unique_public_id = f"karibu_safari/{stem}_{uuid.uuid4().hex[:8]}"
+        unique_public_id = f"karibu_safari/{slugify_filename(filename)}-{uuid.uuid4().hex[:8]}"
 
         def _do_upload():
             return cloudinary.uploader.upload(
@@ -87,7 +98,7 @@ class MediaService:
         upload_dir = Path(__file__).resolve().parents[2] / "static" / "uploads"
         upload_dir.mkdir(parents=True, exist_ok=True)
         ext = Path(filename).suffix or ".jpg"
-        unique_name = f"{uuid.uuid4().hex}{ext}"
+        unique_name = f"{slugify_filename(filename)}-{uuid.uuid4().hex[:8]}{ext}"
         dest = upload_dir / unique_name
         await asyncio.to_thread(dest.write_bytes, contents)
         return f"/uploads/{unique_name}", None
@@ -101,7 +112,8 @@ class MediaService:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             region_name=settings.AWS_REGION,
         )
-        key = f"karibu_safari/{_uuid.uuid4()}_{filename}"
+        ext = Path(filename).suffix or ".jpg"
+        key = f"karibu_safari/{slugify_filename(filename)}-{_uuid.uuid4().hex[:8]}{ext}"
 
         def _do_upload():
             s3.put_object(

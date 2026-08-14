@@ -30,6 +30,7 @@ export default {
         'fade-up': 'fadeUp 0.6s ease-out forwards',
         'fade-in': 'fadeIn 0.8s ease-out forwards',
         'counter': 'counter 2s ease-out forwards',
+        'route-bar': 'routeBar 1.1s ease-in-out infinite',
       },
       keyframes: {
         fadeUp: {
@@ -39,6 +40,11 @@ export default {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
+        },
+        routeBar: {
+          '0%': { transform: 'translateX(-100%)' },
+          '50%': { transform: 'translateX(50%)' },
+          '100%': { transform: 'translateX(250%)' },
         },
       },
       backgroundImage: {

@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.models.route import Route, RouteImage
 from app.schemas.route import RouteCreate, RouteUpdate
 from app.repositories.route import RouteRepository
+from app.services.media import slugify_filename
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
@@ -102,9 +103,11 @@ class RouteService:
                               api_key=settings.CLOUDINARY_API_KEY,
                               api_secret=settings.CLOUDINARY_API_SECRET)
 
+            unique_public_id = f"karibu_routes/{slugify_filename(filename)}-{uuid.uuid4().hex[:8]}"
+
             def _do_upload():
                 return cloudinary.uploader.upload(
-                    io.BytesIO(contents), folder="karibu_routes", overwrite=False
+                    io.BytesIO(contents), public_id=unique_public_id, overwrite=False
                 )
 
             r = await asyncio.to_thread(_do_upload)
@@ -114,7 +117,8 @@ class RouteService:
             s3 = boto3.client("s3", aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                               aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
                               region_name=settings.AWS_REGION)
-            key = f"karibu_routes/{uuid.uuid4()}_{filename}"
+            ext = Path(filename).suffix or ".jpg"
+            key = f"karibu_routes/{slugify_filename(filename)}-{uuid.uuid4().hex[:8]}{ext}"
             await asyncio.to_thread(
                 s3.put_object, Bucket=settings.AWS_BUCKET_NAME, Key=key,
                 Body=contents, ContentType=content_type
@@ -125,7 +129,7 @@ class RouteService:
             upload_dir = Path(__file__).resolve().parents[2] / "static" / "uploads"
             upload_dir.mkdir(parents=True, exist_ok=True)
             ext = Path(filename).suffix or ".jpg"
-            unique_name = f"{uuid.uuid4().hex}{ext}"
+            unique_name = f"{slugify_filename(filename)}-{uuid.uuid4().hex[:8]}{ext}"
             (upload_dir / unique_name).write_bytes(contents)
             return f"/uploads/{unique_name}", None
 

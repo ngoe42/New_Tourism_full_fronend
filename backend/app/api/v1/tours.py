@@ -106,11 +106,12 @@ async def upload_tour_image(
     tour_id: int,
     file: UploadFile = File(...),
     is_cover: bool = Form(False),
+    alt_text: Optional[str] = Form(None),
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
     media = await MediaService(db).upload(file, current_user)
-    result = await TourService(db).add_image(tour_id, media.url, media.public_id, is_cover=is_cover)
+    result = await TourService(db).add_image(tour_id, media.url, media.public_id, is_cover=is_cover, alt_text=alt_text)
     await _invalidate_tours()
     return result
 

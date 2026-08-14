@@ -346,6 +346,8 @@ async def sitemap_xml(request: Request):
     from app.core.database import AsyncSessionLocal
     from sqlalchemy import text
 
+    from xml.sax.saxutils import escape as xml_escape
+
     static_pages = [
         ("/", "2026-06-21", "weekly", "1.0"),
         ("/tours", "2026-06-21", "daily", "0.9"),
@@ -360,6 +362,29 @@ async def sitemap_xml(request: Request):
         ("/safari", "2026-06-21", "weekly", "0.9"),
         ("/contact", "2026-06-21", "monthly", "0.6"),
     ]
+
+    def _image_url(url: str) -> str:
+        """Resolve a possibly-relative /uploads/... image URL to an absolute URL.
+        Local uploads are served from the backend (settings.BACKEND_URL); cloud-hosted
+        images (Cloudinary/S3) already carry an absolute URL and pass through unchanged.
+        """
+        if url.startswith("http://") or url.startswith("https://"):
+            return url
+        base = settings.BACKEND_URL.rstrip("/")
+        return f"{base}{url}" if url.startswith("/") else f"{base}/{url}"
+
+    def _image_tags(images) -> str:
+        tags = []
+        for img_url, caption in images:
+            if not img_url:
+                continue
+            loc = xml_escape(_image_url(img_url))
+            tag = f"    <image:image>\n      <image:loc>{loc}</image:loc>"
+            if caption:
+                tag += f"\n      <image:caption>{xml_escape(caption)}</image:caption>"
+            tag += "\n    </image:image>"
+            tags.append(tag)
+        return ("\n" + "\n".join(tags)) if tags else ""
 
     urls = []
     for path, lastmod, changefreq, priority in static_pages:
@@ -378,11 +403,21 @@ async def sitemap_xml(request: Request):
             for row in tours.fetchall():
                 slug, updated = row
                 lastmod = (updated.strftime("%Y-%m-%d") if updated else "2026-06-21")
+                img_rows = await db.execute(
+                    text("""
+                        SELECT ti.url, ti.alt_text FROM tour_images ti
+                        WHERE ti.tour_id = (SELECT id FROM tours WHERE slug = :slug)
+                        ORDER BY ti.is_cover DESC, ti.order ASC
+                        LIMIT 5
+                    """),
+                    {"slug": slug},
+                )
+                images = [(r[0], r[1]) for r in img_rows.fetchall()]
                 urls.append(f"""  <url>
     <loc>https://{PRODUCTION_DOMAIN}/tours/{slug}</loc>
     <lastmod>{lastmod}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.8</priority>{_image_tags(images)}
   </url>""")
 
             routes = await db.execute(
@@ -391,17 +426,29 @@ async def sitemap_xml(request: Request):
             for row in routes.fetchall():
                 slug, updated = row
                 lastmod = (updated.strftime("%Y-%m-%d") if updated else "2026-06-21")
+                img_rows = await db.execute(
+                    text("""
+                        SELECT ri.url, COALESCE(ri.caption, r.name) FROM route_images ri
+                        JOIN routes r ON r.id = ri.route_id
+                        WHERE ri.route_id = (SELECT id FROM routes WHERE slug = :slug)
+                        ORDER BY ri.is_cover DESC, ri.order ASC
+                        LIMIT 5
+                    """),
+                    {"slug": slug},
+                )
+                images = [(r[0], r[1]) for r in img_rows.fetchall()]
                 urls.append(f"""  <url>
     <loc>https://{PRODUCTION_DOMAIN}/routes/{slug}</loc>
     <lastmod>{lastmod}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.8</priority>{_image_tags(images)}
   </url>""")
     except Exception:
         logger.warning("Failed to fetch dynamic routes for sitemap — using static pages only")
 
     content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">

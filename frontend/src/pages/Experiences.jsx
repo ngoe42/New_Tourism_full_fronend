@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Loader2, ArrowRight, Compass } from 'lucide-react'
+import { ArrowRight, Compass } from 'lucide-react'
 import { experiencesApi } from '../api/experiences'
 import ExperiencesSlider from '../components/ExperiencesSlider'
 import { resolveImageUrl } from '../utils/imageUrl'
+import { CardGridSkeleton } from '../components/skeletons/CardSkeleton'
 
 export default function Experiences() {
   const { data, isLoading } = useQuery({
@@ -25,9 +26,7 @@ export default function Experiences() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
 
           {isLoading ? (
-            <div className="flex justify-center py-24">
-              <Loader2 size={36} className="animate-spin text-green-800" />
-            </div>
+            <CardGridSkeleton count={6} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" />
           ) : experiences.length === 0 ? (
             <div className="text-center py-24">
               <Compass size={48} className="text-gray-200 mx-auto mb-4" />

@@ -2,12 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import SEO from '../components/SEO'
+import Breadcrumbs from '../components/Breadcrumbs'
+import DetailPageSkeleton from '../components/skeletons/DetailPageSkeleton'
+import { SITE_URL, touristTripSchema } from '../utils/schema'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, EffectFade } from 'swiper/modules'
 import 'swiper/css/effect-fade'
 import {
   ArrowLeft, Star, Clock, Users, MapPin, CheckCircle, XCircle,
-  ChevronDown, Share2, Heart, Calendar, Loader2, MessageCircle
+  ChevronDown, Share2, Heart, Calendar, MessageCircle
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { toursApi } from '../api/tours'
@@ -54,11 +57,7 @@ export default function TourDetail() {
   }, [])
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-beige">
-        <Loader2 size={48} className="animate-spin text-gold" />
-      </div>
-    )
+    return <DetailPageSkeleton />
   }
 
   if (isError || !tour) {
@@ -81,8 +80,21 @@ export default function TourDetail() {
   }
 
   const coverImage = resolveImageUrl(tour.images?.find((i) => i.is_cover)?.url ?? tour.images?.[0]?.url ?? '/images/hero-bg.jpg')
-  const galleryImages = tour.images?.length ? tour.images.map((i) => resolveImageUrl(i.url)) : [coverImage]
+  const gallery = tour.images?.length
+    ? tour.images.map((i) => ({ src: resolveImageUrl(i.url), alt: i.alt_text || `${tour.title} — ${tour.location || 'Tanzania'} safari` }))
+    : [{ src: coverImage, alt: `${tour.title} — ${tour.location || 'Tanzania'} safari` }]
   const related = relatedData ?? []
+  const canonicalUrl = `${SITE_URL}/tours/${tour.slug}`
+
+  const tourJsonLd = touristTripSchema({
+    name: tour.title,
+    description: tour.short_description || tour.description || `${tour.title} — Tanzania safari with Nelson Tours and Safaris.`,
+    image: coverImage,
+    url: canonicalUrl,
+    duration: tour.duration,
+    price: tour.price,
+    location: tour.location,
+  })
 
   return (
     <>
@@ -90,6 +102,8 @@ export default function TourDetail() {
         title={`${tour.title} — Nelson Tour and Safari`}
         description={tour.short_description || `${tour.title} — Book your luxury Tanzania safari with expert local guides.`}
         canonicalPath={`/tours/${tour.slug}`}
+        image={coverImage}
+        jsonLd={tourJsonLd}
       />
       <main className="min-h-screen bg-beige">
       {/* Sticky Booking Bar */}
@@ -140,12 +154,19 @@ export default function TourDetail() {
             modules={[Autoplay, EffectFade]}
             effect="fade"
             autoplay={{ delay: 4500, disableOnInteraction: false }}
-            loop={galleryImages.length > 1}
+            loop={gallery.length > 1}
             className="w-full h-full"
           >
-            {galleryImages.map((img, i) => (
+            {gallery.map((img, i) => (
               <SwiperSlide key={i}>
-                <img src={img} alt={`${tour.title} ${i + 1}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  className="w-full h-full object-cover"
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  fetchpriority={i === 0 ? 'high' : 'auto'}
+                  decoding="async"
+                />
               </SwiperSlide>
             ))}
           </Swiper>
@@ -155,6 +176,9 @@ export default function TourDetail() {
         {/* Content — left aligned, bottom anchored */}
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-28 pb-14">
           <div className="max-w-3xl">
+            <div className="mb-5">
+              <Breadcrumbs dark items={[{ name: 'Home', path: '/' }, { name: 'Tours', path: '/tours' }, { name: tour.title, path: `/tours/${tour.slug}` }]} />
+            </div>
             {/* Title */}
             <motion.h1
               initial={{ opacity: 0, y: 24 }}

@@ -51,6 +51,7 @@ class TourImage(Base):
     tour_id: Mapped[int] = mapped_column(ForeignKey("tours.id", ondelete="CASCADE"), nullable=False, index=True)
     url: Mapped[str] = mapped_column(String(1000), nullable=False)
     public_id: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    alt_text: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
     is_cover: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

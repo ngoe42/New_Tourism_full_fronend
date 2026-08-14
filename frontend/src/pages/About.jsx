@@ -6,8 +6,11 @@ import {
 } from 'lucide-react'
 import WhyChooseUs from '../components/WhyChooseUs'
 import CTASection from '../components/CTASection'
+import SEO from '../components/SEO'
+import Breadcrumbs from '../components/Breadcrumbs'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 import { resolveImageUrl } from '../utils/imageUrl'
+import { SITE_URL, ORG_NAME } from '../utils/schema'
 
 const fadeUp = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.7 } }
 const fadeLeft = { initial: { opacity: 0, x: -50 }, whileInView: { opacity: 1, x: 0 }, viewport: { once: true }, transition: { duration: 0.8 } }
@@ -54,17 +57,34 @@ export default function About() {
     resolveImageUrl(aboutTeam3Image) || '/images/team/david.jpg',
   ]
 
+  const aboutJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: `About ${ORG_NAME}`,
+    description: "Nelson Tours and Safaris is a Tanzanian-owned, Arusha-based safari and Kilimanjaro trekking company. Learn about our team, safety standards, and responsible tourism practices.",
+    url: `${SITE_URL}/about`,
+    mainEntity: { '@id': `${SITE_URL}/#organization` },
+  }
+
   return (
     <main className="bg-beige">
+      <SEO
+        title="About Nelson Tours and Safaris — Tanzania Safari Experts"
+        description="Meet the Arusha-based team behind Nelson Tours and Safaris — Tanzania safari planners, UIMLA-certified Kilimanjaro guides, and cultural specialists with two decades of local expertise."
+        canonicalPath="/about"
+        image={heroImg}
+        jsonLd={aboutJsonLd}
+      />
 
       {/* ── 1. HERO — Who We Are ──────────────────────────────────── */}
       <section className="relative min-h-[62vh] flex flex-col justify-end bg-green-950 overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroImg} alt="Tanzania safari at sunrise" className="w-full h-full object-cover" fetchpriority="high" decoding="async" />
+          <img src={heroImg} alt="Tanzania safari at sunrise" className="w-full h-full object-cover" loading="eager" fetchpriority="high" decoding="async" />
           <div className="absolute inset-0 bg-gradient-to-t from-green-950 via-green-950/60 to-green-950/10" />
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-36 pb-20">
-          <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="font-sans text-xs font-semibold uppercase tracking-widest text-gold mb-3">
+          <Breadcrumbs dark items={[{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }]} />
+          <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="font-sans text-xs font-semibold uppercase tracking-widest text-gold mt-5 mb-3">
             Who We Are
           </motion.p>
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-3xl mb-5">

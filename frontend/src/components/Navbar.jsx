@@ -36,10 +36,19 @@ export default function Navbar() {
   const navigate  = useNavigate()
   const { user, logout } = useAuth()
 
+  // The mega-menu previews are hover/tap-triggered and most visits never open
+  // them — fetch each list only the first time its menu is actually touched,
+  // instead of firing all three on every page load and competing with the
+  // page's own critical requests. Once true, stays true (data then caches
+  // normally via staleTime) so reopening the menu doesn't refetch.
+  const [touched, setTouched] = useState({ tours: false, routes: false, experiences: false })
+  const touch = (key) => setTouched((t) => (t[key] ? t : { ...t, [key]: true }))
+
   const { data: toursData } = useQuery({
     queryKey: ['nav-tours'],
     queryFn: () => toursApi.list({ per_page: 20, is_published: true }),
     staleTime: 5 * 60 * 1000,
+    enabled: touched.tours,
   })
   const tourList = Array.isArray(toursData?.items) ? toursData.items : []
 
@@ -47,6 +56,7 @@ export default function Navbar() {
     queryKey: ['nav-routes'],
     queryFn: () => routesApi.list(),
     staleTime: 5 * 60 * 1000,
+    enabled: touched.routes,
   })
   const routeList = Array.isArray(routesData) ? routesData : []
   const [activeRouteHover, setActiveRouteHover] = useState(null)
@@ -59,6 +69,7 @@ export default function Navbar() {
     queryKey: ['nav-experiences'],
     queryFn: () => experiencesApi.list(),
     staleTime: 5 * 60 * 1000,
+    enabled: touched.experiences,
   })
   const experienceList = Array.isArray(experiencesData) ? experiencesData : []
 
@@ -149,6 +160,9 @@ export default function Navbar() {
                 className="relative"
                 onMouseEnter={() => {
                   if (link.hasTourDropdown || link.hasRouteDropdown || link.hasExperienceDropdown) setActiveDropdown(link.label)
+                  if (link.hasTourDropdown) touch('tours')
+                  if (link.hasRouteDropdown) touch('routes')
+                  if (link.hasExperienceDropdown) touch('experiences')
                 }}
                 onMouseLeave={() => {
                   setActiveDropdown(null)
@@ -743,7 +757,7 @@ export default function Navbar() {
                   {/* KILIMANJARO accordion */}
                   <div className="border-b border-gray-100">
                     <button
-                      onClick={() => setMobileExpanded(mobileExpanded === 'kilimanjaro' ? null : 'kilimanjaro')}
+                      onClick={() => { setMobileExpanded(mobileExpanded === 'kilimanjaro' ? null : 'kilimanjaro'); touch('routes') }}
                       className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Kilimanjaro</span>
@@ -878,7 +892,7 @@ export default function Navbar() {
                   {/* SAFARI accordion */}
                   <div className="border-b border-gray-100">
                     <button
-                      onClick={() => setMobileExpanded(mobileExpanded === 'safari' ? null : 'safari')}
+                      onClick={() => { setMobileExpanded(mobileExpanded === 'safari' ? null : 'safari'); touch('tours') }}
                       className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Safari</span>
@@ -922,7 +936,7 @@ export default function Navbar() {
                   {/* EXPERIENCES accordion */}
                   <div className="border-b border-gray-100">
                     <button
-                      onClick={() => setMobileExpanded(mobileExpanded === 'experiences' ? null : 'experiences')}
+                      onClick={() => { setMobileExpanded(mobileExpanded === 'experiences' ? null : 'experiences'); touch('experiences') }}
                       className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Experiences</span>

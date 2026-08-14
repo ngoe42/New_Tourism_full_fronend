@@ -3,8 +3,12 @@ import { Link } from 'react-router-dom'
 import { Star, Clock, Users, MapPin, ArrowRight } from 'lucide-react'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 import { resolveImageUrl } from '../utils/imageUrl'
+import OptimizedImage from './OptimizedImage'
 
-export default function TourCard({ tour, index = 0 }) {
+/** Cards in the first visible row (desktop: index < 4) are likely above the
+ * fold, so they skip lazy-loading and get loading priority instead of
+ * competing with genuinely offscreen images for bandwidth. */
+export default function TourCard({ tour, index = 0, priority = false }) {
   const { showPrices } = useSiteSettings()
   const coverImage = resolveImageUrl(
     tour.images?.find((i) => i.is_cover)?.url ??
@@ -25,12 +29,12 @@ export default function TourCard({ tour, index = 0 }) {
     >
       {/* Image */}
       <div className="relative overflow-hidden aspect-[4/3]">
-        <img
+        <OptimizedImage
           src={coverImage}
           alt={tour.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          loading="lazy"
-          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/hero-bg.jpg' }}
+          priority={priority}
+          containerClassName="w-full h-full"
+          className="group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 

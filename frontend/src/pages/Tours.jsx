@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, SlidersHorizontal, X, Loader2 } from 'lucide-react'
+import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import TourCard from '../components/TourCard'
+import SEO from '../components/SEO'
+import Breadcrumbs from '../components/Breadcrumbs'
+import { CardGridSkeleton } from '../components/skeletons/CardSkeleton'
 import { toursApi } from '../api/tours'
 import { categories } from '../data/tours'
 import { useSiteSettings } from '../hooks/useSiteSettings'
@@ -62,6 +65,11 @@ export default function Tours() {
 
   return (
     <main className="min-h-screen">
+      <SEO
+        title="Tanzania Safari Tours — Nelson Tour and Safari"
+        description="Browse our curated Tanzania safari tours, from Serengeti wildlife safaris to Zanzibar beach escapes and Ngorongoro Crater expeditions — led by local, expert guides."
+        canonicalPath="/tours"
+      />
       {/* Page Hero */}
       <section className="relative pt-28 sm:pt-36 pb-14 sm:pb-20 bg-green-950 overflow-hidden">
         <div className="absolute inset-0 opacity-60">
@@ -69,6 +77,7 @@ export default function Tours() {
             src={toursHeroImage ? resolveImageUrl(toursHeroImage) : '/images/hero-bg.jpg'}
             alt=""
             className="w-full h-full object-cover"
+            loading="eager"
             fetchpriority="high"
             decoding="async"
           />
@@ -76,6 +85,9 @@ export default function Tours() {
         <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 to-green-950/70" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center">
+          <div className="flex justify-center mb-5">
+            <Breadcrumbs dark items={[{ name: 'Home', path: '/' }, { name: 'Tours', path: '/tours' }]} />
+          </div>
           <motion.span
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -178,11 +190,7 @@ export default function Tours() {
             </div>
           )}
 
-          {isLoading && (
-            <div className="flex justify-center py-24">
-              <Loader2 size={40} className="animate-spin text-gold" />
-            </div>
-          )}
+          {isLoading && <CardGridSkeleton count={9} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" />}
 
           <AnimatePresence mode="wait">
             {!isLoading && !isError && filtered.length > 0 ? (
@@ -195,7 +203,7 @@ export default function Tours() {
                 className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
               >
                 {filtered.map((tour, i) => (
-                  <TourCard key={tour.id} tour={tour} index={i} />
+                  <TourCard key={tour.id} tour={tour} index={i} priority={i < 3} />
                 ))}
               </motion.div>
             ) : !isLoading && !isError ? (

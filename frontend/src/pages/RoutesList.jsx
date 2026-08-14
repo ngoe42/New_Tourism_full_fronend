@@ -5,6 +5,9 @@ import { Mountain, Clock, ChevronRight } from 'lucide-react'
 import { routesApi } from '../api/routes'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 import { resolveImageUrl } from '../utils/imageUrl'
+import SEO from '../components/SEO'
+import Breadcrumbs from '../components/Breadcrumbs'
+import { CardGridSkeleton } from '../components/skeletons/CardSkeleton'
 
 export default function RoutesList() {
   const { showPrices, routesHeroTitle, routesHeroDescription, routesHeroImage } = useSiteSettings()
@@ -16,6 +19,11 @@ export default function RoutesList() {
 
   return (
     <div className="bg-beige min-h-screen">
+      <SEO
+        title="Mount Kilimanjaro Climbing Routes — Nelson Tour and Safari"
+        description="Compare Machame, Lemosho, Marangu and other Mount Kilimanjaro routes. Expert Tanzanian mountain guides, UIMLA-certified crews, and full safety support."
+        canonicalPath="/routes"
+      />
       {/* Header */}
       <section className="pt-32 pb-16 lg:pt-40 lg:pb-20 bg-green-950 relative overflow-hidden">
         <div className="absolute inset-0 opacity-60">
@@ -23,12 +31,16 @@ export default function RoutesList() {
             src={routesHeroImage ? resolveImageUrl(routesHeroImage) : '/images/hero-bg.jpg'}
             alt=""
             className="w-full h-full object-cover"
+            loading="eager"
             fetchpriority="high"
             decoding="async"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 to-green-950/70" />
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 text-center">
+          <div className="flex justify-center mb-5">
+            <Breadcrumbs dark items={[{ name: 'Home', path: '/' }, { name: 'Routes', path: '/routes' }]} />
+          </div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -48,9 +60,7 @@ export default function RoutesList() {
       <section className="py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {isLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <CardGridSkeleton count={6} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" />
           ) : error ? (
             <div className="text-center py-20 text-red-500">Failed to load routes. Please try again later.</div>
           ) : (

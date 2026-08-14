@@ -109,9 +109,9 @@ class TourService:
         for url, public_id in image_refs:
             await media_svc.delete_file(url, public_id)
 
-    async def add_image(self, tour_id: int, url: str, public_id: Optional[str] = None, is_cover: bool = False) -> TourImage:
+    async def add_image(self, tour_id: int, url: str, public_id: Optional[str] = None, is_cover: bool = False, alt_text: Optional[str] = None) -> TourImage:
         await self.get_tour(tour_id)
-        image = TourImage(tour_id=tour_id, url=url, public_id=public_id, is_cover=is_cover, order=0)
+        image = TourImage(tour_id=tour_id, url=url, public_id=public_id, is_cover=is_cover, order=0, alt_text=alt_text)
         return await self.image_repo.create(image)
 
     async def delete_image(self, image_id: int) -> None:

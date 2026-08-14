@@ -54,6 +54,18 @@ export default function Hero() {
     <section className="relative h-screen min-h-[600px] sm:min-h-[700px] overflow-hidden flex items-center">
       {/* Video background */}
       <div className="absolute inset-0 overflow-hidden">
+        {/* Always-present base image: guarantees an immediate LCP paint instead of a
+            blank background while site settings are still loading (or if no
+            video/slideshow ends up being configured at all). Video/slideshow layer
+            on top once ready. */}
+        <img
+          src="/images/hero-bg.jpg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
         {shouldUseSlideshow ? (
           <div className="absolute inset-0 overflow-hidden">
             <AnimatePresence mode="sync">
@@ -62,6 +74,7 @@ export default function Hero() {
                 src={activeSlideSrc}
                 alt=""
                 fetchpriority="high"
+                loading="eager"
                 decoding="async"
                 className="absolute inset-0 w-full h-full object-cover will-change-transform"
                 initial={{ opacity: 0, scale: 1.08 }}
