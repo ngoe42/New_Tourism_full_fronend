@@ -29,6 +29,8 @@ frontend/.vite/
 # Docker volumes / data
 postgres_data/
 redis_data/
+backups/
+*.tar.gz
 
 # IDE
 .idea/

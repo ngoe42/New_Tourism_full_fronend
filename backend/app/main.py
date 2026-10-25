@@ -191,7 +191,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
-PRODUCTION_DOMAIN = "nelsontoursandsafaris.com"
+PRODUCTION_DOMAIN = settings.PRODUCTION_DOMAIN
 RAILWAY_HOST_SUFFIX = ".up.railway.app"
 
 
@@ -200,6 +200,11 @@ async def canonical_redirect_middleware(request: Request, call_next):
     host = request.headers.get("host", "").split(":")[0].lower()
     path = request.url.path
     query = request.url.query
+
+    # Local/self-hosted deployments opt out of canonical redirects so that
+    # localhost and LAN hosts are never bounced to the production domain.
+    if not settings.ENABLE_CANONICAL_REDIRECTS:
+        return await call_next(request)
 
     # Bypass redirects for healthcheck and API endpoints
     if path.startswith("/api/") or path in ("/health", "/api/v1/health"):

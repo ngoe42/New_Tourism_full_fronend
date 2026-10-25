@@ -2,14 +2,23 @@
   var host = window.location.hostname;
   var path = window.location.pathname;
   var search = window.location.search;
-  var url = 'https://nelsontoursandsafaris.com';
+  var prodHost = 'nelsontoursandsafaris.com';
+  var isProduction = host === prodHost || host === 'www.' + prodHost;
+  var isRailway = host.indexOf('.up.railway.app') !== -1;
 
-  if (host.indexOf('.up.railway.app') !== -1) {
+  // Localhost / LAN / self-hosted hosts: never redirect.
+  if (!isProduction && !isRailway) {
+    return;
+  }
+
+  var url = 'https://' + prodHost;
+
+  if (isRailway) {
     window.location.replace(url + path + search);
     return;
   }
 
-  if (host === 'www.nelsontoursandsafaris.com') {
+  if (host === 'www.' + prodHost) {
     window.location.replace(url + path + search);
     return;
   }

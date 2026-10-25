@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     BCC_EMAILS: str = "nelsonmichael90@gmail.com"
     FRONTEND_URL: str = "https://nelsontoursandsafaris.com"
     BACKEND_URL: str = "https://api.nelsontoursandsafaris.com"
+    PRODUCTION_DOMAIN: str = "nelsontoursandsafaris.com"
+    # When unset, canonical redirects are enabled only in production.
+    ENABLE_CANONICAL_REDIRECTS: Optional[bool] = None
     # Old Railway fallback: "https://nelsonsafari-backend-development.up.railway.app"
 
     PESAPAL_CONSUMER_KEY: Optional[str] = None
@@ -76,6 +79,9 @@ class Settings(BaseSettings):
             if url.startswith("postgresql+asyncpg://"):
                 return "postgresql+psycopg2://" + url[len("postgresql+asyncpg://"):]
             return url
+
+        if self.ENABLE_CANONICAL_REDIRECTS is None:
+            self.ENABLE_CANONICAL_REDIRECTS = self.ENVIRONMENT == "production"
 
         self.DATABASE_URL = _to_asyncpg(self.DATABASE_URL)
         if not self.DATABASE_URL_SYNC:

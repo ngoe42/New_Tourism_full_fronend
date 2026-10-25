@@ -5,17 +5,20 @@ import { extname, join, resolve } from 'path'
 
 const PORT = process.env.PORT || 3000
 const DIST = resolve('dist')
-const PRODUCTION_DOMAIN = 'nelsontoursandsafaris.com'
+const SITE_URL = (process.env.SITE_URL || 'https://nelsontoursandsafaris.com').replace(/\/+$/, '')
+const PRODUCTION_DOMAIN = new URL(SITE_URL).hostname
+// Off by default so localhost/LAN hosts are never redirected to production.
+const ENABLE_CANONICAL_REDIRECTS = process.env.ENABLE_CANONICAL_REDIRECTS === 'true'
 const INDEX = join(DIST, 'index.html')
 const NOT_FOUND = join(DIST, '404.html')
 
-// Backend API base — derive from VITE_API_URL or default to api subdomain
-const API_HOST = (process.env.VITE_API_URL || 'https://api.nelsontoursandsafaris.com/api/v1')
-  .replace(/^https?:\/\//, '')
-  .split('/')[0]
-  .split(':')[0]
-const API_PROTOCOL = (process.env.VITE_API_URL || 'https://api.nelsontoursandsafaris.com/api/v1')
-  .startsWith('http://') ? 'http' : 'https'
+// Backend base used to proxy sitemap.xml / robots.txt. Inside Docker the
+// frontend talks to the backend service name, not localhost.
+const API_BASE = process.env.BACKEND_INTERNAL_URL || process.env.VITE_API_URL || 'https://api.nelsontoursandsafaris.com'
+const API_PARSED = new URL(API_BASE)
+const API_PROTOCOL = API_PARSED.protocol.replace(':', '')
+const API_HOST = API_PARSED.hostname
+const API_PORT = API_PARSED.port ? Number(API_PARSED.port) : (API_PROTOCOL === 'https' ? 443 : 80)
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -108,7 +111,7 @@ const ROUTE_META = {
                               { title: '5-Day Mafia Island Luxury Experience — Nelson Tour and Safari',   description: 'Escape to Mafia Island for 5 days of pristine beaches, world-class snorkeling, whale sharks, and luxury coastal relaxation in Tanzania.' },
 }
 
-const SITE_LOGO_URL = 'https://nelsontoursandsafaris.com/images/logo/logo.png'
+
 
 function seoMetaForPath(path) {
   if (ROUTE_META[path]) return ROUTE_META[path]
@@ -132,6 +135,12 @@ const server = createServer((req, res) => {
   const queryString = stripTrackingParams(rawQuery)
   const isStaging = host.includes('.up.railway.app')
 
+  const forwardedProto = (req.headers['x-forwarded-proto'] || '').split(',')[0].trim()
+  const protocol = forwardedProto || (req.socket.encrypted ? 'https' : 'http')
+  const requestOrigin = `${protocol}://${req.headers.host}`
+  const canonicalBase = ENABLE_CANONICAL_REDIRECTS ? SITE_URL : requestOrigin
+  const siteLogoUrl = `${canonicalBase}/images/logo/logo.png`
+
   let redirectUrl = null
 
   // Normalise path first (lowercase, strip trailing slash)
@@ -143,26 +152,28 @@ const server = createServer((req, res) => {
     normalised = normalised.replace(/\/+$/, '')
   }
 
-  // www → non-www
-  if (host === `www.${PRODUCTION_DOMAIN}`) {
-    redirectUrl = `https://${PRODUCTION_DOMAIN}${normalised}`
-  }
+  if (ENABLE_CANONICAL_REDIRECTS) {
+    // www → non-www
+    if (host === `www.${PRODUCTION_DOMAIN}`) {
+      redirectUrl = `${SITE_URL}${normalised}`
+    }
 
-  // Railway staging → production (server-side 301 for Googlebot)
-  if (!redirectUrl && isStaging) {
-    redirectUrl = `https://${PRODUCTION_DOMAIN}${normalised}`
-  }
+    // Railway staging → production (server-side 301 for Googlebot)
+    if (!redirectUrl && isStaging) {
+      redirectUrl = `${SITE_URL}${normalised}`
+    }
 
-  // Path normalisation (only if no other redirect already set)
-  if (!redirectUrl && normalised !== path) {
-    redirectUrl = `https://${host}${normalised}`
-  }
+    // Path normalisation (only if no other redirect already set)
+    if (!redirectUrl && normalised !== path) {
+      redirectUrl = `${SITE_URL}${normalised}`
+    }
 
-  if (redirectUrl) {
-    redirectUrl += queryString
-    res.writeHead(301, { Location: redirectUrl })
-    res.end()
-    return
+    if (redirectUrl) {
+      redirectUrl += queryString
+      res.writeHead(301, { Location: redirectUrl })
+      res.end()
+      return
+    }
   }
 
   // Proxy sitemap and robots to the backend (includes dynamic tour/route pages)
@@ -170,7 +181,7 @@ const server = createServer((req, res) => {
     const backendPath = `${path}`
     const opts = {
       hostname: API_HOST,
-      port: 443,
+      port: API_PORT,
       path: backendPath,
       method: req.method,
       headers: { ...req.headers, host: API_HOST },
@@ -189,7 +200,7 @@ const server = createServer((req, res) => {
   if (isSPARoute) {
     try {
       let indexContent = readFileSync(INDEX, 'utf-8')
-      const canonicalUrl = `https://${PRODUCTION_DOMAIN}${path}${queryString}`
+      const canonicalUrl = `${canonicalBase}${path}${queryString}`
       const meta = seoMetaForPath(path)
       const title = meta ? meta.title : 'Nelson Tour and Safari'
       const description = meta ? meta.description : ''
@@ -216,11 +227,11 @@ const server = createServer((req, res) => {
         `  <meta property="og:url" content="${safe(canonicalUrl)}" />`,
         `  <meta property="og:title" content="${safe(title)}" />`,
         `  <meta property="og:description" content="${safe(description)}" />`,
-        `  <meta property="og:image" content="${SITE_LOGO_URL}" />`,
+        `  <meta property="og:image" content="${siteLogoUrl}" />`,
         `  <meta name="twitter:card" content="summary_large_image" />`,
         `  <meta name="twitter:title" content="${safe(title)}" />`,
         `  <meta name="twitter:description" content="${safe(description)}" />`,
-        `  <meta name="twitter:image" content="${SITE_LOGO_URL}" />`,
+        `  <meta name="twitter:image" content="${siteLogoUrl}" />`,
       ].join('\n')
       indexContent = indexContent.replace('</head>', seoHead + '\n</head>')
 

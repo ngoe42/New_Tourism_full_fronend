@@ -1,7 +1,24 @@
 import { Helmet } from 'react-helmet-async'
 import { useLocation } from 'react-router-dom'
 
-const PRODUCTION_URL = import.meta.env.VITE_PRODUCTION_URL || 'https://nelsontoursandsafaris.com'
+const CONFIGURED_URL = import.meta.env.VITE_PRODUCTION_URL || 'https://nelsontoursandsafaris.com'
+
+function isLocalHost(host) {
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '0.0.0.0' ||
+    host.endsWith('.local') ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+  )
+}
+
+const PRODUCTION_URL =
+  typeof window !== 'undefined' && isLocalHost(window.location.hostname)
+    ? window.location.origin
+    : CONFIGURED_URL
 
 const TRACKING_PARAMS = [
   'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',

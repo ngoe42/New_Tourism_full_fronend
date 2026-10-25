@@ -1,0 +1,91 @@
+name: nelson-tour
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: nelson_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: nelson_tour_safari
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nelson_tour_safari"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: nelson_redis
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nelson_api
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/nelson_tour_safari
+      DATABASE_URL_SYNC: postgresql://postgres:password@db:5432/nelson_tour_safari
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: development
+      ENABLE_CANONICAL_REDIRECTS: "false"
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173
+      PORT: "8000"
+      WEB_CONCURRENCY: "2"
+    ports:
+      - "8002:8000"
+    volumes:
+      - uploads_data:/app/static/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8002/api/v1
+    container_name: nelson_frontend
+    environment:
+      PORT: "3000"
+      VITE_API_URL: http://localhost:8002/api/v1
+      BACKEND_INTERNAL_URL: http://backend:8000
+      ENABLE_CANONICAL_REDIRECTS: "false"
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:
