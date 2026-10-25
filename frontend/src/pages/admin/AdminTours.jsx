@@ -10,6 +10,7 @@ const TOUR_CATEGORIES = categories.filter((c) => c !== 'All')
 const EMPTY_FORM = {
   title: '', slug: '', subtitle: '', description: '', category: 'Luxury Safaris',
   location: '', duration: '', group_size: '', price: '',
+  rating: 0, review_count: 0,
   highlights: [], itinerary: [], included: [], excluded: [],
   is_featured: false, is_published: true,
 }
@@ -198,8 +199,6 @@ function TourForm({ initial, onClose, onSave, saving }) {
   const handleSubmit = (e) => {
     e.preventDefault()
     const formData = { ...form, price: parseFloat(form.price) || 0 }
-    delete formData.rating
-    delete formData.review_count
     delete formData.images
     delete formData.created_at
     delete formData.updated_at
@@ -284,6 +283,34 @@ function TourForm({ initial, onClose, onSave, saving }) {
             <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Location *</label>
             <input type="text" value={form.location} onChange={(e) => set('location', e.target.value)} required
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+          </div>
+
+          {/* Rating */}
+          <div>
+            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Star Rating (0–5)</label>
+            <input type="number" min="0" max="5" step="0.1" value={form.rating ?? 0}
+              onChange={(e) => set('rating', Math.min(5, Math.max(0, parseFloat(e.target.value) || 0)))}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+            <div className="flex items-center gap-0.5 mt-1.5">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <button key={i} type="button" onClick={() => set('rating', i)}
+                  title={`${i} star${i > 1 ? 's' : ''}`}
+                  className="p-0.5 hover:scale-110 transition-transform">
+                  <Star size={14} fill="currentColor"
+                    className={i <= Math.round(form.rating || 0) ? 'text-amber-400' : 'text-gray-200'} />
+                </button>
+              ))}
+              <span className="ml-1 font-sans text-xs text-gray-400">{Number(form.rating || 0).toFixed(1)}</span>
+            </div>
+          </div>
+
+          {/* Review Count */}
+          <div>
+            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Number of Reviews</label>
+            <input type="number" min="0" step="1" value={form.review_count ?? 0}
+              onChange={(e) => set('review_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+            <p className="mt-1.5 font-sans text-[11px] text-gray-400">Shown next to the star rating on the website.</p>
           </div>
 
           {/* Description */}
@@ -502,7 +529,15 @@ export default function AdminTours() {
       }
       return tour
     },
-    onSuccess: () => { qc.invalidateQueries(['admin-tours']); setActiveForm(null); showToast('Tour created successfully!') },
+    onSuccess: () => {
+      qc.invalidateQueries(['admin-tours'])
+      qc.invalidateQueries(['tours'])
+      qc.invalidateQueries(['tour'])
+      qc.invalidateQueries(['tours-featured'])
+      qc.invalidateQueries(['tours-related'])
+      setActiveForm(null)
+      showToast('Tour created successfully!')
+    },
     onError: (e) => showToast(extractError(e, 'Failed to create tour'), 'error'),
   })
 
@@ -514,13 +549,28 @@ export default function AdminTours() {
       }
       return tour
     },
-    onSuccess: () => { qc.invalidateQueries(['admin-tours']); setActiveForm(null); showToast('Tour updated successfully!') },
+    onSuccess: () => {
+      qc.invalidateQueries(['admin-tours'])
+      qc.invalidateQueries(['tours'])
+      qc.invalidateQueries(['tour'])
+      qc.invalidateQueries(['tours-featured'])
+      qc.invalidateQueries(['tours-related'])
+      setActiveForm(null)
+      showToast('Tour updated successfully!')
+    },
     onError: (e) => showToast(extractError(e, 'Failed to update tour'), 'error'),
   })
 
   const deleteMutation = useMutation({
     mutationFn: toursApi.delete,
-    onSuccess: () => { qc.invalidateQueries(['admin-tours']); showToast('Tour deleted') },
+    onSuccess: () => {
+      qc.invalidateQueries(['admin-tours'])
+      qc.invalidateQueries(['tours'])
+      qc.invalidateQueries(['tour'])
+      qc.invalidateQueries(['tours-featured'])
+      qc.invalidateQueries(['tours-related'])
+      showToast('Tour deleted')
+    },
     onError: (e) => showToast(extractError(e, 'Failed to delete tour'), 'error'),
   })
 

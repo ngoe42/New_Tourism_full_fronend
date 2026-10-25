@@ -36,6 +36,8 @@ class TourBase(BaseModel):
     excluded: Optional[List[str]] = []
     is_published: bool = False
     is_featured: bool = False
+    rating: float = Field(default=0.0, ge=0, le=5)
+    review_count: int = Field(default=0, ge=0)
 
 
 class TourCreate(TourBase):
@@ -58,6 +60,8 @@ class TourUpdate(BaseModel):
     excluded: Optional[List[str]] = None
     is_published: Optional[bool] = None
     is_featured: Optional[bool] = None
+    rating: Optional[float] = Field(None, ge=0, le=5)
+    review_count: Optional[int] = Field(None, ge=0)
 
 
 # NOTE: Response model intentionally does NOT inherit TourBase.

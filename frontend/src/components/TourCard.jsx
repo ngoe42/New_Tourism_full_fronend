@@ -96,11 +96,15 @@ export default function TourCard({ tour, index = 0, priority = false }) {
         {/* Divider */}
         <div className="border-t border-gray-100 pt-4 flex items-center justify-between">
           {/* Rating */}
-          <div className="flex items-center gap-1.5">
-            <Star size={14} className="text-gold fill-gold" />
-            <span className="font-sans text-sm font-semibold text-green-950">{tour.rating}</span>
-            <span className="font-sans text-xs text-gray-400">({reviewCount})</span>
-          </div>
+          {tour.rating > 0 ? (
+            <div className="flex items-center gap-1.5">
+              <Star size={14} className="text-gold fill-gold" />
+              <span className="font-sans text-sm font-semibold text-green-950">{tour.rating}</span>
+              <span className="font-sans text-xs text-gray-400">({reviewCount})</span>
+            </div>
+          ) : (
+            <span className="font-sans text-xs text-gray-400">No reviews yet</span>
+          )}
 
           {/* Price */}
           {showPrices ? (

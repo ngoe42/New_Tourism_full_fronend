@@ -121,10 +121,12 @@ export default function TourDetail() {
                 <img src={coverImage} alt="" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" loading="lazy" decoding="async" />
                 <div className="min-w-0">
                   <p className="font-serif text-sm font-semibold text-green-950 truncate">{tour.title}</p>
-                  <div className="flex items-center gap-1.5">
-                    <Star size={11} className="text-gold fill-gold" />
-                    <span className="font-sans text-xs text-gray-500">{tour.rating} · {tour.review_count} reviews</span>
-                  </div>
+                  {tour.rating > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Star size={11} className="text-gold fill-gold" />
+                      <span className="font-sans text-xs text-gray-500">{tour.rating} · {tour.review_count} reviews</span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-4 flex-shrink-0">
@@ -295,14 +297,16 @@ export default function TourDetail() {
             ) : (
               <p className="font-serif text-lg font-semibold text-green-950">Request a Quote</p>
             )}
-            <div className="flex items-center gap-3 mt-0.5">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={11} className={i < Math.round(tour.rating) ? 'text-gold fill-gold' : 'text-gray-200 fill-gray-200'} />
-                ))}
+            {tour.rating > 0 && (
+              <div className="flex items-center gap-3 mt-0.5">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={11} className={i < Math.round(tour.rating) ? 'text-gold fill-gold' : 'text-gray-200 fill-gray-200'} />
+                  ))}
+                </div>
+                <span className="font-sans text-xs text-gray-400">{tour.review_count} reviews</span>
               </div>
-              <span className="font-sans text-xs text-gray-400">{tour.review_count} reviews</span>
-            </div>
+            )}
           </div>
           {/* Action buttons */}
           <div className="flex flex-wrap gap-3">
@@ -463,11 +467,15 @@ export default function TourDetail() {
                     )}
                   </div>
                   <div className="text-right">
-                    <div className="flex items-center gap-1 justify-end">
-                      <Star size={14} className="text-gold fill-gold" />
-                      <span className="font-sans text-sm font-semibold text-green-950">{tour.rating}</span>
-                    </div>
-                    <p className="font-sans text-xs text-gray-400">{tour.review_count} reviews</p>
+                    {tour.rating > 0 && (
+                      <>
+                        <div className="flex items-center gap-1 justify-end">
+                          <Star size={14} className="text-gold fill-gold" />
+                          <span className="font-sans text-sm font-semibold text-green-950">{tour.rating}</span>
+                        </div>
+                        <p className="font-sans text-xs text-gray-400">{tour.review_count} reviews</p>
+                      </>
+                    )}
                   </div>
                 </div>
 

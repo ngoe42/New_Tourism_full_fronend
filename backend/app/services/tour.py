@@ -47,6 +47,8 @@ class TourService:
             excluded=data.excluded or [],
             is_published=data.is_published,
             is_featured=data.is_featured,
+            rating=data.rating,
+            review_count=data.review_count,
         )
         return await self.tour_repo.create(tour)
 
