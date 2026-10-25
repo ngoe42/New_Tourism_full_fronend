@@ -36,7 +36,4 @@ export const bookingsApi = {
 
   delete: (id) =>
     apiClient.delete(`/bookings/${id}`),
-
-  deleteMultiple: (ids) =>
-    apiClient.post('/bookings/bulk-delete', { ids }).then((r) => r.data),
 }

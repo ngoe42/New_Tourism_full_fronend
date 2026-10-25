@@ -7,7 +7,6 @@ import {
   Mail, Phone, ArrowRight, CreditCard, FileText,
 } from 'lucide-react'
 import { bookingsApi } from '../api/bookings'
-import { useSiteSettings } from '../hooks/useSiteSettings'
 
 const STATUS_CONFIG = {
   pending:   { label: 'Pending Confirmation', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: Clock },
@@ -49,7 +48,6 @@ export default function BookingConfirmation() {
   const [submitting, setSubmitting] = useState(false)
 
   const bookingId = parseInt(id, 10)
-  const { sendPaymentEmail } = useSiteSettings()
 
   useEffect(() => {
     const stored = sessionStorage.getItem('lastBookingEmail')
@@ -164,7 +162,7 @@ export default function BookingConfirmation() {
   const StatusIcon = statusCfg.icon
   const PayIcon = paymentCfg?.icon
 
-  const needsPayment = booking.payment_status?.toUpperCase() === 'PENDING' && sendPaymentEmail
+  const needsPayment = booking.payment_status?.toUpperCase() === 'PENDING'
   const isPaid = booking.payment_status?.toUpperCase() === 'COMPLETED' || booking.status === 'confirmed' || booking.status === 'completed'
 
   return (
@@ -243,7 +241,15 @@ export default function BookingConfirmation() {
               </p>
             </div>
 
-
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 text-[#c9a96e]">
+                <DollarSign size={14} />
+                <span className="font-sans text-[10px] uppercase tracking-widest text-gray-400">Total Price</span>
+              </div>
+              <p className="font-sans text-sm font-semibold text-gray-800">
+                USD {Number(booking.total_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
 
             {booking.tour?.duration && (
               <div className="flex flex-col gap-1">
@@ -322,25 +328,6 @@ export default function BookingConfirmation() {
             </p>
             <p className="font-sans text-sm text-gray-600 leading-relaxed">
               {booking.special_requests}
-            </p>
-          </motion.div>
-        )}
-
-        {/* ── Confirmation banner ── */}
-        {booking.status === 'confirmed' && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.14 }}
-            className="bg-green-50 border-2 border-green-200 rounded-3xl px-8 py-6 mb-4 text-center"
-          >
-            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-              <CheckCircle size={28} className="text-green-700" />
-            </div>
-            <h3 className="font-serif text-xl font-bold text-green-900 mb-1">Booking Confirmed!</h3>
-            <p className="font-sans text-sm text-green-700">
-              Your booking <span className="font-semibold">#{booking.id}</span> has been confirmed.
-              We look forward to welcoming you!
             </p>
           </motion.div>
         )}

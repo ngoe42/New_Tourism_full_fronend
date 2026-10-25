@@ -52,8 +52,6 @@ export default function Login() {
                 src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
                 alt="Nelson Tours & Safari"
                 className="h-20 w-auto object-contain"
-                fetchpriority="high"
-                decoding="async"
               />
             </div>
             <h1 className="font-serif text-2xl font-bold text-green-950">Welcome Back</h1>
@@ -81,7 +79,7 @@ export default function Login() {
                   required
                   value={form.email}
                   onChange={(e) => set('email', e.target.value)}
-                  placeholder="info@nelsontoursandsafaris.com"
+                  placeholder="admin@nelsontoursandsafari.com"
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl font-sans text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
                 />
               </div>

@@ -9,7 +9,7 @@ import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export default function BookingForm({ tourId = null, routeId = null, tourTitle = '', tourPrice = 0, compact = false }) {
   const { user } = useAuth()
-  const { showPrices, sendPaymentEmail } = useSiteSettings()
+  const { showPrices } = useSiteSettings()
   const [form, setForm] = useState({
     name: user?.name ?? '',
     email: user?.email ?? '',
@@ -60,29 +60,7 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
         setBookingRef(booking.id)
         sessionStorage.setItem('lastBookingId', booking.id)
         sessionStorage.setItem('lastBookingEmail', form.email)
-        // Payment link is generated asynchronously — poll until ready
-        if (booking.payment_redirect_url) {
-          setPaymentUrl(booking.payment_redirect_url)
-        } else {
-          ;(async function pollPaymentLink() {
-            for (let i = 0; i < 60; i++) {
-              await new Promise((r) => setTimeout(r, 2000))
-              try {
-                const b = await bookingsApi.getById(booking.id)
-                if (b.payment_redirect_url) {
-                  setPaymentUrl(b.payment_redirect_url)
-                  return
-                }
-                if (b.payment_status === 'FAILED') {
-                  setPaymentUrl(null)
-                  return
-                }
-              } catch {
-                // transient — keep polling
-              }
-            }
-          })()
-        }
+        setPaymentUrl(booking.payment_redirect_url || null)
         setStatus('success')
       } else {
         const inquiryPayload = {
@@ -133,7 +111,7 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
         {bookingRef && (
           <p className="font-sans text-xs text-gray-400 mb-5">Booking Reference: #{bookingRef}</p>
         )}
-        {bookingRef && sendPaymentEmail && (
+        {bookingRef && (
           <button
             onClick={() => navigate(`/payment/resume?id=${bookingRef}`)}
             className="mt-3 mb-2 w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gold text-white font-sans text-sm font-semibold rounded-xl hover:bg-amber-700 transition-colors shadow-md"
@@ -141,7 +119,7 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
             Complete Payment Now
           </button>
         )}
-        {bookingRef && sendPaymentEmail && (
+        {bookingRef && (
           <p className="font-sans text-[11px] text-gray-400 mb-2">Visa · Mastercard · M-Pesa · Airtel Money · Secured by Pesapal</p>
         )}
         {bookingRef && (

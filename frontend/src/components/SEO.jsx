@@ -1,24 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 import { useLocation } from 'react-router-dom'
 
-const CONFIGURED_URL = import.meta.env.VITE_PRODUCTION_URL || 'https://nelsontoursandsafaris.com'
-
-function isLocalHost(host) {
-  return (
-    host === 'localhost' ||
-    host === '127.0.0.1' ||
-    host === '0.0.0.0' ||
-    host.endsWith('.local') ||
-    /^10\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host)
-  )
-}
-
-const PRODUCTION_URL =
-  typeof window !== 'undefined' && isLocalHost(window.location.hostname)
-    ? window.location.origin
-    : CONFIGURED_URL
+const PRODUCTION_URL = import.meta.env.VITE_PRODUCTION_URL || 'https://nelsontoursandsafaris.com'
 
 const TRACKING_PARAMS = [
   'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
@@ -34,7 +17,7 @@ function normalizePath(path) {
   return normalized
 }
 
-export default function SEO({ title, description, canonicalPath, noindex, image, jsonLd }) {
+export default function SEO({ title, description, canonicalPath, noindex, image }) {
   const { pathname, search } = useLocation()
   const isStaging = typeof window !== 'undefined' && window.location.hostname.includes('.up.railway.app')
   const shouldNoindex = noindex !== undefined ? noindex : isStaging
@@ -47,7 +30,6 @@ export default function SEO({ title, description, canonicalPath, noindex, image,
   const path = normalizePath(canonicalPath || pathname)
   const url = `${PRODUCTION_URL}${path}${queryString}`
   const ogImage = image || `${PRODUCTION_URL}/images/logo/logo.png`
-  const jsonLdItems = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : []
 
   return (
     <Helmet>
@@ -64,9 +46,6 @@ export default function SEO({ title, description, canonicalPath, noindex, image,
       {description && <meta name="twitter:description" content={description} />}
       <meta name="twitter:image" content={ogImage} />
       {shouldNoindex && <meta name="robots" content="noindex, nofollow" />}
-      {jsonLdItems.map((item, i) => (
-        <script key={i} type="application/ld+json">{JSON.stringify(item)}</script>
-      ))}
     </Helmet>
   )
 }

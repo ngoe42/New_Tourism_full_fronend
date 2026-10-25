@@ -36,19 +36,10 @@ export default function Navbar() {
   const navigate  = useNavigate()
   const { user, logout } = useAuth()
 
-  // The mega-menu previews are hover/tap-triggered and most visits never open
-  // them — fetch each list only the first time its menu is actually touched,
-  // instead of firing all three on every page load and competing with the
-  // page's own critical requests. Once true, stays true (data then caches
-  // normally via staleTime) so reopening the menu doesn't refetch.
-  const [touched, setTouched] = useState({ tours: false, routes: false, experiences: false })
-  const touch = (key) => setTouched((t) => (t[key] ? t : { ...t, [key]: true }))
-
   const { data: toursData } = useQuery({
     queryKey: ['nav-tours'],
     queryFn: () => toursApi.list({ per_page: 20, is_published: true }),
     staleTime: 5 * 60 * 1000,
-    enabled: touched.tours,
   })
   const tourList = Array.isArray(toursData?.items) ? toursData.items : []
 
@@ -56,7 +47,6 @@ export default function Navbar() {
     queryKey: ['nav-routes'],
     queryFn: () => routesApi.list(),
     staleTime: 5 * 60 * 1000,
-    enabled: touched.routes,
   })
   const routeList = Array.isArray(routesData) ? routesData : []
   const [activeRouteHover, setActiveRouteHover] = useState(null)
@@ -69,7 +59,6 @@ export default function Navbar() {
     queryKey: ['nav-experiences'],
     queryFn: () => experiencesApi.list(),
     staleTime: 5 * 60 * 1000,
-    enabled: touched.experiences,
   })
   const experienceList = Array.isArray(experiencesData) ? experiencesData : []
 
@@ -123,8 +112,8 @@ export default function Navbar() {
             <a href="tel:+255777123456" className="flex items-center gap-1 font-sans text-[10px] text-white/60 hover:text-white transition-colors">
               <Phone size={10} /> +255 777 123 456
             </a>
-            <a href="mailto:info@nelsontoursandsafaris.com" className="flex items-center gap-1 font-sans text-[10px] text-white/60 hover:text-white transition-colors">
-              <Mail size={10} /> info@nelsontoursandsafaris.com
+            <a href="mailto:info@nelsontoursandsafari.com" className="flex items-center gap-1 font-sans text-[10px] text-white/60 hover:text-white transition-colors">
+              <Mail size={10} /> info@nelsontoursandsafari.com
             </a>
           </div>
           <div className="flex items-center gap-3 ml-auto">
@@ -147,8 +136,6 @@ export default function Navbar() {
               className={`h-[84px] sm:h-24 lg:h-[120px] w-auto object-contain transition-all duration-500 origin-top-left z-10 ${
                 isTransparent ? 'scale-110 sm:scale-125 translate-y-0.5 sm:translate-y-1' : 'scale-100 translate-y-0 translate-x-0'
               }`}
-              fetchpriority="high"
-              decoding="async"
             />
           </Link>
 
@@ -160,9 +147,6 @@ export default function Navbar() {
                 className="relative"
                 onMouseEnter={() => {
                   if (link.hasTourDropdown || link.hasRouteDropdown || link.hasExperienceDropdown) setActiveDropdown(link.label)
-                  if (link.hasTourDropdown) touch('tours')
-                  if (link.hasRouteDropdown) touch('routes')
-                  if (link.hasExperienceDropdown) touch('experiences')
                 }}
                 onMouseLeave={() => {
                   setActiveDropdown(null)
@@ -314,7 +298,7 @@ export default function Navbar() {
                             {(() => {
                               const cover = activeRouteHover.images?.find(i => i.is_cover) ?? activeRouteHover.images?.[0]
                               return cover ? (
-                                <img src={resolveImageUrl(cover.url)} alt={activeRouteHover.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                                <img src={resolveImageUrl(cover.url)} alt={activeRouteHover.name} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
                                   <Mountain size={28} className="text-white/30" />
@@ -460,8 +444,6 @@ export default function Navbar() {
                                   src={resolveImageUrl(cover.url)}
                                   alt={activeTourHover.title}
                                   className="w-full h-full object-cover"
-                                  loading="lazy"
-                                  decoding="async"
                                 />
                               ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
@@ -581,7 +563,7 @@ export default function Navbar() {
                           {/* Cover image */}
                           <div className="relative h-48 flex-shrink-0 overflow-hidden">
                             {activeExpHover.image_url ? (
-                              <img src={resolveImageUrl(activeExpHover.image_url)} alt={activeExpHover.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                              <img src={resolveImageUrl(activeExpHover.image_url)} alt={activeExpHover.title} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full bg-gradient-to-br from-green-900 to-amber-800 flex items-center justify-center">
                                 <Mountain size={32} className="text-white/30" />
@@ -727,8 +709,6 @@ export default function Navbar() {
                     src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
                     alt="Nelson Tours & Safari"
                     className="h-14 w-auto object-contain"
-                    fetchpriority="high"
-                    decoding="async"
                   />
                 </Link>
                 <button
@@ -757,7 +737,7 @@ export default function Navbar() {
                   {/* KILIMANJARO accordion */}
                   <div className="border-b border-gray-100">
                     <button
-                      onClick={() => { setMobileExpanded(mobileExpanded === 'kilimanjaro' ? null : 'kilimanjaro'); touch('routes') }}
+                      onClick={() => setMobileExpanded(mobileExpanded === 'kilimanjaro' ? null : 'kilimanjaro')}
                       className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Kilimanjaro</span>
@@ -892,7 +872,7 @@ export default function Navbar() {
                   {/* SAFARI accordion */}
                   <div className="border-b border-gray-100">
                     <button
-                      onClick={() => { setMobileExpanded(mobileExpanded === 'safari' ? null : 'safari'); touch('tours') }}
+                      onClick={() => setMobileExpanded(mobileExpanded === 'safari' ? null : 'safari')}
                       className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Safari</span>
@@ -936,7 +916,7 @@ export default function Navbar() {
                   {/* EXPERIENCES accordion */}
                   <div className="border-b border-gray-100">
                     <button
-                      onClick={() => { setMobileExpanded(mobileExpanded === 'experiences' ? null : 'experiences'); touch('experiences') }}
+                      onClick={() => setMobileExpanded(mobileExpanded === 'experiences' ? null : 'experiences')}
                       className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-sm font-bold text-gray-800 uppercase tracking-wider hover:text-gold hover:bg-beige/50 transition-colors"
                     >
                       <span>Experiences</span>

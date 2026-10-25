@@ -48,8 +48,6 @@ export default function Footer() {
               src={logoUrl ? resolveImageUrl(logoUrl) : '/images/logo/logo.png'}
               alt="Nelson Tours & Safari"
               className="h-24 w-auto object-contain drop-shadow mb-3"
-              loading="lazy"
-              decoding="async"
             />
           </Link>
           <p className="font-sans text-white/50 text-xs leading-relaxed mb-4 max-w-[220px]">
@@ -125,13 +123,13 @@ export default function Footer() {
               <Phone size={13} className="text-gold flex-shrink-0" />
               <span className="font-sans text-xs text-white/60 group-hover:text-gold transition-colors">+255 750 005 973</span>
             </a>
-            <a href="mailto:info@nelsontoursandsafaris.com" className="flex items-center gap-2 group">
+            <a href="mailto:contact@nelsontoursandsafari.com" className="flex items-center gap-2 group">
               <Mail size={13} className="text-gold flex-shrink-0" />
-              <span className="font-sans text-xs text-white/60 group-hover:text-gold transition-colors break-all">info@nelsontoursandsafaris.com</span>
+              <span className="font-sans text-xs text-white/60 group-hover:text-gold transition-colors break-all">contact@nelsontoursandsafari.com</span>
             </a>
             <div className="flex items-center gap-2">
               <MapPin size={13} className="text-gold flex-shrink-0" />
-              <span className="font-sans text-xs text-white/60">Hai, Kilimanjaro, Tanzania</span>
+              <span className="font-sans text-xs text-white/60">Arusha, Tanzania</span>
             </div>
           </div>
 
@@ -153,10 +151,15 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-1.5">
-          <p className="font-sans text-xs text-white/20">Licensed by TATO & TTB · Hai, Kilimanjaro, Tanzania</p>
+          <p className="font-sans text-xs text-white/20">Licensed by TATO & TTB · Arusha, Tanzania</p>
           <p className="font-sans text-[11px] text-white/60">
             Designed &amp; Built by{' '}
-            <span className="text-gold underline underline-offset-2">Kenedy Ngoe</span>
+            <a
+              href="mailto:ngoekenedy@gmail.com"
+              className="text-gold hover:text-gold/80 transition-colors underline underline-offset-2"
+            >
+              Kenedy Ngoe
+            </a>
           </p>
         </div>
       </div>

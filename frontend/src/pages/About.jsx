@@ -6,11 +6,8 @@ import {
 } from 'lucide-react'
 import WhyChooseUs from '../components/WhyChooseUs'
 import CTASection from '../components/CTASection'
-import SEO from '../components/SEO'
-import Breadcrumbs from '../components/Breadcrumbs'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 import { resolveImageUrl } from '../utils/imageUrl'
-import { SITE_URL, ORG_NAME } from '../utils/schema'
 
 const fadeUp = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.7 } }
 const fadeLeft = { initial: { opacity: 0, x: -50 }, whileInView: { opacity: 1, x: 0 }, viewport: { once: true }, transition: { duration: 0.8 } }
@@ -57,41 +54,24 @@ export default function About() {
     resolveImageUrl(aboutTeam3Image) || '/images/team/david.jpg',
   ]
 
-  const aboutJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'AboutPage',
-    name: `About ${ORG_NAME}`,
-    description: "Nelson Tours and Safaris is a Tanzanian-owned, Arusha-based safari and Kilimanjaro trekking company. Learn about our team, safety standards, and responsible tourism practices.",
-    url: `${SITE_URL}/about`,
-    mainEntity: { '@id': `${SITE_URL}/#organization` },
-  }
-
   return (
     <main className="bg-beige">
-      <SEO
-        title="About Nelson Tours and Safaris — Tanzania Safari Experts"
-        description="Meet the Arusha-based team behind Nelson Tours and Safaris — Tanzania safari planners, UIMLA-certified Kilimanjaro guides, and cultural specialists with two decades of local expertise."
-        canonicalPath="/about"
-        image={heroImg}
-        jsonLd={aboutJsonLd}
-      />
 
       {/* ── 1. HERO — Who We Are ──────────────────────────────────── */}
       <section className="relative min-h-[62vh] flex flex-col justify-end bg-green-950 overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroImg} alt="Tanzania safari at sunrise" className="w-full h-full object-cover" loading="eager" fetchpriority="high" decoding="async" />
+          <img src={heroImg} alt="Tanzania safari at sunrise" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-green-950 via-green-950/60 to-green-950/10" />
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-36 pb-20">
-          <Breadcrumbs dark items={[{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }]} />
-          <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="font-sans text-xs font-semibold uppercase tracking-widest text-gold mt-5 mb-3">
+          <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="font-sans text-xs font-semibold uppercase tracking-widest text-gold mb-3">
             Who We Are
           </motion.p>
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-3xl mb-5">
             Tanzania's Most Trusted Safari & Adventure Specialists
           </motion.h1>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.22 }} className="font-sans text-base sm:text-lg text-white/75 max-w-2xl leading-relaxed mb-8">
-            Nelson Tours and Safaris is a Tanzanian-owned, Kilimanjaro based travel company dedicated to one mission: crafting life-changing adventures across Africa's most extraordinary landscapes. We are safari planners, mountain guides, beach escape architects and cultural storytellers — united by an unshakeable love for this land and an unwavering commitment to the guests who trust us to show it to them.
+            Nelson Tours and Safaris is a Tanzanian-owned, Arusha-based travel company dedicated to one mission: crafting life-changing adventures across Africa's most extraordinary landscapes. We are safari planners, mountain guides, beach escape architects and cultural storytellers — united by an unshakeable love for this land and an unwavering commitment to the guests who trust us to show it to them.
           </motion.p>
         </div>
       </section>
@@ -112,7 +92,7 @@ export default function About() {
                 Rooted in Tanzania. <br />Built on Passion.
               </h2>
               <p className="font-sans text-gray-600 leading-relaxed text-base sm:text-lg mb-4">
-                Nelson Tours and Safaris was not built in a boardroom. It was born on the red volcanic soils of Kilimanjaro, under the watchful silhouette of Mount Kilimanjaro, from a simple but powerful belief: that Tanzania is one of the most extraordinary places on Earth — and that every human being who visits it deserves to experience its full, unfiltered wonder.
+                Nelson Tours and Safaris was not built in a boardroom. It was born on the red volcanic soils of Arusha, under the watchful silhouette of Mount Kilimanjaro, from a simple but powerful belief: that Tanzania is one of the most extraordinary places on Earth — and that every human being who visits it deserves to experience its full, unfiltered wonder.
               </p>
               <p className="font-sans text-gray-600 leading-relaxed text-base sm:text-lg mb-6">
                 Our founder, Nelson, grew up listening to the rhythm of the Serengeti. He spent years as a field guide before assembling a team of equally passionate local professionals — naturalists, mountain climbers, cultural guides and hospitality specialists — each driven by the same quiet pride in Tanzania's landscapes, wildlife, and people. What began as a dream to share this land honestly and beautifully has grown into one of Tanzania's most trusted adventure companies.
@@ -369,7 +349,7 @@ export default function About() {
       {/* ── 12. CLOSING CALL TO ADVENTURE ─────────────────────────── */}
       <section className="relative py-28 sm:py-36 bg-green-950 overflow-hidden text-center">
         <div className="absolute inset-0 opacity-20">
-          <img src="/images/sections/story-luxury.jpg" alt="" className="w-full h-full object-cover" aria-hidden="true" loading="lazy" decoding="async" />
+          <img src="/images/sections/story-luxury.jpg" alt="" className="w-full h-full object-cover" aria-hidden="true" />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto px-6 lg:px-8">
           <motion.div {...fadeUp}>

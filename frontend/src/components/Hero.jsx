@@ -54,18 +54,6 @@ export default function Hero() {
     <section className="relative h-screen min-h-[600px] sm:min-h-[700px] overflow-hidden flex items-center">
       {/* Video background */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Always-present base image: guarantees an immediate LCP paint instead of a
-            blank background while site settings are still loading (or if no
-            video/slideshow ends up being configured at all). Video/slideshow layer
-            on top once ready. */}
-        <img
-          src="/images/hero-bg.jpg"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-          loading="eager"
-          fetchpriority="high"
-          decoding="async"
-        />
         {shouldUseSlideshow ? (
           <div className="absolute inset-0 overflow-hidden">
             <AnimatePresence mode="sync">
@@ -73,9 +61,6 @@ export default function Hero() {
                 key={activeSlideSrc}
                 src={activeSlideSrc}
                 alt=""
-                fetchpriority="high"
-                loading="eager"
-                decoding="async"
                 className="absolute inset-0 w-full h-full object-cover will-change-transform"
                 initial={{ opacity: 0, scale: 1.08 }}
                 animate={{ opacity: 1, scale: 1.15 }}
@@ -87,7 +72,7 @@ export default function Hero() {
               />
             </AnimatePresence>
           </div>
-        ) : shouldUseVideo ? (
+        ) : (
           <video
             key={videoSrc}
             src={videoSrc}
@@ -100,7 +85,7 @@ export default function Hero() {
             style={{ transform: 'translateZ(0)' }}
             onError={() => setVideoFailed(true)}
           />
-        ) : null}
+        )}
         {/* Multi-layer gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-[#1a5c43]/55 pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent pointer-events-none" />
