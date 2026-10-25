@@ -23,7 +23,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app/dist ./dist
-COPY server.js generate-config.js ./
+COPY package.json server.js generate-config.js ./
 
 EXPOSE 3000
 
