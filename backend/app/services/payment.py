@@ -8,6 +8,8 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.security import create_booking_token, verify_booking_token
+from app.dependencies.auth import has_permission
 from app.models.booking import Booking, BookingStatus
 from app.models.payment_attempt import PaymentAttempt
 from app.models.user import User
@@ -39,17 +41,36 @@ class PaymentService:
         ipn_url = f"{settings.BACKEND_URL}/api/v1/payments/ipn"
         return await self.pesapal.register_ipn(ipn_url)
 
+    # ── Access control ───────────────────────────────────────────────
+
+    async def authorize_booking_access(
+        self,
+        booking: Booking,
+        user: User | None,
+        token: str | None = None,
+        tracking_id: str | None = None,
+    ) -> None:
+        """Allow staff with manage_bookings, the owning user, anyone holding the
+        booking's signed access token (emailed links), or the payer returning
+        from Pesapal with one of this booking's order tracking IDs."""
+        if has_permission(user, "manage_bookings"):
+            return
+        if user and booking.user_id is not None and booking.user_id == user.id:
+            return
+        if verify_booking_token(booking.id, token):
+            return
+        if tracking_id and await self.attempt_repo.exists_for_booking(booking.id, tracking_id.strip()):
+            return
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
     # ── Initiate Payment ─────────────────────────────────────────────
 
-    async def initiate_payment(self, booking_id: int, user: User | None) -> dict:
+    async def initiate_payment(self, booking_id: int, user: User | None, token: str | None = None) -> dict:
         """Create a Pesapal order for the given booking and return the redirect URL."""
         booking = await self.booking_repo.get_for_update(booking_id)
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
-        # Ownership: if booking belongs to a user, require auth as that user or admin
-        if booking.user_id is not None:
-            if not user or (booking.user_id != user.id and user.role.value != "admin"):
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        await self.authorize_booking_access(booking, user, token=token)
 
         if not settings.PESAPAL_CONSUMER_KEY or not settings.PESAPAL_CONSUMER_SECRET:
             raise HTTPException(
@@ -132,7 +153,7 @@ class PaymentService:
 
         if not email_already_sent:
             tour = booking.tour
-            resume_link = f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
+            resume_link = f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}&token={create_booking_token(booking.id)}"
             _t = asyncio.create_task(send_booking_confirmation_email(
                 booking_id=booking.id,
                 tour_title=tour.title if tour else f"Booking #{booking.id}",
@@ -374,7 +395,7 @@ class PaymentService:
                     body=(
                         f"Dear {first},\n\nHere is your payment link for booking "
                         f"#{booking.id} — {tour_title}.\n\nPlease complete your secure payment "
-                        f"at: {settings.FRONTEND_URL}/payment/resume?id={booking.id}\n\n"
+                        f"at: {settings.FRONTEND_URL}/payment/resume?id={booking.id}&token={create_booking_token(booking.id)}\n\n"
                         f"Warm regards,\nNelson Tours & Safari Team"
                     ),
                 )
@@ -425,7 +446,7 @@ class PaymentService:
             return
 
         first = booking.contact_name.split()[0]
-        resume_link = f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}"
+        resume_link = f"{settings.FRONTEND_URL}/payment/resume?id={booking.id}&token={create_booking_token(booking.id)}"
         body = (
             f"Dear {first},\n\n"
             f"Here is your payment link for booking #{booking.id} — {tour_title}.\n\n"
@@ -447,7 +468,13 @@ class PaymentService:
 
     # ── Poll Status ──────────────────────────────────────────────────
 
-    async def get_payment_status(self, booking_id: int, user: User | None) -> dict:
+    async def get_payment_status(
+        self,
+        booking_id: int,
+        user: User | None,
+        token: str | None = None,
+        tracking_id: str | None = None,
+    ) -> dict:
         """Poll Pesapal for latest payment status and sync to booking.
 
         Short-circuits for terminal states to avoid hammering Pesapal and writing
@@ -457,9 +484,7 @@ class PaymentService:
         booking = await self.booking_repo.get(booking_id)   # plain read — no lock
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
-        if booking.user_id is not None:
-            if not user or (booking.user_id != user.id and user.role.value != "admin"):
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        await self.authorize_booking_access(booking, user, token=token, tracking_id=tracking_id)
 
         if not booking.pesapal_order_tracking_id:
             return {

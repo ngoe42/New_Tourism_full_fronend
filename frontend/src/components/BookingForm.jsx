@@ -23,6 +23,7 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
   const navigate = useNavigate()
   const [paymentUrl, setPaymentUrl] = useState(null)
   const [bookingRef, setBookingRef] = useState(null)
+  const [bookingToken, setBookingToken] = useState(null)
   const submitting = useRef(false)
 
   useEffect(() => {
@@ -58,8 +59,10 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
         })
 
         setBookingRef(booking.id)
+        setBookingToken(booking.payment_token || null)
         sessionStorage.setItem('lastBookingId', booking.id)
         sessionStorage.setItem('lastBookingEmail', form.email)
+        if (booking.payment_token) sessionStorage.setItem('lastBookingToken', booking.payment_token)
         setPaymentUrl(booking.payment_redirect_url || null)
         setStatus('success')
       } else {
@@ -113,7 +116,7 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
         )}
         {bookingRef && (
           <button
-            onClick={() => navigate(`/payment/resume?id=${bookingRef}`)}
+            onClick={() => navigate(`/payment/resume?id=${bookingRef}&token=${encodeURIComponent(bookingToken || '')}`)}
             className="mt-3 mb-2 w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gold text-white font-sans text-sm font-semibold rounded-xl hover:bg-amber-700 transition-colors shadow-md"
           >
             Complete Payment Now
@@ -131,7 +134,7 @@ export default function BookingForm({ tourId = null, routeId = null, tourTitle =
           </button>
         )}
         <button
-          onClick={() => { setStatus('idle'); setPaymentUrl(null); setBookingRef(null) }}
+          onClick={() => { setStatus('idle'); setPaymentUrl(null); setBookingRef(null); setBookingToken(null) }}
           className="mt-4 text-sm font-sans text-[#c9a96e] hover:underline transition-colors"
         >
           Submit another request

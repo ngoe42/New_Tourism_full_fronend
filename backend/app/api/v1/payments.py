@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.security import create_booking_token
 from app.core.limiter import limiter
 from app.dependencies.auth import get_current_user_optional, get_current_user
 from app.models.user import User
@@ -25,12 +26,13 @@ class ResendLinkRequest(BaseModel):
 async def initiate_payment(
     request: Request,
     booking_id: int,
+    token: str | None = Query(None, description="Booking access token for guest bookings"),
     current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
     """Initiate a Pesapal payment for an existing booking. Returns redirect_url."""
     service = PaymentService(db)
-    return await service.initiate_payment(booking_id, current_user)
+    return await service.initiate_payment(booking_id, current_user, token=token)
 
 
 @router.get("/ipn")
@@ -74,13 +76,20 @@ async def register_ipn(
 @router.get("/status/{booking_id}")
 async def payment_status(
     booking_id: int,
-    token: str | None = Query(None, description="Booking access token for anonymous users"),
+    token: str | None = Query(None, description="Booking access token for guest bookings"),
+    tracking_id: str | None = Query(None, description="Pesapal OrderTrackingId from the payment callback"),
     current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
     """Poll the current Pesapal payment status for a booking."""
     service = PaymentService(db)
-    return await service.get_payment_status(booking_id, current_user)
+    result = await service.get_payment_status(
+        booking_id, current_user, token=token, tracking_id=tracking_id
+    )
+    # Caller is authorised at this point — hand back the token so the
+    # callback page can build a working "retry payment" link.
+    result["payment_token"] = create_booking_token(booking_id)
+    return result
 
 
 @router.get("/link/{booking_id}")
@@ -88,6 +97,7 @@ async def payment_status(
 async def get_payment_link(
     request: Request,
     booking_id: int,
+    token: str | None = Query(None, description="Booking access token for guest bookings"),
     current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
@@ -101,13 +111,8 @@ async def get_payment_link(
     if not booking:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
 
-    # Ownership check: must be the booking owner, an admin, or an
-    # anonymous booking (user_id is NULL, e.g. guest checkout)
-    if booking.user_id is not None:
-        if not current_user or (
-            booking.user_id != current_user.id and current_user.role.value != "admin"
-        ):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    service = PaymentService(db)
+    await service.authorize_booking_access(booking, current_user, token=token)
 
     tour_title = booking.tour.title if booking.tour else f"Booking #{booking.id}"
 
@@ -122,9 +127,8 @@ async def get_payment_link(
         }
 
     # Try to generate a fresh Pesapal URL
-    service = PaymentService(db)
     try:
-        result = await service.initiate_payment(booking_id, user=current_user)
+        result = await service.initiate_payment(booking_id, user=current_user, token=token)
         return {
             "booking_id": booking.id,
             "redirect_url": result["redirect_url"],

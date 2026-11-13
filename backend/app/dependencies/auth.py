@@ -118,18 +118,22 @@ async def require_superadmin(current_user: User = Depends(get_current_user)) -> 
     return current_user
 
 
+def has_permission(user: User | None, *codenames: str) -> bool:
+    """True for the Super Admin, a legacy ``admin``, or a user whose assigned
+    role grants at least one of the given permission codenames."""
+    if user is None:
+        return False
+    if user.is_superadmin or user.role == UserRole.admin:
+        return True
+    role = user.assigned_role
+    return bool(role and any(role.has_permission(c) for c in codenames))
+
+
 def require_permission(*codenames: str):
     """Require the user's assigned role to have at least one of the given permissions.
-    Users with the legacy ``admin`` enum role always pass."""
+    The Super Admin and users with the legacy ``admin`` enum role always pass."""
     async def permission_checker(current_user: User = Depends(get_current_user)) -> User:
-        # Super Admin bypasses every permission check.
-        if current_user.is_superadmin:
-            return current_user
-        # Legacy admin enum bypass
-        if current_user.role == UserRole.admin:
-            return current_user
-        role = current_user.assigned_role
-        if role and any(role.has_permission(c) for c in codenames):
+        if has_permission(current_user, *codenames):
             return current_user
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

@@ -10,10 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 _background_tasks: Set[asyncio.Task] = set()
 
 from app.core.config import settings
+from app.core.security import create_booking_token
 from app.core.database import AsyncSessionLocal
 from app.models.booking import Booking, BookingStatus
 from app.models.payment_attempt import PaymentAttempt
 from app.models.site_settings import SiteSettings
+from app.dependencies.auth import has_permission
 from app.models.user import User
 from app.repositories.booking import BookingRepository
 from app.repositories.payment_attempt import PaymentAttemptRepository
@@ -137,7 +139,7 @@ async def _init_pesapal_background(
 
     # Email: ALWAYS fires regardless of Pesapal outcome.
     email_payment_link = (
-        f"{settings.FRONTEND_URL}/payment/resume?id={booking_id}"
+        f"{settings.FRONTEND_URL}/payment/resume?id={booking_id}&token={create_booking_token(booking_id)}"
         if payment_link else None
     )
     await _send_booking_emails_background(
@@ -419,7 +421,7 @@ class BookingService:
         booking = await self.booking_repo.get(booking_id)
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
-        if user.role.value != "admin" and booking.user_id != user.id:
+        if booking.user_id != user.id and not has_permission(user, "manage_bookings"):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         return booking
 
@@ -494,14 +496,14 @@ class BookingService:
         if not booking:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-        # Guard: financial and date fields must not be mutated on a completed booking
-        # to preserve payment audit accuracy.
+        # Guard: financial and date fields must not be mutated on a confirmed or
+        # completed booking to preserve payment audit accuracy.
         if booking.status in (BookingStatus.confirmed, BookingStatus.completed):
             protected = {"guests", "total_price", "travel_date"} & set(update_data)
             if protected:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Cannot modify {sorted(protected)} on a completed booking",
+                    detail=f"Cannot modify {sorted(protected)} on a {booking.status.value} booking",
                 )
         # Recalculate total_price when guests change without an explicit new price
         if "guests" in update_data and "total_price" not in update_data:

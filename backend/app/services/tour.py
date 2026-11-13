@@ -3,6 +3,9 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy import select, func
+
+from app.models.testimonial import Testimonial
 from app.models.tour import Tour, TourImage
 from app.repositories.tour import TourRepository, TourImageRepository
 from app.schemas.tour import TourCreate, TourUpdate, PaginatedTours
@@ -47,10 +50,33 @@ class TourService:
             excluded=data.excluded or [],
             is_published=data.is_published,
             is_featured=data.is_featured,
-            rating=data.rating,
-            review_count=data.review_count,
+            base_rating=data.base_rating,
+            base_review_count=data.base_review_count,
         )
-        return await self.tour_repo.create(tour)
+        tour = await self.tour_repo.create(tour)
+        await self.recalculate_rating(tour.id)
+        return await self.get_tour(tour.id)
+
+    async def recalculate_rating(self, tour_id: int | None) -> None:
+        """Blend the admin-entered base rating with approved testimonials:
+        rating = (base_rating * base_count + sum(approved)) / (base_count + n_approved)
+        """
+        if tour_id is None:
+            return
+        tour = await self.tour_repo.get(tour_id)
+        if not tour:
+            return
+        n, total = (await self.db.execute(
+            select(func.count(Testimonial.id), func.coalesce(func.sum(Testimonial.rating), 0))
+            .where(Testimonial.tour_id == tour_id, Testimonial.is_approved.is_(True))
+        )).one()
+        base_count = tour.base_review_count or 0
+        count = base_count + int(n)
+        rating = (
+            round(((tour.base_rating or 0) * base_count + float(total)) / count, 1)
+            if count else 0.0
+        )
+        await self.tour_repo.update(tour, {"rating": rating, "review_count": count})
 
     async def get_tour(self, tour_id: int) -> Tour:
         tour = await self.tour_repo.get(tour_id)
@@ -98,7 +124,10 @@ class TourService:
     async def update_tour(self, tour_id: int, data: TourUpdate) -> Tour:
         tour = await self.get_tour(tour_id)
         update_data = data.model_dump(exclude_none=True)
-        return await self.tour_repo.update(tour, update_data)
+        tour = await self.tour_repo.update(tour, update_data)
+        if {"base_rating", "base_review_count"} & set(update_data):
+            await self.recalculate_rating(tour.id)
+        return tour
 
     async def delete_tour(self, tour_id: int) -> None:
         tour = await self.get_tour(tour_id)

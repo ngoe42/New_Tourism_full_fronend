@@ -341,7 +341,7 @@ export default function BookingConfirmation() {
         >
           {needsPayment && (
             <button
-              onClick={() => navigate(`/payment/resume?id=${booking.id}`)}
+              onClick={() => navigate(`/payment/resume?id=${booking.id}&token=${encodeURIComponent(booking.payment_token || '')}`)}
               className="w-full flex items-center justify-center gap-2 bg-[#c9a96e] hover:bg-amber-700 text-white font-sans text-sm font-semibold py-3.5 rounded-xl transition-colors shadow-md"
             >
               <CreditCard size={16} /> Complete Payment Now

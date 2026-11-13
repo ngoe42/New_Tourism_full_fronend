@@ -14,6 +14,13 @@ const TERMINAL_FAILURES = ['FAILED', 'REVERSED']
 export default function PaymentResume() {
   const [searchParams] = useSearchParams()
   const bookingId = searchParams.get('id')
+  const [token, setToken] = useState(searchParams.get('token') || '')
+  // Shown when the link has no/invalid token (e.g. emails sent before tokens
+  // existed): the guest proves ownership with the booking email instead.
+  const [needsEmail, setNeedsEmail] = useState(false)
+  const [emailInput, setEmailInput] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [verifying, setVerifying] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -30,7 +37,7 @@ export default function PaymentResume() {
     if (count >= MAX_POLLS) return
     pollTimer.current = setTimeout(async () => {
       try {
-        const res = await bookingsApi.pollPaymentStatus(bookingId)
+        const res = await bookingsApi.pollPaymentStatus(bookingId, { token })
         const s = res.payment_status?.toUpperCase()
         if (s === 'COMPLETED') {
           setPaymentStatus('COMPLETED')
@@ -66,7 +73,7 @@ export default function PaymentResume() {
     setIframeError(false)
     setIframeReady(false)
     try {
-      const res = await bookingsApi.refreshPaymentLink(bookingId)
+      const res = await bookingsApi.refreshPaymentLink(bookingId, token)
       setData((prev) => ({ ...prev, redirect_url: res.redirect_url }))
       armIframeTimeout()
     } catch {
@@ -97,8 +104,10 @@ export default function PaymentResume() {
       setLoading(false)
       return
     }
-    bookingsApi.getPaymentLink(bookingId)
+    setLoading(true)
+    bookingsApi.getPaymentLink(bookingId, token || undefined)
       .then((res) => {
+        setNeedsEmail(false)
         setData(res)
         setLoading(false)
         if (res.payment_status?.toUpperCase() === 'COMPLETED') {
@@ -110,12 +119,36 @@ export default function PaymentResume() {
           armIframeTimeout()
         }
       })
-      .catch(() => {
-        setError('Payment link not found or has expired. Please contact us for assistance.')
+      .catch((err) => {
+        if (err?.response?.status === 403) {
+          setNeedsEmail(true)
+        } else {
+          setError('Payment link not found or has expired. Please contact us for assistance.')
+        }
         setLoading(false)
       })
     return () => { clearTimeout(pollTimer.current); clearTimeout(iframeTimeout.current) }
-  }, [bookingId])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingId, token])
+
+  const handleVerifyEmail = async (e) => {
+    e.preventDefault()
+    const email = emailInput.trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError('Please enter a valid email address.')
+      return
+    }
+    setEmailError('')
+    setVerifying(true)
+    try {
+      const booking = await bookingsApi.lookupPublic(bookingId, email)
+      setToken(booking.payment_token)   // re-runs the effect above
+    } catch {
+      setEmailError('That email does not match this booking.')
+    } finally {
+      setVerifying(false)
+    }
+  }
 
   const isSuccess = paymentStatus === 'COMPLETED'
   const isFailed = paymentStatus && paymentStatus !== 'COMPLETED'
@@ -128,6 +161,46 @@ export default function PaymentResume() {
           <Loader2 size={36} className="animate-spin text-[#c9a96e]" />
           <p className="font-sans text-sm text-gray-400">Loading your payment details…</p>
         </div>
+      </div>
+    )
+  }
+
+  /* ── Verify email (link without a valid token) ─────────── */
+  if (needsEmail) {
+    return (
+      <div className="min-h-screen bg-[#faf8f3] flex items-center justify-center px-4">
+        <form
+          onSubmit={handleVerifyEmail}
+          className="max-w-sm w-full bg-white rounded-2xl shadow-md p-8 flex flex-col gap-4"
+        >
+          <div className="flex flex-col items-center text-center gap-2">
+            <Shield size={36} className="text-[#c9a96e]" />
+            <h1 className="font-serif text-xl font-semibold text-green-950">Confirm your booking</h1>
+            <p className="font-sans text-sm text-gray-500">
+              Enter the email address you used for booking #{bookingId} to continue to payment.
+            </p>
+          </div>
+          <input
+            type="email"
+            value={emailInput}
+            onChange={(e) => setEmailInput(e.target.value)}
+            placeholder="you@example.com"
+            autoComplete="email"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 font-sans text-sm focus:outline-none focus:border-[#c9a96e]"
+          />
+          {emailError && <p className="font-sans text-xs text-red-500">{emailError}</p>}
+          <button
+            type="submit"
+            disabled={verifying}
+            className="flex items-center justify-center gap-2 font-sans text-sm font-semibold text-white bg-green-900 hover:bg-[#c9a96e] transition-colors px-6 py-3 rounded-xl disabled:opacity-60"
+          >
+            {verifying && <Loader2 size={15} className="animate-spin" />}
+            {verifying ? 'Checking…' : 'Continue to Payment'}
+          </button>
+          <Link to="/contact" className="font-sans text-xs text-center text-gray-400 hover:text-gray-600">
+            Need help? Contact us
+          </Link>
+        </form>
       </div>
     )
   }

@@ -26,6 +26,11 @@ class Tour(Base):
     excluded: Mapped[Optional[list]] = mapped_column(JSON, nullable=True, default=list)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Starting values entered by the admin (e.g. reviews collected elsewhere).
+    base_rating: Mapped[float] = mapped_column(Float, default=0.0, nullable=False, server_default="0")
+    base_review_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False, server_default="0")
+    # Derived: base values blended with approved testimonials for this tour.
+    # Never set directly — see TourService.recalculate_rating().
     rating: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     review_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

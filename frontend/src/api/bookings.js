@@ -19,17 +19,21 @@ export const bookingsApi = {
   updateStatus: (id, status, notes) =>
     apiClient.put(`/bookings/${id}/status`, { status, notes }).then((r) => r.data),
 
-  initiatePayment: (bookingId) =>
-    apiClient.post(`/payments/initiate/${bookingId}`).then((r) => r.data),
+  // `token` is the booking's payment_token — required for guest bookings.
+  initiatePayment: (bookingId, token) =>
+    apiClient.post(`/payments/initiate/${bookingId}`, null, { params: { token } }).then((r) => r.data),
 
-  pollPaymentStatus: (bookingId) =>
-    apiClient.get(`/payments/status/${bookingId}`).then((r) => r.data),
+  // Pass either the booking token or the Pesapal OrderTrackingId (callback page).
+  pollPaymentStatus: (bookingId, { token, trackingId } = {}) =>
+    apiClient
+      .get(`/payments/status/${bookingId}`, { params: { token, tracking_id: trackingId } })
+      .then((r) => r.data),
 
-  getPaymentLink: (bookingId) =>
-    apiClient.get(`/payments/link/${bookingId}`).then((r) => r.data),
+  getPaymentLink: (bookingId, token) =>
+    apiClient.get(`/payments/link/${bookingId}`, { params: { token } }).then((r) => r.data),
 
-  refreshPaymentLink: (bookingId) =>
-    apiClient.post(`/payments/initiate/${bookingId}`).then((r) => r.data),
+  refreshPaymentLink: (bookingId, token) =>
+    apiClient.post(`/payments/initiate/${bookingId}`, null, { params: { token } }).then((r) => r.data),
 
   update: (id, data) =>
     apiClient.put(`/bookings/${id}`, data).then((r) => r.data),

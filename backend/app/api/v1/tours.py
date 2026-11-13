@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.cache import cache_get, cache_set, cache_delete, cache_delete_pattern, TTL_SHORT, TTL_MEDIUM
-from app.dependencies.auth import get_current_user, get_current_user_optional, require_admin
+from app.dependencies.auth import get_current_user, get_current_user_optional, has_permission, require_permission
 from app.models.user import User
 from app.schemas.tour import TourCreate, TourUpdate, TourResponse, TourListResponse, TourImageResponse, PaginatedTours
 from app.services.tour import TourService
@@ -34,7 +34,7 @@ async def list_tours(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_current_user_optional),
 ):
-    is_admin = current_user is not None and current_user.role.value == "admin"
+    is_admin = has_permission(current_user, "manage_tours")
     raw = f"{page}:{per_page}:{q}:{category}:{min_price}:{max_price}:{is_admin}"
     cache_key = "tours:list:" + hashlib.md5(raw.encode()).hexdigest()
     cached = await cache_get(cache_key)
@@ -78,7 +78,7 @@ async def get_tour(tour_id_or_slug: str, db: AsyncSession = Depends(get_db)):
     return tour
 
 
-@router.post("", response_model=TourResponse, status_code=201, dependencies=[Depends(require_admin)])
+@router.post("", response_model=TourResponse, status_code=201, dependencies=[Depends(require_permission("manage_tours"))])
 async def create_tour(data: TourCreate, db: AsyncSession = Depends(get_db)):
     service = TourService(db)
     result = await service.create_tour(data)
@@ -86,7 +86,7 @@ async def create_tour(data: TourCreate, db: AsyncSession = Depends(get_db)):
     return result
 
 
-@router.put("/{tour_id}", response_model=TourResponse, dependencies=[Depends(require_admin)])
+@router.put("/{tour_id}", response_model=TourResponse, dependencies=[Depends(require_permission("manage_tours"))])
 async def update_tour(tour_id: int, data: TourUpdate, db: AsyncSession = Depends(get_db)):
     service = TourService(db)
     result = await service.update_tour(tour_id, data)
@@ -94,7 +94,7 @@ async def update_tour(tour_id: int, data: TourUpdate, db: AsyncSession = Depends
     return result
 
 
-@router.delete("/{tour_id}", status_code=204, dependencies=[Depends(require_admin)])
+@router.delete("/{tour_id}", status_code=204, dependencies=[Depends(require_permission("manage_tours"))])
 async def delete_tour(tour_id: int, db: AsyncSession = Depends(get_db)):
     service = TourService(db)
     await service.delete_tour(tour_id)
@@ -107,7 +107,7 @@ async def upload_tour_image(
     file: UploadFile = File(...),
     is_cover: bool = Form(False),
     alt_text: Optional[str] = Form(None),
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(require_permission("manage_tours")),
     db: AsyncSession = Depends(get_db),
 ):
     media = await MediaService(db).upload(file, current_user)
@@ -116,7 +116,7 @@ async def upload_tour_image(
     return result
 
 
-@router.delete("/{tour_id}/images/{image_id}", status_code=204, dependencies=[Depends(require_admin)])
+@router.delete("/{tour_id}/images/{image_id}", status_code=204, dependencies=[Depends(require_permission("manage_tours"))])
 async def delete_tour_image(tour_id: int, image_id: int, db: AsyncSession = Depends(get_db)):
     service = TourService(db)
     await service.delete_image(image_id)

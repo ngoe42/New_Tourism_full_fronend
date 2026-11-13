@@ -6,7 +6,7 @@ import { bookingsApi } from '../api/bookings'
 const MAX_POLLS = 24        // poll for up to 2 minutes
 const POLL_INTERVAL_MS = 5000
 
-export default function PaymentModal({ isOpen, onClose, redirectUrl, bookingId, tourTitle, amount, currency = 'USD' }) {
+export default function PaymentModal({ isOpen, onClose, redirectUrl, bookingId, paymentToken, tourTitle, amount, currency = 'USD' }) {
   const [iframeReady, setIframeReady] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState(null) // null | COMPLETED | FAILED | INVALID | REVERSED
   const [pollCount, setPollCount] = useState(0)
@@ -17,7 +17,7 @@ export default function PaymentModal({ isOpen, onClose, redirectUrl, bookingId, 
     if (count >= MAX_POLLS) return
     pollTimer.current = setTimeout(async () => {
       try {
-        const data = await bookingsApi.pollPaymentStatus(bookingId)
+        const data = await bookingsApi.pollPaymentStatus(bookingId, { token: paymentToken })
         const s = data.payment_status?.toUpperCase()
         if (s && s !== 'PENDING') {
           setPaymentStatus(s)

@@ -1,7 +1,8 @@
 import re
 from datetime import date, datetime, timezone
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, computed_field, field_validator
+from app.core.security import create_booking_token
 from app.models.booking import BookingStatus
 
 
@@ -102,6 +103,12 @@ class BookingResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @computed_field
+    @property
+    def payment_token(self) -> str:
+        """Access token for the guest payment/resume links."""
+        return create_booking_token(self.id)
+
 
 class BookingPublicResponse(BaseModel):
     id: int
@@ -120,6 +127,12 @@ class BookingPublicResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @computed_field
+    @property
+    def payment_token(self) -> str:
+        """Access token for the guest payment/resume links."""
+        return create_booking_token(self.id)
 
 
 class BulkDeleteRequest(BaseModel):

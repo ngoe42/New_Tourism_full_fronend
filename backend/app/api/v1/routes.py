@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.core.cache import cache_get, cache_set, cache_delete, cache_delete_pattern, TTL_MEDIUM
 from app.schemas.route import RouteCreate, RouteUpdate, RouteOut, RouteImageOut
 from app.services.route import RouteService
-from app.dependencies.auth import require_admin
+from app.dependencies.auth import require_permission
 
 
 async def _invalidate_routes() -> None:
@@ -52,14 +52,14 @@ async def get_route(slug_or_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/", response_model=RouteOut, status_code=status.HTTP_201_CREATED,
-             dependencies=[Depends(require_admin)])
+             dependencies=[Depends(require_permission("manage_routes"))])
 async def create_route(route_in: RouteCreate, db: AsyncSession = Depends(get_db)):
     result = await RouteService(db).create_route(route_in)
     await _invalidate_routes()
     return result
 
 
-@router.put("/{route_id}", response_model=RouteOut, dependencies=[Depends(require_admin)])
+@router.put("/{route_id}", response_model=RouteOut, dependencies=[Depends(require_permission("manage_routes"))])
 async def update_route(route_id: int, route_in: RouteUpdate, db: AsyncSession = Depends(get_db)):
     result = await RouteService(db).update_route(route_id, route_in)
     await _invalidate_routes()
@@ -67,7 +67,7 @@ async def update_route(route_id: int, route_in: RouteUpdate, db: AsyncSession = 
 
 
 @router.delete("/{route_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[Depends(require_admin)])
+               dependencies=[Depends(require_permission("manage_routes"))])
 async def delete_route(route_id: int, db: AsyncSession = Depends(get_db)):
     await RouteService(db).delete_route(route_id)
     await _invalidate_routes()
@@ -76,7 +76,7 @@ async def delete_route(route_id: int, db: AsyncSession = Depends(get_db)):
 # ── Image endpoints ─────────────────────────────────────────────────────────
 
 @router.post("/{route_id}/images", response_model=RouteImageOut, status_code=201,
-             dependencies=[Depends(require_admin)])
+             dependencies=[Depends(require_permission("manage_routes"))])
 async def upload_route_image(
     route_id: int,
     file: UploadFile = File(...),
@@ -90,7 +90,7 @@ async def upload_route_image(
 
 
 @router.delete("/{route_id}/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[Depends(require_admin)])
+               dependencies=[Depends(require_permission("manage_routes"))])
 async def delete_route_image(route_id: int, image_id: int, db: AsyncSession = Depends(get_db)):
     await RouteService(db).delete_image(route_id, image_id)
     await _invalidate_routes()

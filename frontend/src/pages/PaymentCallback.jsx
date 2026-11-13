@@ -66,6 +66,7 @@ export default function PaymentCallback() {
   const [paymentStatus, setPaymentStatus] = useState('PENDING')
   const [loading, setLoading] = useState(true)
   const [bookingId, setBookingId] = useState(null)
+  const [paymentToken, setPaymentToken] = useState(null)
   const [pollCount, setPollCount] = useState(0)
   const [countdown, setCountdown] = useState(0)
   const [resendEmail, setResendEmail] = useState('')
@@ -86,7 +87,17 @@ export default function PaymentCallback() {
 
   const pollStatus = async (id) => {
     try {
-      const data = await bookingsApi.pollPaymentStatus(id)
+      // Prove access with Pesapal's tracking ID; fall back to the token saved
+      // at booking time when this tab is the one that made the booking.
+      const storedId = sessionStorage.getItem('lastBookingId')
+      const storedToken = storedId && parseInt(storedId) === id
+        ? sessionStorage.getItem('lastBookingToken')
+        : null
+      const data = await bookingsApi.pollPaymentStatus(id, {
+        trackingId: orderTrackingId || undefined,
+        token: storedToken || undefined,
+      })
+      if (data.payment_token) setPaymentToken(data.payment_token)
       const s = data.payment_status?.toUpperCase() || 'PENDING'
       setPaymentStatus(s)
       return s
@@ -322,7 +333,7 @@ export default function PaymentCallback() {
           </Link>
           {bookingId && ['FAILED', 'INVALID', 'REVERSED', 'UNKNOWN'].includes(paymentStatus) && (
             <Link
-              to={`/payment/resume?id=${bookingId}`}
+              to={`/payment/resume?id=${bookingId}${paymentToken ? `&token=${encodeURIComponent(paymentToken)}` : ''}`}
               className="font-sans text-sm font-medium text-[#c9a96e] hover:underline transition-colors text-center"
             >
               Try Payment Again

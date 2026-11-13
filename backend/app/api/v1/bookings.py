@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.cache import cache_get, cache_set, cache_delete
 from app.core.database import get_db
 from app.core.limiter import limiter
-from app.dependencies.auth import get_current_user, get_current_user_optional, require_admin
+from app.dependencies.auth import get_current_user, get_current_user_optional, require_permission
 from app.models.user import User
 from app.schemas.booking import BookingCreate, BookingResponse, BookingPublicResponse, BookingStatusUpdate, BookingAdminUpdate, BulkDeleteRequest, BulkDeleteResponse, PaginatedBookings
 from app.repositories.booking import BookingRepository
@@ -79,7 +79,7 @@ async def get_booking(
     return await service.get_booking(booking_id, current_user)
 
 
-@router.get("", response_model=PaginatedBookings, dependencies=[Depends(require_admin)])
+@router.get("", response_model=PaginatedBookings, dependencies=[Depends(require_permission("manage_bookings"))])
 @limiter.limit("60/minute")
 async def list_all_bookings(
     request: Request,
@@ -91,7 +91,7 @@ async def list_all_bookings(
     return await service.list_all_bookings(page=page, per_page=per_page)
 
 
-@router.put("/{booking_id}/status", response_model=BookingResponse, dependencies=[Depends(require_admin)])
+@router.put("/{booking_id}/status", response_model=BookingResponse, dependencies=[Depends(require_permission("manage_bookings"))])
 async def update_booking_status(
     booking_id: int,
     data: BookingStatusUpdate,
@@ -101,7 +101,7 @@ async def update_booking_status(
     return await service.update_status(booking_id, data)
 
 
-@router.put("/{booking_id}", response_model=BookingResponse, dependencies=[Depends(require_admin)])
+@router.put("/{booking_id}", response_model=BookingResponse, dependencies=[Depends(require_permission("manage_bookings"))])
 async def admin_update_booking(
     booking_id: int,
     data: BookingAdminUpdate,
@@ -111,7 +111,7 @@ async def admin_update_booking(
     return await service.admin_update(booking_id, data)
 
 
-@router.delete("/{booking_id}", status_code=204, dependencies=[Depends(require_admin)])
+@router.delete("/{booking_id}", status_code=204, dependencies=[Depends(require_permission("manage_bookings"))])
 async def delete_booking(
     booking_id: int,
     db: AsyncSession = Depends(get_db),
@@ -120,7 +120,7 @@ async def delete_booking(
     await service.delete_booking(booking_id)
 
 
-@router.post("/bulk-delete", response_model=BulkDeleteResponse, dependencies=[Depends(require_admin)])
+@router.post("/bulk-delete", response_model=BulkDeleteResponse, dependencies=[Depends(require_permission("manage_bookings"))])
 async def bulk_delete_bookings(
     data: BulkDeleteRequest,
     db: AsyncSession = Depends(get_db),

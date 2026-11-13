@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.dependencies.auth import get_current_user, require_admin
+from app.dependencies.auth import get_current_user, require_permission
 from app.models.experience import Experience
 from app.models.route import Route, RouteImage
 from app.models.tour import Tour, TourImage
@@ -21,7 +21,7 @@ router = APIRouter(tags=["Media"])
 async def upload_file(
     file: UploadFile = File(...),
     tour_id: Optional[int] = Query(None),
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(require_permission("manage_tours", "manage_experiences", "manage_routes", "manage_settings")),
     db: AsyncSession = Depends(get_db),
 ):
     service = MediaService(db)
@@ -29,7 +29,7 @@ async def upload_file(
     return media
 
 
-@router.get("", response_model=list[MediaResponse], dependencies=[Depends(require_admin)])
+@router.get("", response_model=list[MediaResponse], dependencies=[Depends(require_permission("manage_tours", "manage_experiences", "manage_routes", "manage_settings"))])
 async def list_media(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -92,7 +92,7 @@ async def list_hero_images(
 @router.delete("/{media_id}", status_code=204)
 async def delete_media(
     media_id: int,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(require_permission("manage_tours", "manage_experiences", "manage_routes", "manage_settings")),
     db: AsyncSession = Depends(get_db),
 ):
     service = MediaService(db)

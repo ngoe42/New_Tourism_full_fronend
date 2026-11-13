@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.limiter import limiter
-from app.dependencies.auth import require_admin
+from app.dependencies.auth import require_permission
 from app.schemas.dashboard import DashboardStats
 from app.schemas.inquiry import InquiryUpdate
 from app.services.dashboard import DashboardService
@@ -17,7 +17,7 @@ from app.services.inquiry import InquiryService
 router = APIRouter(tags=["Admin Dashboard"])
 
 
-@router.get("/dashboard", response_model=DashboardStats, dependencies=[Depends(require_admin)])
+@router.get("/dashboard", response_model=DashboardStats, dependencies=[Depends(require_permission("view_dashboard"))])
 async def get_dashboard(db: AsyncSession = Depends(get_db)):
     service = DashboardService(db)
     return await service.get_stats()
@@ -31,7 +31,7 @@ class SendEmailRequest(BaseModel):
     booking_id: Optional[int] = None
 
 
-@router.post("/send-email", dependencies=[Depends(require_admin)])
+@router.post("/send-email", dependencies=[Depends(require_permission("send_emails"))])
 @limiter.limit("20/hour")
 async def send_reply_email(
     request: Request,

@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 from jose import JWTError, jwt
@@ -55,3 +57,20 @@ def verify_password_reset_token(token: str) -> Optional[int]:
         return int(payload["sub"])
     except (JWTError, ValueError):
         return None
+
+
+# ── Booking access tokens ─────────────────────────────────────────────────────
+# Guests have no account, so payment links carry an HMAC of the booking ID.
+# Without it, anyone could walk sequential booking IDs and trigger Pesapal
+# orders / emails for other people's bookings. Deterministic, so links that
+# are emailed keep working; rotating SECRET_KEY invalidates them all.
+
+def create_booking_token(booking_id: int) -> str:
+    msg = f"booking-access:{int(booking_id)}".encode()
+    return hmac.new(settings.SECRET_KEY.encode(), msg, hashlib.sha256).hexdigest()[:32]
+
+
+def verify_booking_token(booking_id: int, token: Optional[str]) -> bool:
+    if not token:
+        return False
+    return hmac.compare_digest(create_booking_token(booking_id), token.strip())

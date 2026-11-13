@@ -10,7 +10,7 @@ const TOUR_CATEGORIES = categories.filter((c) => c !== 'All')
 const EMPTY_FORM = {
   title: '', slug: '', subtitle: '', description: '', category: 'Luxury Safaris',
   location: '', duration: '', group_size: '', price: '',
-  rating: 0, review_count: 0,
+  base_rating: 0, base_review_count: 0,
   highlights: [], itinerary: [], included: [], excluded: [],
   is_featured: false, is_published: true,
 }
@@ -199,6 +199,9 @@ function TourForm({ initial, onClose, onSave, saving }) {
   const handleSubmit = (e) => {
     e.preventDefault()
     const formData = { ...form, price: parseFloat(form.price) || 0 }
+    // rating / review_count are derived on the server from the base values + approved reviews
+    delete formData.rating
+    delete formData.review_count
     delete formData.images
     delete formData.created_at
     delete formData.updated_at
@@ -287,30 +290,33 @@ function TourForm({ initial, onClose, onSave, saving }) {
 
           {/* Rating */}
           <div>
-            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Star Rating (0–5)</label>
-            <input type="number" min="0" max="5" step="0.1" value={form.rating ?? 0}
-              onChange={(e) => set('rating', Math.min(5, Math.max(0, parseFloat(e.target.value) || 0)))}
+            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Starting Star Rating (0–5)</label>
+            <input type="number" min="0" max="5" step="0.1" value={form.base_rating ?? 0}
+              onChange={(e) => set('base_rating', Math.min(5, Math.max(0, parseFloat(e.target.value) || 0)))}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
             <div className="flex items-center gap-0.5 mt-1.5">
               {[1, 2, 3, 4, 5].map((i) => (
-                <button key={i} type="button" onClick={() => set('rating', i)}
+                <button key={i} type="button" onClick={() => set('base_rating', i)}
                   title={`${i} star${i > 1 ? 's' : ''}`}
                   className="p-0.5 hover:scale-110 transition-transform">
                   <Star size={14} fill="currentColor"
-                    className={i <= Math.round(form.rating || 0) ? 'text-amber-400' : 'text-gray-200'} />
+                    className={i <= Math.round(form.base_rating || 0) ? 'text-amber-400' : 'text-gray-200'} />
                 </button>
               ))}
-              <span className="ml-1 font-sans text-xs text-gray-400">{Number(form.rating || 0).toFixed(1)}</span>
+              <span className="ml-1 font-sans text-xs text-gray-400">{Number(form.base_rating || 0).toFixed(1)}</span>
             </div>
           </div>
 
           {/* Review Count */}
           <div>
-            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Number of Reviews</label>
-            <input type="number" min="0" step="1" value={form.review_count ?? 0}
-              onChange={(e) => set('review_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
+            <label className="block font-sans text-xs font-semibold text-gray-600 mb-1.5">Starting Number of Reviews</label>
+            <input type="number" min="0" step="1" value={form.base_review_count ?? 0}
+              onChange={(e) => set('base_review_count', Math.max(0, parseInt(e.target.value, 10) || 0))}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 font-sans text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
-            <p className="mt-1.5 font-sans text-[11px] text-gray-400">Shown next to the star rating on the website.</p>
+            <p className="mt-1.5 font-sans text-[11px] text-gray-400">
+              Reviews from elsewhere (e.g. TripAdvisor). Approved testimonials for this tour are added on top automatically.
+              {initial?.id && ` Currently shown on the website: ${initial.rating ?? 0} (${initial.review_count ?? 0}).`}
+            </p>
           </div>
 
           {/* Description */}

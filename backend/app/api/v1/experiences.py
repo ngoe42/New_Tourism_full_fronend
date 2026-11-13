@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from app.core.database import get_db
 from app.core.cache import cache_get, cache_set, cache_delete, TTL_MEDIUM
-from app.dependencies.auth import require_admin
+from app.dependencies.auth import require_permission
 from app.models.experience import Experience
 from app.repositories.experience import ExperienceRepository
 from app.schemas.experience import (
@@ -41,7 +41,7 @@ async def list_experiences(db: AsyncSession = Depends(get_db)):
 @router.get("/all", response_model=List[ExperienceResponse])
 async def list_all_experiences(
     db: AsyncSession = Depends(get_db),
-    _=Depends(require_admin),
+    _=Depends(require_permission("manage_experiences")),
 ):
     repo = ExperienceRepository(db)
     return await repo.get_all()
@@ -51,7 +51,7 @@ async def list_all_experiences(
 async def create_experience(
     data: ExperienceCreate,
     db: AsyncSession = Depends(get_db),
-    _=Depends(require_admin),
+    _=Depends(require_permission("manage_experiences")),
 ):
     repo = ExperienceRepository(db)
     experience = Experience(**data.model_dump())
@@ -67,7 +67,7 @@ async def update_experience(
     experience_id: int,
     data: ExperienceUpdate,
     db: AsyncSession = Depends(get_db),
-    _=Depends(require_admin),
+    _=Depends(require_permission("manage_experiences")),
 ):
     repo = ExperienceRepository(db)
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
@@ -85,7 +85,7 @@ async def update_experience(
 async def delete_experience(
     experience_id: int,
     db: AsyncSession = Depends(get_db),
-    _=Depends(require_admin),
+    _=Depends(require_permission("manage_experiences")),
 ):
     repo = ExperienceRepository(db)
     experience = await repo.get(experience_id)
@@ -112,7 +112,7 @@ async def delete_experience(
 async def reorder_experiences(
     items: List[ExperienceReorderItem],
     db: AsyncSession = Depends(get_db),
-    _=Depends(require_admin),
+    _=Depends(require_permission("manage_experiences")),
 ):
     repo = ExperienceRepository(db)
     await repo.bulk_reorder([{"id": i.id, "order": i.order} for i in items])

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.testimonial import Testimonial
 from app.models.user import User
 from app.repositories.testimonial import TestimonialRepository
+from app.services.tour import TourService
 from app.schemas.testimonial import TestimonialCreate, TestimonialAdminUpdate, PaginatedTestimonials
 
 
@@ -52,8 +53,12 @@ class TestimonialService:
 
     async def admin_update(self, testimonial_id: int, data: TestimonialAdminUpdate) -> Testimonial:
         t = await self.get(testimonial_id)
-        return await self.repo.update(t, data.model_dump(exclude_none=True))
+        t = await self.repo.update(t, data.model_dump(exclude_none=True))
+        await TourService(self.db).recalculate_rating(t.tour_id)
+        return t
 
     async def delete(self, testimonial_id: int) -> None:
         t = await self.get(testimonial_id)
+        tour_id = t.tour_id
         await self.repo.delete(t)
+        await TourService(self.db).recalculate_rating(tour_id)

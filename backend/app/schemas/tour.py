@@ -36,8 +36,10 @@ class TourBase(BaseModel):
     excluded: Optional[List[str]] = []
     is_published: bool = False
     is_featured: bool = False
-    rating: float = Field(default=0.0, ge=0, le=5)
-    review_count: int = Field(default=0, ge=0)
+    # Admin-entered starting values; the public rating/review_count are
+    # derived from these plus approved testimonials.
+    base_rating: float = Field(default=0.0, ge=0, le=5)
+    base_review_count: int = Field(default=0, ge=0)
 
 
 class TourCreate(TourBase):
@@ -60,8 +62,8 @@ class TourUpdate(BaseModel):
     excluded: Optional[List[str]] = None
     is_published: Optional[bool] = None
     is_featured: Optional[bool] = None
-    rating: Optional[float] = Field(None, ge=0, le=5)
-    review_count: Optional[int] = Field(None, ge=0)
+    base_rating: Optional[float] = Field(None, ge=0, le=5)
+    base_review_count: Optional[int] = Field(None, ge=0)
 
 
 # NOTE: Response model intentionally does NOT inherit TourBase.
@@ -88,6 +90,8 @@ class TourResponse(BaseModel):
     is_featured: bool = False
     rating: float
     review_count: int
+    base_rating: float = 0
+    base_review_count: int = 0
     images: List[TourImageResponse] = []
     created_at: datetime
     updated_at: datetime
@@ -109,6 +113,8 @@ class TourListResponse(BaseModel):
     badge: Optional[str] = None
     rating: float
     review_count: int
+    base_rating: float = 0
+    base_review_count: int = 0
     is_featured: bool
     is_published: bool
     images: List[TourImageResponse] = []

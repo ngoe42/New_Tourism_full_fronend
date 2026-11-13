@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.dependencies.auth import get_current_user_optional, require_admin
+from app.api.v1.tours import _invalidate_tours
+from app.dependencies.auth import get_current_user_optional, require_permission
 from app.models.user import User
 from app.schemas.testimonial import (
     TestimonialCreate, TestimonialResponse, TestimonialAdminUpdate, PaginatedTestimonials
@@ -32,7 +33,7 @@ async def list_testimonials(
     return await service.list_approved(page=page, per_page=per_page)
 
 
-@router.get("/all", response_model=PaginatedTestimonials, dependencies=[Depends(require_admin)])
+@router.get("/all", response_model=PaginatedTestimonials, dependencies=[Depends(require_permission("manage_testimonials"))])
 async def list_all_testimonials(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -42,23 +43,28 @@ async def list_all_testimonials(
     return await service.list_all(page=page, per_page=per_page)
 
 
-@router.put("/{testimonial_id}/approve", response_model=TestimonialResponse, dependencies=[Depends(require_admin)])
+@router.put("/{testimonial_id}/approve", response_model=TestimonialResponse, dependencies=[Depends(require_permission("manage_testimonials"))])
 async def approve_testimonial(testimonial_id: int, db: AsyncSession = Depends(get_db)):
     service = TestimonialService(db)
-    return await service.admin_update(testimonial_id, TestimonialAdminUpdate(is_approved=True))
+    result = await service.admin_update(testimonial_id, TestimonialAdminUpdate(is_approved=True))
+    await _invalidate_tours()  # tour ratings changed
+    return result
 
 
-@router.put("/{testimonial_id}", response_model=TestimonialResponse, dependencies=[Depends(require_admin)])
+@router.put("/{testimonial_id}", response_model=TestimonialResponse, dependencies=[Depends(require_permission("manage_testimonials"))])
 async def admin_update_testimonial(
     testimonial_id: int,
     data: TestimonialAdminUpdate,
     db: AsyncSession = Depends(get_db),
 ):
     service = TestimonialService(db)
-    return await service.admin_update(testimonial_id, data)
+    result = await service.admin_update(testimonial_id, data)
+    await _invalidate_tours()
+    return result
 
 
-@router.delete("/{testimonial_id}", status_code=204, dependencies=[Depends(require_admin)])
+@router.delete("/{testimonial_id}", status_code=204, dependencies=[Depends(require_permission("manage_testimonials"))])
 async def delete_testimonial(testimonial_id: int, db: AsyncSession = Depends(get_db)):
     service = TestimonialService(db)
     await service.delete(testimonial_id)
+    await _invalidate_tours()
